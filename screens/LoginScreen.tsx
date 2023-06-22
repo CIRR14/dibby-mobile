@@ -1,4 +1,5 @@
 import {
+  ColorSchemeName,
   KeyboardAvoidingView,
   StyleSheet,
   Text,
@@ -53,7 +54,7 @@ const LoginScreen = () => {
 
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
-  const styles = makeStyles(colors as unknown as ThemeColors);
+  const styles = makeStyles(colors as unknown as ThemeColors, theme);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (userObj) => {
@@ -308,7 +309,7 @@ const LoginScreen = () => {
 
 export default LoginScreen;
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -320,7 +321,8 @@ const makeStyles = (colors: ThemeColors) =>
       margin: 12,
     },
     input: {
-      backgroundColor: colors.inverseSurface,
+      backgroundColor:
+        theme === "dark" ? colors.inverseSurface : colors.surfaceVariant,
       color: colors.surface,
       paddingHorizontal: 15,
       paddingVertical: 10,

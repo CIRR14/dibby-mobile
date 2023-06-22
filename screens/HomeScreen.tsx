@@ -5,16 +5,18 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from "react-native";
 import React from "react";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useTheme } from "@react-navigation/native";
 import { useUser } from "../hooks/useUser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../components/Card";
 import TopBar from "../components/TopBar";
+import { ColorTheme, ThemeColors } from "../constants/Colors";
 
 const numColumns = 2;
 
@@ -22,6 +24,10 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
     useUser();
+
+  const { colors } = useTheme() as unknown as ColorTheme;
+  const theme = useColorScheme();
+  const styles = makeStyles(colors as unknown as ThemeColors);
 
   const handleSignOut = () => {
     signOut(auth)
@@ -38,7 +44,7 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      <TopBar title="Home" />
+      <TopBar title="Home" signOut={handleSignOut} />
       <View style={styles.grid}>
         <FlatList
           key={numColumns}
@@ -57,20 +63,15 @@ const HomeScreen = () => {
 
 export default HomeScreen;
 
-const styles = StyleSheet.create({
-  topContainer: {
-    flex: 1,
-    // justifyContent: "center",
-    // alignItems: "center",
-  },
-  grid: {
-    flex: 1,
-    display: "flex",
-    // justifyContent: "space-evenly",
-    // alignContent: "stretch",
-    // flexDirection: "row",
-    // flexWrap: "wrap",
-    // alignItems: "flex-start",
-    margin: 16,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    topContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    grid: {
+      flex: 1,
+      display: "flex",
+      margin: 16,
+    },
+  });

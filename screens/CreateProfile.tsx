@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   TextInput,
   useColorScheme,
+  ColorSchemeName,
 } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -72,12 +73,10 @@ const CreateProfile = () => {
           </View>
         </TouchableOpacity>
         <View style={styles.userNameEmailContainer}>
-          <Text
-            style={{ fontWeight: "bold", color: colors.secondaryContainer }}
-          >
+          <Text style={{ fontWeight: "bold", color: colors.onSurfaceVariant }}>
             {username || "Display Name"}
           </Text>
-          <Text style={{ color: colors.secondaryContainer }}>
+          <Text style={{ color: colors.onSurfaceVariant }}>
             {loggedInUser?.email}
           </Text>
         </View>
@@ -88,9 +87,7 @@ const CreateProfile = () => {
           autoCapitalize="words"
           placeholder="Display Name"
           value={username}
-          placeholderTextColor={
-            theme === "dark" ? colors.surface : colors.onSurface
-          }
+          placeholderTextColor={colors.onSurfaceVariant}
           onChangeText={(text: string) => setUsername(text)}
           style={styles.displayNameInput}
           clearButtonMode="always"
@@ -110,8 +107,7 @@ const makeStyles = (colors: ThemeColors) =>
     container: {
       backgroundColor: colors.background,
       flex: 1,
-      padding: 16,
-      margin: 16,
+      padding: 32,
       alignItems: "center",
     },
     title: {
@@ -119,10 +115,10 @@ const makeStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
       textAlign: "center",
       marginBottom: 20,
-      color: colors.onBackground,
+      color: colors.onSurfaceVariant,
     },
     sectionContainer: {
-      backgroundColor: colors.onSecondaryContainer,
+      backgroundColor: colors.surfaceVariant,
       width: "100%",
       borderRadius: 10,
       padding: 20,
@@ -131,7 +127,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
     },
     profilePictureContainer: {
-      backgroundColor: colors.secondary,
+      backgroundColor: colors.onSurfaceVariant,
       borderRadius: 100,
       width: 50,
       height: 50,
@@ -143,7 +139,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingLeft: 20,
     },
     displayNameInput: {
-      color: colors.secondaryContainer,
+      color: colors.onSurfaceVariant,
       fontWeight: "bold",
       width: "100%",
     },
