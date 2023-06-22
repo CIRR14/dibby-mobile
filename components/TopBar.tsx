@@ -1,20 +1,38 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from "react-native";
 import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faArrowLeft, faBackward, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { useTheme } from "@react-navigation/native";
 
 interface ITopBarProps {
   title: string;
-  onPressBack: () => void;
+  onPressBack?: () => void;
 }
 
 const TopBar: React.FC<ITopBarProps> = ({ title, onPressBack }) => {
+  const { colors } = useTheme() as unknown as ColorTheme;
+  const theme = useColorScheme();
+  const styles = makeStyles(colors as unknown as ThemeColors);
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={onPressBack} style={[styles.innerContainer, styles.backButton]}>
-        <FontAwesomeIcon icon={faChevronLeft} size={12} />
-        <Text style={styles.backText}>Back</Text>
+      <TouchableOpacity
+        onPress={onPressBack}
+        style={[styles.innerContainer, styles.backButton]}
+      >
+        {onPressBack && (
+          <FontAwesomeIcon
+            icon={faChevronLeft}
+            size={16}
+            color={colors.onSurfaceVariant}
+          />
+        )}
       </TouchableOpacity>
       <View style={styles.innerContainer}>
         <Text style={styles.title}> {title} </Text>
@@ -28,34 +46,35 @@ const TopBar: React.FC<ITopBarProps> = ({ title, onPressBack }) => {
 
 export default TopBar;
 
-const styles = StyleSheet.create({
-  container: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    height: 64,
-    backgroundColor: "#2f95dc",
-    padding: 12,
-  },
-  title: {
-    color: "white",
-    fontSize: 22,
-  },
-  innerContainer: {
-    width: 64,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backButton: {
-    flexDirection: "row",
-    borderRadius: 8,
-    height: 32,
-    backgroundColor: "#ccc",
-  },
-  backText: {
-    color: "#000",
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      width: "100%",
+      height: 64,
+      backgroundColor: colors.surfaceVariant,
+      padding: 12,
+    },
+    title: {
+      color: colors.onSurfaceVariant,
+      fontSize: 22,
+    },
+    innerContainer: {
+      width: 64,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    backButton: {
+      flexDirection: "row",
+      borderRadius: 8,
+      height: 32,
+      justifyContent: "flex-start",
+    },
+    backText: {
+      color: colors.onSurfaceVariant,
+    },
+  });
