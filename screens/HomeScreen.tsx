@@ -1,5 +1,7 @@
 import {
+  Dimensions,
   FlatList,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -7,8 +9,8 @@ import {
   View,
   useColorScheme,
 } from "react-native";
-import React from "react";
-import { auth } from "../firebase";
+import React, { useEffect, useState } from "react";
+import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
 
 import { useNavigation, useTheme } from "@react-navigation/native";
@@ -17,10 +19,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../components/Card";
 import TopBar from "../components/TopBar";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
+import {
+  onSnapshot,
+  collection,
+  deleteDoc,
+  doc,
+  orderBy,
+  query,
+} from "firebase/firestore";
+import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
 
-const numColumns = 2;
+const windowWidth = Dimensions.get("window").width;
+// const windowHeight = Dimensions.get('window').height;
+
+const numColumns = Math.floor(windowWidth / 500);
 
 const HomeScreen = () => {
+  const [currentTrips, setCurrentTrips] = useState<Trip[]>([]);
+
   const navigation = useNavigation();
   const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
     useUser();
@@ -28,6 +44,28 @@ const HomeScreen = () => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      query(collection(db, "trips"), orderBy("created", "desc")),
+      (doc) => {
+        const newData: Trip[] = doc.docs.flatMap((doc) => ({
+          ...(doc.data() as TripDoc),
+          id: doc.id,
+        }));
+        setCurrentTrips(newData);
+      }
+    );
+
+    return () => {
+      unsub();
+    };
+  }, []);
+
+  const deleteTrip = async (e: any, trip: Trip | Expense) => {
+    e.stopPropagation();
+    await deleteDoc(doc(db, "trips", trip.id));
+  };
 
   const handleSignOut = () => {
     signOut(auth)
@@ -44,18 +82,16 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      <TopBar title="Home" signOut={handleSignOut} />
+      <TopBar title="Trips" signOut={handleSignOut} />
       <View style={styles.grid}>
         <FlatList
           key={numColumns}
-          data={[
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-            19, 20,
-          ]}
-          renderItem={({ item }) => <Card add />}
-          keyExtractor={(item) => item.toString()}
+          data={currentTrips}
+          renderItem={({ item }) => <Card item={item as Trip} />}
+          keyExtractor={(trip) => trip.id}
           numColumns={numColumns}
-        ></FlatList>
+        />
+        <Card add />
       </View>
     </SafeAreaView>
   );
