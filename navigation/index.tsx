@@ -5,7 +5,7 @@
  */
 import { FontAwesome } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, Theme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as React from "react";
 import { ColorSchemeName, Pressable, Text } from "react-native";
@@ -25,6 +25,7 @@ import {
   RootTabScreenProps,
 } from "../types";
 import LinkingConfiguration from "./LinkingConfiguration";
+import CreateTrip from "../components/CreateTrip";
 
 export default function Navigation({
   colorScheme,
@@ -34,7 +35,7 @@ export default function Navigation({
   return (
     <NavigationContainer
       linking={LinkingConfiguration}
-      theme={colorScheme === "dark" ? CustomDarkTheme : CustomLightTheme}
+      theme={colorScheme === "dark" ? CustomDarkTheme as unknown as Theme : CustomLightTheme as unknown as Theme}
       fallback={<Text>Loading...</Text>}
     >
       <RootNavigator />
@@ -64,6 +65,11 @@ function RootNavigator() {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CreateTrip"
+        component={CreateTrip}
         options={{ headerShown: false }}
       />
       <Stack.Screen

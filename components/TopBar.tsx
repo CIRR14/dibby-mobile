@@ -60,19 +60,20 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      width: "100%",
       height: 64,
       backgroundColor: colors.secondary,
-      padding: 12,
+      padding: 16,
     },
     title: {
       color: colors.onSecondary,
       fontSize: 22,
+      width: 120,
+      textAlign: 'center'
     },
     innerContainer: {
-      width: 64,
+      width: 120,
       display: "flex",
-      alignItems: "center",
+      alignItems: "flex-end",
       justifyContent: "center",
     },
     backButton: {

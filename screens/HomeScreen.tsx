@@ -1,11 +1,8 @@
 import {
   Dimensions,
   FlatList,
-  Platform,
-  ScrollView,
+  Modal,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
   useColorScheme,
 } from "react-native";
@@ -28,14 +25,15 @@ import {
   query,
 } from "firebase/firestore";
 import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
+import CreateTrip from "../components/CreateTrip";
 
 const windowWidth = Dimensions.get("window").width;
-// const windowHeight = Dimensions.get('window').height;
 
 const numColumns = Math.floor(windowWidth / 500);
 
 const HomeScreen = () => {
   const [currentTrips, setCurrentTrips] = useState<Trip[]>([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const navigation = useNavigation();
   const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
@@ -46,21 +44,23 @@ const HomeScreen = () => {
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   useEffect(() => {
-    const unsub = onSnapshot(
-      query(collection(db, "trips"), orderBy("created", "desc")),
-      (doc) => {
-        const newData: Trip[] = doc.docs.flatMap((doc) => ({
-          ...(doc.data() as TripDoc),
-          id: doc.id,
-        }));
-        setCurrentTrips(newData);
-      }
-    );
+    if (loggedInUser && loggedInUser.uid) {
+      const unsub = onSnapshot(
+        query(collection(db, loggedInUser.uid), orderBy("created", "desc")),
+        (doc) => {
+          const newData: Trip[] = doc.docs.flatMap((doc) => ({
+            ...(doc.data() as TripDoc),
+            id: doc.id,
+          }));
+          setCurrentTrips(newData);
+        }
+      );
 
-    return () => {
-      unsub();
-    };
-  }, []);
+      return () => {
+        unsub();
+      };
+    }
+  }, [loggedInUser]);
 
   const deleteTrip = async (e: any, trip: Trip | Expense) => {
     e.stopPropagation();
@@ -80,6 +80,11 @@ const HomeScreen = () => {
       });
   };
 
+  const toggleModal = () => {
+    setIsModalVisible(!isModalVisible);
+
+  }
+
   return (
     <SafeAreaView style={styles.topContainer}>
       <TopBar title="Trips" signOut={handleSignOut} />
@@ -91,7 +96,16 @@ const HomeScreen = () => {
           keyExtractor={(trip) => trip.id}
           numColumns={numColumns}
         />
-        <Card add />
+        <Card add onPress={toggleModal} />
+        <Modal
+          animationType='slide'
+          visible={isModalVisible}
+          onRequestClose={toggleModal}>
+          {
+            loggedInUser &&
+            <CreateTrip currentUser={loggedInUser} onPressBack={toggleModal} />
+          }
+        </Modal>
       </View>
     </SafeAreaView>
   );
