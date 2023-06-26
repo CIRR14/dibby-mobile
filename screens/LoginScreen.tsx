@@ -184,7 +184,7 @@ const LoginScreen = () => {
     setMethod("logIn");
     signInWithEmailAndPassword(auth, email, password)
       .then((user: UserCredential) => {
-        console.log("logging in");
+        console.log("logging in", { user });
       })
       .catch((err: FirebaseError) => {
         console.log({ err });
@@ -385,7 +385,6 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       textAlign: "center",
       marginTop: 2,
       color: colors.primary,
-      textDecoration: "underline",
       fontSize: 16,
       fontWeight: "500",
     },
