@@ -1,17 +1,71 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import React, { useEffect } from "react";
-import { auth } from "../firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  Dimensions,
+  FlatList,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import { auth, db } from "../firebase";
+import { signOut } from "firebase/auth";
 
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useTheme } from "@react-navigation/native";
 import { useUser } from "../hooks/useUser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../components/Card";
 import TopBar from "../components/TopBar";
+import { ColorTheme, ThemeColors } from "../constants/Colors";
+import {
+  onSnapshot,
+  collection,
+  deleteDoc,
+  doc,
+  orderBy,
+  query,
+} from "firebase/firestore";
+import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
+
+const windowWidth = Dimensions.get("window").width;
+// const windowHeight = Dimensions.get('window').height;
+
+const numColumns = Math.floor(windowWidth / 500);
 
 const HomeScreen = () => {
+  const [currentTrips, setCurrentTrips] = useState<Trip[]>([]);
+
   const navigation = useNavigation();
-  const { username, loggedInUser, photoURL, setUsername, setPhotoURL } = useUser();
+  const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
+    useUser();
+
+  const { colors } = useTheme() as unknown as ColorTheme;
+  const theme = useColorScheme();
+  const styles = makeStyles(colors as unknown as ThemeColors);
+
+  useEffect(() => {
+    const unsub = onSnapshot(
+      query(collection(db, "trips"), orderBy("created", "desc")),
+      (doc) => {
+        const newData: Trip[] = doc.docs.flatMap((doc) => ({
+          ...(doc.data() as TripDoc),
+          id: doc.id,
+        }));
+        setCurrentTrips(newData);
+      }
+    );
+
+    return () => {
+      unsub();
+    };
+  }, []);
+
+  const deleteTrip = async (e: any, trip: Trip | Expense) => {
+    e.stopPropagation();
+    await deleteDoc(doc(db, "trips", trip.id));
+  };
 
   const handleSignOut = () => {
     signOut(auth)
@@ -27,49 +81,33 @@ const HomeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TopBar title="Home" onPressBack={() => navigation.navigate("CreateProfile")} />
-      <View style={styles.container}>
-        <Text style={styles.text}> Profile Picture: {photoURL} </Text>
-        <Text style={styles.text}>Email: {loggedInUser?.email}</Text>
-        <Text style={styles.text}>DisplayName: {loggedInUser?.displayName} </Text>
+    <SafeAreaView style={styles.topContainer}>
+      <TopBar title="Trips" signOut={handleSignOut} />
+      <View style={styles.grid}>
+        <FlatList
+          key={numColumns}
+          data={currentTrips}
+          renderItem={({ item }) => <Card item={item as Trip} />}
+          keyExtractor={(trip) => trip.id}
+          numColumns={numColumns}
+        />
+        <Card add />
       </View>
-      <View>
-        <Card />
-      </View>
-      <TouchableOpacity style={styles.button} onPress={handleSignOut}>
-        <Text style={styles.buttonText}> Sign Out </Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
 export default HomeScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  text: {},
-  button: {
-    backgroundColor: "#2f95dc",
-    width: "100%",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  backButton: {
-    backgroundColor: "grey",
-    width: "20%",
-    padding: 10,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    topContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    grid: {
+      flex: 1,
+      display: "flex",
+      margin: 16,
+    },
+  });
