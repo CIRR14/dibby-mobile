@@ -17,6 +17,10 @@ export interface ThemeColors {
   onError: string;
   errorContainer: string;
   onErrorContainer: string;
+  success: string;
+  onSuccess: string;
+  successContainer: string;
+  onSuccessContainer: string;
   background: string;
   onBackground: string;
   surface: string;
@@ -68,6 +72,10 @@ export const CustomLightTheme: ColorTheme = {
     onError: "rgb(255, 255, 255)",
     errorContainer: "rgb(255, 218, 214)",
     onErrorContainer: "rgb(65, 0, 2)",
+    success: "rgb(171, 255, 192)",
+    onSuccess: "rgb(69, 212, 100)",
+    successContainer: "rgb(35, 106, 52)",
+    onSuccessContainer: "rgb(142, 234, 165)",
     background: "rgb(253, 252, 255)",
     onBackground: "rgb(26, 28, 30)",
     surface: "rgb(253, 252, 255)",
@@ -116,6 +124,10 @@ export const CustomDarkTheme: ColorTheme = {
     onError: "rgb(105, 0, 5)",
     errorContainer: "rgb(147, 0, 10)",
     onErrorContainer: "rgb(255, 180, 171)",
+    success: "rgb(171, 255, 192)",
+    onSuccess: "rgb(69, 212, 100)",
+    successContainer: "rgb(35, 106, 52)",
+    onSuccessContainer: "rgb(142, 234, 165)",
     background: "rgb(26, 28, 30)",
     onBackground: "rgb(227, 226, 230)",
     surface: "rgb(26, 28, 30)",
