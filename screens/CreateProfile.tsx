@@ -67,15 +67,15 @@ const CreateProfile = () => {
             {photoURL ? (
               <>this is a photo</>
             ) : (
-              <FontAwesomeIcon icon={faCamera} color={colors.onSecondary} />
+              <FontAwesomeIcon icon={faCamera} color={colors.primary.text} />
             )}
           </View>
         </TouchableOpacity>
         <View style={styles.userNameEmailContainer}>
-          <Text style={{ fontWeight: "bold", color: colors.onSurfaceVariant }}>
+          <Text style={{ fontWeight: "bold", color: colors.light.text }}>
             {username || "Display Name"}
           </Text>
-          <Text style={{ color: colors.onSurfaceVariant }}>
+          <Text style={{ color: colors.light.text }}>
             {loggedInUser?.email}
           </Text>
         </View>
@@ -86,7 +86,7 @@ const CreateProfile = () => {
           autoCapitalize="words"
           placeholder="Display Name"
           value={username}
-          placeholderTextColor={colors.onSurfaceVariant}
+          placeholderTextColor={colors.light.text}
           onChangeText={(text: string) => setUsername(text)}
           style={styles.displayNameInput}
           clearButtonMode="always"
@@ -104,7 +104,7 @@ export default CreateProfile;
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
-      backgroundColor: colors.background,
+      backgroundColor: colors.background.default,
       flex: 1,
       padding: 32,
       alignItems: "center",
@@ -114,10 +114,10 @@ const makeStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
       textAlign: "center",
       marginBottom: 20,
-      color: colors.onSurfaceVariant,
+      color: colors.primary.text,
     },
     sectionContainer: {
-      backgroundColor: colors.surfaceVariant,
+      backgroundColor: colors.background.paper,
       width: "100%",
       borderRadius: 10,
       padding: 20,
@@ -126,7 +126,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
     },
     profilePictureContainer: {
-      backgroundColor: colors.onSurfaceVariant,
+      backgroundColor: colors.background.default,
       borderRadius: 100,
       width: 50,
       height: 50,
@@ -138,19 +138,19 @@ const makeStyles = (colors: ThemeColors) =>
       paddingLeft: 20,
     },
     displayNameInput: {
-      color: colors.onSurfaceVariant,
+      color: colors.light.text,
       fontWeight: "bold",
       width: "100%",
     },
     nextButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primary.button,
       width: "100%",
       padding: 15,
       borderRadius: 10,
       alignItems: "center",
     },
     buttonText: {
-      color: colors.onPrimary,
+      color: colors.primary.text,
       fontWeight: "700",
       fontSize: 16,
     },

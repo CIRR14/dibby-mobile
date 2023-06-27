@@ -210,7 +210,7 @@ const LoginScreen = () => {
               keyboardType="email-address"
               value={email}
               placeholderTextColor={
-                theme === "dark" ? colors.surface : colors.onSurface
+                theme === "dark" ? colors.light.text : colors.light.text
               }
               onChangeText={(text: string) => setEmail(text)}
               style={styles.input}
@@ -221,7 +221,7 @@ const LoginScreen = () => {
               keyboardType="visible-password"
               value={password}
               placeholderTextColor={
-                theme === "dark" ? colors.surface : colors.onSurface
+                theme === "dark" ? colors.light.text : colors.light.text
               }
               onChangeText={(text: string) => setPassword(text)}
               style={styles.input}
@@ -232,7 +232,7 @@ const LoginScreen = () => {
               <TextInput
                 placeholder="Verify Password"
                 placeholderTextColor={
-                  theme === "dark" ? colors.surface : colors.onSurface
+                  theme === "dark" ? colors.light.text : colors.light.text
                 }
                 value={passwordVerification}
                 onChangeText={(text: string) => setPasswordVerification(text)}
@@ -244,8 +244,7 @@ const LoginScreen = () => {
 
             {passwordVerificationRequired && (
               <Text style={styles.loginText} onPress={() => resetToLogin()}>
-                {" "}
-                Login{" "}
+                Login
               </Text>
             )}
           </View>
@@ -283,21 +282,21 @@ const LoginScreen = () => {
               <FontAwesomeIcon
                 icon={faFacebookSquare}
                 size={32}
-                color={colors.primary}
+                color={colors.primary.text}
               />
             </TouchableOpacity>
             <TouchableOpacity>
               <FontAwesomeIcon
                 icon={faGoogle}
                 size={32}
-                color={colors.primary}
+                color={colors.primary.text}
               />
             </TouchableOpacity>
             <TouchableOpacity>
               <FontAwesomeIcon
                 icon={faApple}
                 size={32}
-                color={colors.primary}
+                color={colors.primary.text}
               />
             </TouchableOpacity>
           </View>
@@ -312,6 +311,7 @@ export default LoginScreen;
 const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
   StyleSheet.create({
     container: {
+      backgroundColor: colors.background.default,
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
@@ -322,8 +322,8 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
     },
     input: {
       backgroundColor:
-        theme === "dark" ? colors.inverseSurface : colors.surfaceVariant,
-      color: colors.surface,
+        theme === "dark" ? colors.background.paper : colors.background.paper,
+      color: colors.light.text,
       paddingHorizontal: 15,
       paddingVertical: 10,
       borderRadius: 10,
@@ -335,30 +335,30 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       alignItems: "center",
     },
     button: {
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primary.button,
       width: "100%",
       padding: 15,
       borderRadius: 10,
       alignItems: "center",
     },
     buttonOutline: {
-      backgroundColor: colors.elevation.level0,
+      backgroundColor: colors.transparent,
       marginTop: 5,
-      borderColor: colors.primary,
+      borderColor: colors.primary.button,
       borderWidth: 2,
     },
     buttonText: {
-      color: colors.onPrimary,
+      color: colors.primary.text,
       fontWeight: "700",
       fontSize: 16,
     },
     buttonOutlineText: {
-      color: colors.primary,
+      color: colors.primary.text,
       fontWeight: "700",
       fontSize: 16,
     },
     errorText: {
-      color: colors.error,
+      color: colors.danger.background,
       fontWeight: "500",
       fontSize: 12,
       marginTop: 12,
@@ -370,13 +370,13 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       marginBottom: 50,
     },
     titleText: {
-      color: colors.primary,
+      color: colors.primary.text,
       fontSize: 50,
       fontWeight: "bold",
       marginLeft: 40,
     },
     descriptionText: {
-      color: colors.primary,
+      color: colors.primary.text,
       fontSize: 20,
       fontWeight: "400",
       marginLeft: 40,
@@ -384,7 +384,7 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
     loginText: {
       textAlign: "center",
       marginTop: 2,
-      color: colors.primary,
+      color: colors.primary.text,
       fontSize: 16,
       fontWeight: "500",
     },
@@ -397,10 +397,10 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
     orLines: {
       flex: 1,
       height: 1,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primary.text,
       width: 100,
     },
-    orText: { width: 50, textAlign: "center", color: colors.primary },
+    orText: { width: 50, textAlign: "center", color: colors.primary.text },
     providerContainer: {
       flexDirection: "row",
       alignItems: "center",

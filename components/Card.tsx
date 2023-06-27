@@ -34,7 +34,7 @@ export const Card: React.FC<ICardProps> = ({ add = false, item, onPress }) => {
         <FontAwesomeIcon
           icon={faCirclePlus}
           size={24}
-          color={colors.onPrimary}
+          color={colors.primary.text}
         />
       ) : (
         <View style={styles.cardContent}>
@@ -77,12 +77,12 @@ const makeStyles = (colors: ThemeColors) =>
       width: "100%",
       padding: 20,
       borderRadius: 16,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.primary.button,
     },
     card: {
       flex: 1,
       margin: 8,
-      backgroundColor: colors.surfaceVariant,
+      backgroundColor: colors.primary.card,
       padding: 16,
       borderRadius: 16,
       display: "flex",
@@ -96,7 +96,7 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: "column",
     },
     text: {
-      color: colors.onSurfaceVariant,
+      color: colors.primary.text,
       textAlign: "center",
       padding: 8,
     },

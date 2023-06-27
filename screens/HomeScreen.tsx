@@ -117,7 +117,7 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.background.default,
     },
     grid: {
       flex: 1,
