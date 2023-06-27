@@ -31,7 +31,7 @@ const TopBar: React.FC<ITopBarProps> = ({ title, onPressBack, signOut }) => {
           <FontAwesomeIcon
             icon={faChevronLeft}
             size={24}
-            color={colors.onSecondary}
+            color={colors.primary.text}
           />
         )}
       </TouchableOpacity>
@@ -43,7 +43,7 @@ const TopBar: React.FC<ITopBarProps> = ({ title, onPressBack, signOut }) => {
           <FontAwesomeIcon
             icon={faSignOutAlt}
             size={24}
-            color={colors.onSecondary}
+            color={colors.primary.text}
           />
         )}
       </TouchableOpacity>
@@ -61,13 +61,14 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "space-between",
       alignItems: "center",
       height: 64,
-      backgroundColor: colors.secondary,
+      backgroundColor: colors.background.default,
       padding: 16,
     },
     title: {
-      color: colors.onSecondary,
+      color: colors.primary.text,
       fontSize: 22,
       width: 120,
+      fontWeight: 'bold',
       textAlign: 'center'
     },
     innerContainer: {
@@ -83,6 +84,6 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "flex-start",
     },
     backText: {
-      color: colors.onSurfaceVariant,
+      color: colors.primary.text,
     },
   });

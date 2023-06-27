@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { StyleSheet, SafeAreaView, View, useColorScheme, Text, TouchableOpacity, TextInput, ColorSchemeName, TouchableWithoutFeedback, Keyboard, ScrollView, KeyboardAvoidingView } from 'react-native'
 import { ColorTheme, ThemeColors } from '../constants/Colors'
-import { useNavigation, useTheme } from '@react-navigation/native'
+import { useTheme } from '@react-navigation/native'
 import { User } from 'firebase/auth'
 import { db } from '../firebase'
 import { faAdd, faClose, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -21,10 +21,6 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
     const { colors } = useTheme() as unknown as ColorTheme;
     const theme = useColorScheme();
     const styles = makeStyles(colors as unknown as ThemeColors, theme);
-    const navigation = useNavigation();
-
-    // const [title, setTitle] = useState("");
-
 
     const initialValues: TripDoc = {
         created: Timestamp.fromDate(new Date()),
@@ -37,7 +33,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
         perPerson: 0,
     };
 
-    const { register, handleSubmit, formState, control, getValues, setValue, reset } = useForm({
+    const { handleSubmit, formState, control, reset } = useForm({
         mode: "onBlur",
         reValidateMode: "onChange",
         defaultValues: initialValues,
@@ -119,7 +115,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
                             <FontAwesomeIcon
                                 icon={faClose}
                                 size={24}
-                                color={colors.secondary}
+                                color={colors.primary.text}
                             />
                         </TouchableOpacity>
                         <Text style={styles.title}>
@@ -145,22 +141,12 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
                                     clearButtonMode="always"
                                     style={styles.input}
                                     placeholderTextColor={
-                                        theme === "dark" ? colors.scrim : colors.onSurfaceDisabled
+                                        theme === "dark" ? colors.light.text : colors.light.text
                                     }
                                 />
                             )}
                         />
                         {formState.errors.name && <Text style={styles.errorText}>Trip must have a name.</Text>}
-                        {/* <TextInput
-                            placeholder="Name of Trip"
-                            value={title}
-                            placeholderTextColor={
-                                theme === "dark" ? colors.scrim : colors.onSurfaceDisabled
-                            }
-                            onChangeText={(text: string) => setTitle(text)}
-                            style={styles.input}
-                            clearButtonMode="always"
-                        /> */}
                         <View style={styles.titleContainer}>
                             <Text style={styles.title}>
                                 Travelers
@@ -181,7 +167,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
                                                         <TextInput
                                                             placeholder={index === 0 ? currentUser.displayName!! : `Name of Traveler ${index + 1}`}
                                                             placeholderTextColor={
-                                                                theme === "dark" ? colors.scrim : colors.onSurfaceDisabled
+                                                                theme === "dark" ? colors.light.text : colors.light.text
                                                             }
                                                             onBlur={onBlur}
                                                             onChangeText={onChange}
@@ -196,7 +182,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
                                                 {
                                                     index !== 0 &&
                                                     <TouchableOpacity style={styles.deleteButton} onPress={() => removeTraveler(index)}>
-                                                        <FontAwesomeIcon icon={faTrash} size={16} color={colors.error} />
+                                                        <FontAwesomeIcon icon={faTrash} size={16} color={colors.danger.card} />
                                                     </TouchableOpacity>
                                                 }
 
@@ -208,7 +194,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
                                 {formState.errors.travelers && <Text style={styles.errorText}> All travelers must have a name.</Text>}
                                 <View style={styles.addContainer}>
                                     <TouchableOpacity style={styles.addButton} onPress={addTraveler}>
-                                        <FontAwesomeIcon style={{ margin: 8 }} icon={faAdd} size={16} color={'white'} />
+                                        <FontAwesomeIcon style={{ margin: 8 }} icon={faAdd} size={16} color={colors.primary.text} />
                                     </TouchableOpacity>
                                 </View>
                                 <TouchableOpacity style={!formState.isValid ? [styles.submitButton, styles.disabledButton] : styles.submitButton} disabled={!formState.isValid} onPress={handleSubmit(onSubmit)}>
@@ -230,7 +216,7 @@ export default CreateTrip
 const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
     StyleSheet.create({
         topContainer: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.background.default,
             height: '100%',
         },
         travelersContainer: {
@@ -258,26 +244,26 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
             marginTop: 16
         },
         title: {
-            color: colors.secondary,
+            color: colors.primary.text,
             fontSize: 22,
             width: 120,
 
         },
         text: {
-            color: colors.onBackground,
+            color: colors.primary.text,
         },
         errorText: {
-            color: colors.error,
+            color: colors.danger.card,
         },
         content: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.background.default,
             margin: 16,
             display: 'flex',
         },
         input: {
             backgroundColor:
-                theme === "dark" ? colors.inverseSurface : colors.surfaceVariant,
-            color: theme === "dark" ? colors.surface : colors.onSurfaceVariant,
+                theme === "dark" ? colors.background.paper : colors.background.paper,
+            color: theme === "dark" ? colors.light.text : colors.light.text,
             paddingHorizontal: 24,
             paddingVertical: 12,
             borderRadius: 12,
@@ -285,7 +271,7 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
             minWidth: '90%'
         },
         submitButton: {
-            backgroundColor: colors.primary,
+            backgroundColor: colors.primary.button,
             width: "100%",
             padding: 15,
             borderRadius: 10,
@@ -301,11 +287,11 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
             marginTop: 16,
         },
         addButton: {
-            backgroundColor: colors.tertiary,
+            backgroundColor: colors.primary.card,
             borderRadius: 100,
         },
         buttonText: {
-            color: colors.onPrimary,
+            color: colors.primary.text,
             fontWeight: "700",
             fontSize: 16,
         },

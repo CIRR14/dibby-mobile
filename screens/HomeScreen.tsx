@@ -5,6 +5,8 @@ import {
   StyleSheet,
   View,
   useColorScheme,
+  Text,
+  Alert
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
@@ -26,6 +28,7 @@ import {
 } from "firebase/firestore";
 import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
 import CreateTrip from "../components/CreateTrip";
+import { TouchableOpacity } from "react-native-gesture-handler";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -33,7 +36,7 @@ const numColumns = Math.floor(windowWidth / 500);
 
 const HomeScreen = () => {
   const [currentTrips, setCurrentTrips] = useState<Trip[]>([]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCreateTripModalVisible, setIsCreateTripModalVisible] = useState(false);
 
   const navigation = useNavigation();
   const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
@@ -62,9 +65,8 @@ const HomeScreen = () => {
     }
   }, [loggedInUser]);
 
-  const deleteTrip = async (e: any, trip: Trip | Expense) => {
-    e.stopPropagation();
-    await deleteDoc(doc(db, "trips", trip.id));
+  const deleteTrip = async (trip: Trip) => {
+    await deleteDoc(doc(db, loggedInUser!!.uid, trip.id));
   };
 
   const handleSignOut = () => {
@@ -80,33 +82,51 @@ const HomeScreen = () => {
       });
   };
 
-  const toggleModal = () => {
-    setIsModalVisible(!isModalVisible);
-
+  const toggleCreateTripModal = () => {
+    setIsCreateTripModalVisible(!isCreateTripModalVisible);
   }
+
+  const deleteAlert = (item: Trip | Expense) =>
+    Alert.alert(`Are you sure you want to delete ${item.name}?`, 'This will be permanently deleted.', [
+      {
+        text: 'Cancel',
+        onPress: () => console.log('Cancel Pressed'),
+        style: 'cancel',
+      },
+      { text: 'OK', onPress: () => deleteTrip(item as Trip) },
+    ]);
+
 
   return (
     <SafeAreaView style={styles.topContainer}>
       <TopBar title="Trips" signOut={handleSignOut} />
-      <View style={styles.grid}>
-        <FlatList
-          key={numColumns}
-          data={currentTrips}
-          renderItem={({ item }) => <Card item={item as Trip} />}
-          keyExtractor={(trip) => trip.id}
-          numColumns={numColumns}
-        />
-        <Card add onPress={toggleModal} />
-        <Modal
-          animationType='slide'
-          visible={isModalVisible}
-          onRequestClose={toggleModal}>
-          {
-            loggedInUser &&
-            <CreateTrip currentUser={loggedInUser} onPressBack={toggleModal} />
-          }
-        </Modal>
-      </View>
+      {
+        loggedInUser &&
+        <View style={styles.grid}>
+          <FlatList
+            key={numColumns}
+            data={currentTrips}
+            renderItem={({ item }) => <Card
+              item={item as Trip}
+              onDeleteItem={() => deleteAlert(item)}
+              onPress={() => { console.log('open trip') }}
+            />}
+            keyExtractor={(trip) => trip.id}
+            numColumns={numColumns}
+          />
+          <Card add onPress={toggleCreateTripModal} />
+          <Modal
+            animationType='slide'
+            visible={isCreateTripModalVisible}
+            onRequestClose={toggleCreateTripModal}>
+            {
+              loggedInUser &&
+              <CreateTrip currentUser={loggedInUser} onPressBack={toggleCreateTripModal} />
+            }
+          </Modal>
+        </View>
+
+      }
     </SafeAreaView>
   );
 };
@@ -117,7 +137,7 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: colors.background.default,
     },
     grid: {
       flex: 1,

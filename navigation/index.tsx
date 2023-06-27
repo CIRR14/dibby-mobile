@@ -68,11 +68,6 @@ function RootNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="CreateTrip"
-        component={CreateTrip}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
         name="NotFound"
         component={NotFoundScreen}
         options={{ title: "Oops!" }}
