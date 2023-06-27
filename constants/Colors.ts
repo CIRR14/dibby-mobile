@@ -35,7 +35,7 @@ export const CustomLightTheme: ColorTheme = {
       background: '#28a745',
       text: '#224722',
       button: '#28a745',
-      card: '#d9e7cb'
+      card: '#e7edde'
     },
     secondary: {
       background: '#6c757d',
@@ -44,7 +44,7 @@ export const CustomLightTheme: ColorTheme = {
     },
     success: {
       background: '#2ecc71',
-      text: '#ffffff',
+      text: '#0d7e3c',
       button: '#2ecc71',
     },
     danger: {
@@ -60,7 +60,7 @@ export const CustomLightTheme: ColorTheme = {
     },
     info: {
       background: '#3498db',
-      text: '#ffffff',
+      text: '#1786d1',
       button: '#3498db',
     },
     light: {
@@ -74,7 +74,7 @@ export const CustomLightTheme: ColorTheme = {
       button: '#343a40',
     },
     background: {
-      default: '#e7edde',
+      default: '#d9e7cb',
       paper: '#ffffff',
     },
     transparent: 'transparent'
@@ -98,7 +98,7 @@ export const CustomDarkTheme: ColorTheme = {
     },
     success: {
       background: '#1b9e50',
-      text: '#ffffff',
+      text: '#25eb74',
       button: '#1b9e50',
     },
     danger: {
@@ -114,7 +114,7 @@ export const CustomDarkTheme: ColorTheme = {
     },
     info: {
       background: '#2073b3',
-      text: '#ffffff',
+      text: '#7fb9e5',
       button: '#2073b3',
     },
     light: {

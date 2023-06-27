@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { StyleSheet, SafeAreaView, View, useColorScheme, Text, TouchableOpacity, TextInput, ColorSchemeName, TouchableWithoutFeedback, Keyboard, ScrollView, KeyboardAvoidingView } from 'react-native'
 import { ColorTheme, ThemeColors } from '../constants/Colors'
-import { useNavigation, useTheme } from '@react-navigation/native'
+import { useTheme } from '@react-navigation/native'
 import { User } from 'firebase/auth'
 import { db } from '../firebase'
 import { faAdd, faClose, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -21,10 +21,6 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
     const { colors } = useTheme() as unknown as ColorTheme;
     const theme = useColorScheme();
     const styles = makeStyles(colors as unknown as ThemeColors, theme);
-    const navigation = useNavigation();
-
-    // const [title, setTitle] = useState("");
-
 
     const initialValues: TripDoc = {
         created: Timestamp.fromDate(new Date()),
@@ -37,7 +33,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
         perPerson: 0,
     };
 
-    const { register, handleSubmit, formState, control, getValues, setValue, reset } = useForm({
+    const { handleSubmit, formState, control, reset } = useForm({
         mode: "onBlur",
         reValidateMode: "onChange",
         defaultValues: initialValues,
@@ -151,16 +147,6 @@ const CreateTrip: React.FC<ICreateTripProps> = ({ currentUser, onPressBack }) =>
                             )}
                         />
                         {formState.errors.name && <Text style={styles.errorText}>Trip must have a name.</Text>}
-                        {/* <TextInput
-                            placeholder="Name of Trip"
-                            value={title}
-                            placeholderTextColor={
-                                theme === "dark" ? colors.scrim : colors.onSurfaceDisabled
-                            }
-                            onChangeText={(text: string) => setTitle(text)}
-                            style={styles.input}
-                            clearButtonMode="always"
-                        /> */}
                         <View style={styles.titleContainer}>
                             <Text style={styles.title}>
                                 Travelers
