@@ -101,7 +101,7 @@ export const Card: React.FC<ICardProps> = ({ add = false, item, onPress, onDelet
                       {
                         color: item.owed > 0 ? colors.success.text : item.owed < 0 ? colors.danger.text : colors.primary.text
                       }
-                    ]}>{item.owed > 0 ? `is owed $${item.owed}` : item.owed < 0 ? `owes $${item.owed}` : 'checkmark here'}</Text>
+                    ]}>{item.owed > 0 ? `is owed $${item.owed}` : item.owed < 0 ? `owes $${item.owed}` : '✅'}</Text>
                   </View>
                 )
               }}
