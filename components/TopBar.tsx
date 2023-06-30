@@ -9,41 +9,83 @@ import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChevronLeft, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
-import { useTheme } from "@react-navigation/native";
+import { useNavigation, useTheme } from "@react-navigation/native";
+import { Avatar } from "@rneui/base";
+import { getInitials } from "../helpers/AppHelpers";
+import { User } from "firebase/auth";
+import { userColors } from "../helpers/GenerateColor";
+import { Traveler } from "../constants/DibbyTypes";
 
 interface ITopBarProps {
   title: string;
   onPressBack?: () => void;
   signOut?: () => void;
+  user?: User | null;
+  travelers?: Traveler[];
 }
 
-const TopBar: React.FC<ITopBarProps> = ({ title, onPressBack, signOut }) => {
+const TopBar: React.FC<ITopBarProps> = ({
+  title,
+  onPressBack,
+  signOut,
+  user,
+  travelers,
+}) => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        onPress={onPressBack}
-        style={[styles.innerContainer, styles.backButton]}
+        onPress={signOut}
+        style={[styles.innerContainer, styles.leftButton]}
       >
-        {onPressBack && (
+        {signOut ? (
           <FontAwesomeIcon
-            icon={faChevronLeft}
+            icon={faSignOutAlt}
             size={24}
-            color={colors.primary.text}
+            color={colors.background.text}
           />
+        ) : (
+          <TouchableOpacity
+            onPress={onPressBack}
+            style={[styles.innerContainer, styles.leftButton]}
+          >
+            {onPressBack && (
+              <FontAwesomeIcon
+                icon={faChevronLeft}
+                size={24}
+                color={colors.background.text}
+              />
+            )}
+          </TouchableOpacity>
         )}
       </TouchableOpacity>
       <View style={styles.innerContainer}>
         <Text style={styles.title}> {title} </Text>
       </View>
-      <TouchableOpacity onPress={signOut} style={styles.innerContainer}>
-        {signOut && (
-          <FontAwesomeIcon
-            icon={faSignOutAlt}
-            size={24}
-            color={colors.primary.text}
+
+      <TouchableOpacity onPress={onPressBack} style={styles.innerContainer}>
+        {user && (
+          <Avatar
+            size="medium"
+            rounded
+            title={getInitials(user?.displayName)}
+            containerStyle={{
+              borderWidth: 1,
+              borderStyle: "solid",
+              borderColor: userColors[0].border || colors.primary.background,
+            }}
+            overlayContainerStyle={{
+              backgroundColor:
+                userColors[0].background || colors.primary.background,
+            }}
+            titleStyle={{
+              color: userColors[0].text || colors.primary.text,
+            }}
+            onPress={() => navigation.navigate("CreateProfile")}
           />
         )}
       </TouchableOpacity>
@@ -65,25 +107,23 @@ const makeStyles = (colors: ThemeColors) =>
       padding: 16,
     },
     title: {
-      color: colors.primary.text,
+      color: colors.background.text,
       fontSize: 22,
-      width: 120,
-      fontWeight: 'bold',
-      textAlign: 'center'
+      minWidth: 120,
+      fontWeight: "bold",
+      textAlign: "center",
     },
     innerContainer: {
-      width: 120,
+      minWidth: 120,
       display: "flex",
       alignItems: "flex-end",
       justifyContent: "center",
     },
-    backButton: {
+    leftButton: {
       flexDirection: "row",
       borderRadius: 8,
       height: 32,
       justifyContent: "flex-start",
-    },
-    backText: {
-      color: colors.primary.text,
+      alignItems: "flex-start",
     },
   });

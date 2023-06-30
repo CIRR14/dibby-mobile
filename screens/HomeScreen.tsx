@@ -6,7 +6,7 @@ import {
   View,
   useColorScheme,
   Text,
-  Alert
+  Alert,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
@@ -29,6 +29,7 @@ import {
 import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
 import CreateTrip from "../components/CreateTrip";
 import { TouchableOpacity } from "react-native-gesture-handler";
+import { Platform } from "react-native";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -36,7 +37,8 @@ const numColumns = Math.floor(windowWidth / 500);
 
 const HomeScreen = () => {
   const [currentTrips, setCurrentTrips] = useState<Trip[]>([]);
-  const [isCreateTripModalVisible, setIsCreateTripModalVisible] = useState(false);
+  const [isCreateTripModalVisible, setIsCreateTripModalVisible] =
+    useState(false);
 
   const navigation = useNavigation();
   const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
@@ -84,49 +86,87 @@ const HomeScreen = () => {
 
   const toggleCreateTripModal = () => {
     setIsCreateTripModalVisible(!isCreateTripModalVisible);
-  }
+  };
 
-  const deleteAlert = (item: Trip | Expense) =>
-    Alert.alert(`Are you sure you want to delete ${item.name}?`, 'This will be permanently deleted.', [
+  const deleteAlert = (item: Trip | Expense) => {
+    const title = `Are you sure you want to delete ${item.name}?`;
+    const message = "This will be permanently deleted.";
+    const options: {
+      text: string;
+      onPress?: (value?: string) => void;
+      style?: "cancel" | "default" | "destructive" | undefined;
+    }[] = [
       {
-        text: 'Cancel',
-        onPress: () => console.log('Cancel Pressed'),
-        style: 'cancel',
+        text: "Cancel",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel",
       },
-      { text: 'OK', onPress: () => deleteTrip(item as Trip) },
-    ]);
+      { text: "OK", onPress: () => deleteTrip(item as Trip) },
+    ];
 
+    if (Platform.OS === "web") {
+      const result = window.confirm(
+        [title, message].filter(Boolean).join("\n")
+      );
+
+      if (result) {
+        const confirmOption = options.find(({ style }) => style !== "cancel");
+        confirmOption && confirmOption.onPress && confirmOption.onPress();
+      } else {
+        const cancelOption = options.find(({ style }) => style === "cancel");
+        cancelOption && cancelOption.onPress && cancelOption.onPress();
+      }
+    } else {
+      Alert.alert(title, message, options);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      <TopBar title="Trips" signOut={handleSignOut} />
-      {
-        loggedInUser &&
+      <TopBar title="Trips" signOut={handleSignOut} user={loggedInUser} />
+      {loggedInUser && (
         <View style={styles.grid}>
-          <FlatList
-            key={numColumns}
-            data={currentTrips}
-            renderItem={({ item }) => <Card
-              item={item as Trip}
-              onDeleteItem={() => deleteAlert(item)}
-              onPress={() => { console.log('open trip') }}
-            />}
-            keyExtractor={(trip) => trip.id}
-            numColumns={numColumns}
-          />
+          {currentTrips.length > 0 ? (
+            <FlatList
+              key={numColumns}
+              data={currentTrips}
+              renderItem={({ item }) => (
+                <Card
+                  trip={item}
+                  onDeleteItem={() => deleteAlert(item)}
+                  onPress={() =>
+                    navigation.navigate("ViewTrip", {
+                      tripName: item.name,
+                      tripId: item.id,
+                    })
+                  }
+                />
+              )}
+              keyExtractor={(trip) => trip.id}
+              numColumns={numColumns}
+            />
+          ) : (
+            <View>
+              <Text style={styles.emptyText}>
+                No trips yet. Add some below!
+              </Text>
+            </View>
+          )}
           <Card add onPress={toggleCreateTripModal} />
           <Modal
-            animationType='slide'
+            animationType="slide"
             visible={isCreateTripModalVisible}
-            onRequestClose={toggleCreateTripModal}>
-            {
-              loggedInUser &&
-              <CreateTrip currentUser={loggedInUser} onPressBack={toggleCreateTripModal} />
-            }
+            onRequestClose={toggleCreateTripModal}
+          >
+            {loggedInUser && (
+              <CreateTrip
+                currentUser={loggedInUser}
+                onPressBack={toggleCreateTripModal}
+              />
+            )}
           </Modal>
         </View>
-
-      }
+      )}
     </SafeAreaView>
   );
 };
@@ -143,5 +183,9 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       display: "flex",
       margin: 16,
+    },
+    emptyText: {
+      color: colors.primary.text,
+      textAlign: "center",
     },
   });

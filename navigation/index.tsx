@@ -26,6 +26,7 @@ import {
 } from "../types";
 import LinkingConfiguration from "./LinkingConfiguration";
 import CreateTrip from "../components/CreateTrip";
+import ViewTrip from "../screens/ViewTrip";
 
 export default function Navigation({
   colorScheme,
@@ -35,7 +36,11 @@ export default function Navigation({
   return (
     <NavigationContainer
       linking={LinkingConfiguration}
-      theme={colorScheme === "dark" ? CustomDarkTheme as unknown as Theme : CustomLightTheme as unknown as Theme}
+      theme={
+        colorScheme === "dark"
+          ? (CustomDarkTheme as unknown as Theme)
+          : (CustomLightTheme as unknown as Theme)
+      }
       fallback={<Text>Loading...</Text>}
     >
       <RootNavigator />
@@ -65,6 +70,11 @@ function RootNavigator() {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ViewTrip"
+        component={ViewTrip}
         options={{ headerShown: false }}
       />
       <Stack.Screen

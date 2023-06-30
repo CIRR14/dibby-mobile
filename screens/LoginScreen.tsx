@@ -132,8 +132,7 @@ const LoginScreen = () => {
   };
 
   const createProfile = async (user: User): Promise<DocumentReference> => {
-    const { uid, displayName, phoneNumber, photoURL, email, emailVerified } =
-      user;
+    const { uid, displayName, phoneNumber, photoURL, email, emailVerified } = user;
     return addDoc(collection(db, "users"), {
       uid,
       displayName,
@@ -166,8 +165,8 @@ const LoginScreen = () => {
             email,
             emailVerified,
           });
-          const profile = await createProfile(userCredentials.user);
-          console.log("created", profile.id);
+          // const profile = await createProfile(userCredentials.user);
+          // console.log("created", profile.id);
         })
         .catch((err: FirebaseError) => {
           console.log({ err });

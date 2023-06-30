@@ -6,7 +6,7 @@ import {
   TextInput,
   useColorScheme,
 } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateProfile } from "firebase/auth";
 import { useNavigation, useTheme } from "@react-navigation/native";
@@ -14,6 +14,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faCamera } from "@fortawesome/free-solid-svg-icons";
 import { useUser } from "../hooks/useUser";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { Avatar } from "@rneui/themed";
+import { getInitials } from "../helpers/AppHelpers";
+import { userColors } from "../helpers/GenerateColor";
 
 const CreateProfile = () => {
   const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
@@ -24,22 +27,12 @@ const CreateProfile = () => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
-  // const [username, setUsername] = useState<string>('');
-  // const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
-  // const [photoURL, setPhotoURL] = useState<string>('')
 
-  // useEffect(() => {
-  //     const unsubscribe = onAuthStateChanged(auth, userObj => {
-  //         if (userObj) {
-  //             setUsername(userObj.displayName || '');
-  //             setPhotoURL(userObj.photoURL || '');
-  //             setLoggedInUser(userObj);
-  //         } else {
-  //             navigation.navigate('Login')
-  //         }
-  //     });
-  //     return unsubscribe;
-  // }, []);
+  useEffect(() => {
+    if (loggedInUser && loggedInUser.displayName) {
+      navigation.navigate("Home");
+    }
+  }, [loggedInUser]);
 
   const handleNext = () => {
     if (loggedInUser) {
@@ -64,18 +57,31 @@ const CreateProfile = () => {
       <View style={styles.sectionContainer}>
         <TouchableOpacity>
           <View style={styles.profilePictureContainer}>
-            {photoURL ? (
-              <>this is a photo</>
-            ) : (
-              <FontAwesomeIcon icon={faCamera} color={colors.primary.text} />
-            )}
+            <Avatar
+              rounded
+              source={{
+                uri: loggedInUser
+                  ? loggedInUser.photoURL || undefined
+                  : undefined,
+              }}
+              title={getInitials(loggedInUser?.displayName)}
+              titleStyle={{ color: colors.background.paper }}
+              containerStyle={{
+                backgroundColor: userColors[0].background,
+              }}
+              icon={{
+                name: "user",
+                type: "font-awesome",
+                color: colors.background.paper,
+              }}
+            />
           </View>
         </TouchableOpacity>
         <View style={styles.userNameEmailContainer}>
-          <Text style={{ fontWeight: "bold", color: colors.light.text }}>
+          <Text style={{ fontWeight: "bold", color: colors.background.text }}>
             {username || "Display Name"}
           </Text>
-          <Text style={{ color: colors.light.text }}>
+          <Text style={{ color: colors.background.text }}>
             {loggedInUser?.email}
           </Text>
         </View>
@@ -86,7 +92,7 @@ const CreateProfile = () => {
           autoCapitalize="words"
           placeholder="Display Name"
           value={username}
-          placeholderTextColor={colors.light.text}
+          placeholderTextColor={colors.input.text}
           onChangeText={(text: string) => setUsername(text)}
           style={styles.displayNameInput}
           clearButtonMode="always"
@@ -114,7 +120,7 @@ const makeStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
       textAlign: "center",
       marginBottom: 20,
-      color: colors.primary.text,
+      color: colors.background.text,
     },
     sectionContainer: {
       backgroundColor: colors.background.paper,
@@ -126,7 +132,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
     },
     profilePictureContainer: {
-      backgroundColor: colors.background.default,
+      backgroundColor: userColors[0].background,
       borderRadius: 100,
       width: 50,
       height: 50,
@@ -138,7 +144,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingLeft: 20,
     },
     displayNameInput: {
-      color: colors.light.text,
+      color: colors.input.text,
       fontWeight: "bold",
       width: "100%",
     },

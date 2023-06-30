@@ -30,7 +30,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       Login: 'login',
       CreateProfile: 'CreateProfile',
       Home: 'home',
-      CreateTrip: 'CreateTrip',
+      ViewTrip: 'ViewTrip',
       Modal: 'modal',
       NotFound: '*',
     },
