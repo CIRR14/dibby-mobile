@@ -132,7 +132,8 @@ const LoginScreen = () => {
   };
 
   const createProfile = async (user: User): Promise<DocumentReference> => {
-    const { uid, displayName, phoneNumber, photoURL, email, emailVerified } = user;
+    const { uid, displayName, phoneNumber, photoURL, email, emailVerified } =
+      user;
     return addDoc(collection(db, "users"), {
       uid,
       displayName,
@@ -208,9 +209,7 @@ const LoginScreen = () => {
               placeholder="Email"
               keyboardType="email-address"
               value={email}
-              placeholderTextColor={
-                theme === "dark" ? colors.light.text : colors.light.text
-              }
+              placeholderTextColor={colors.input.text}
               onChangeText={(text: string) => setEmail(text)}
               style={styles.input}
               clearButtonMode="always"
@@ -219,9 +218,7 @@ const LoginScreen = () => {
               placeholder="Password"
               keyboardType="visible-password"
               value={password}
-              placeholderTextColor={
-                theme === "dark" ? colors.light.text : colors.light.text
-              }
+              placeholderTextColor={colors.input.text}
               onChangeText={(text: string) => setPassword(text)}
               style={styles.input}
               secureTextEntry
@@ -230,9 +227,7 @@ const LoginScreen = () => {
             {passwordVerificationRequired && (
               <TextInput
                 placeholder="Verify Password"
-                placeholderTextColor={
-                  theme === "dark" ? colors.light.text : colors.light.text
-                }
+                placeholderTextColor={colors.input.text}
                 value={passwordVerification}
                 onChangeText={(text: string) => setPasswordVerification(text)}
                 style={styles.input}
@@ -281,21 +276,21 @@ const LoginScreen = () => {
               <FontAwesomeIcon
                 icon={faFacebookSquare}
                 size={32}
-                color={colors.primary.text}
+                color={colors.background.text}
               />
             </TouchableOpacity>
             <TouchableOpacity>
               <FontAwesomeIcon
                 icon={faGoogle}
                 size={32}
-                color={colors.primary.text}
+                color={colors.background.text}
               />
             </TouchableOpacity>
             <TouchableOpacity>
               <FontAwesomeIcon
                 icon={faApple}
                 size={32}
-                color={colors.primary.text}
+                color={colors.background.text}
               />
             </TouchableOpacity>
           </View>
@@ -320,9 +315,8 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       margin: 12,
     },
     input: {
-      backgroundColor:
-        theme === "dark" ? colors.background.paper : colors.background.paper,
-      color: colors.light.text,
+      backgroundColor: colors.input.background,
+      color: colors.background.text,
       paddingHorizontal: 15,
       paddingVertical: 10,
       borderRadius: 10,
@@ -357,7 +351,7 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       fontSize: 16,
     },
     errorText: {
-      color: colors.danger.background,
+      color: colors.danger.button,
       fontWeight: "500",
       fontSize: 12,
       marginTop: 12,
@@ -369,21 +363,21 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       marginBottom: 50,
     },
     titleText: {
-      color: colors.primary.text,
+      color: colors.background.text,
       fontSize: 50,
       fontWeight: "bold",
       marginLeft: 40,
     },
     descriptionText: {
-      color: colors.primary.text,
+      color: colors.background.text,
       fontSize: 20,
       fontWeight: "400",
       marginLeft: 40,
     },
     loginText: {
       textAlign: "center",
-      marginTop: 2,
-      color: colors.primary.text,
+      marginTop: 8,
+      color: colors.background.text,
       fontSize: 16,
       fontWeight: "500",
     },
@@ -396,10 +390,10 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
     orLines: {
       flex: 1,
       height: 1,
-      backgroundColor: colors.primary.text,
+      backgroundColor: colors.background.text,
       width: 100,
     },
-    orText: { width: 50, textAlign: "center", color: colors.primary.text },
+    orText: { width: 50, textAlign: "center", color: colors.background.text },
     providerContainer: {
       flexDirection: "row",
       alignItems: "center",

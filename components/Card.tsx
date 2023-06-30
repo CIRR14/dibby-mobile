@@ -23,8 +23,8 @@ import { Trip, Expense, Traveler } from "../constants/DibbyTypes";
 import { timestampToString } from "../helpers/TypeHelpers";
 import { RectButton, Swipeable } from "react-native-gesture-handler";
 import { Avatar } from "@rneui/themed";
-import { getInitials } from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
+import { getInitials } from "../helpers/AppHelpers";
 
 interface ICardProps {
   add?: boolean;
@@ -193,7 +193,6 @@ export const Card: React.FC<ICardProps> = ({
                           : colors.light.button,
                       opacity: 0.95,
                     }}
-                    // icon={<FontAwesomeIcon icon={faAdd} />}
                   >
                     {expense.payer === item && (
                       <Avatar.Accessory

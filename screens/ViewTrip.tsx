@@ -127,6 +127,7 @@ const ViewTrip = ({ route }: any) => {
           {currentTrip?.travelers.map((item, index) => {
             return (
               <Avatar
+                key={item.id}
                 size="small"
                 rounded
                 title={
@@ -175,7 +176,13 @@ const ViewTrip = ({ route }: any) => {
                   expense={item}
                   trip={currentTrip}
                   onDeleteItem={() => deleteAlert(item)}
-                  onPress={() => console.log("View Expense")}
+                  onPress={() =>
+                    navigation.navigate("ViewExpense", {
+                      tripName,
+                      tripId,
+                      expenseId: item.id,
+                    })
+                  }
                   expandable={true}
                 />
               )}
