@@ -20,7 +20,7 @@ export type RootStackParamList = {
   Home: undefined;
   Login: undefined;
   CreateProfile: undefined;
-  CreateTrip: undefined;
+  ViewTrip: { tripName: string, tripId: string };
 };
 
 export type RootStackScreenProps<Screen extends keyof RootStackParamList> = NativeStackScreenProps<

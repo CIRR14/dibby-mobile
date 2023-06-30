@@ -1,4 +1,4 @@
-import { Timestamp } from "firebase/firestore";
+import { FieldValue, Timestamp } from "firebase/firestore";
 
 
 export interface TripDoc {
@@ -13,7 +13,7 @@ export interface TripDoc {
 }
 
 export interface Trip extends TripDoc {
-    id : string;
+    id: string;
 }
 
 export interface Expense {
@@ -22,7 +22,7 @@ export interface Expense {
     updated: Timestamp;
     name: string;
     payer: string;
-    amount: number;
+    amount: number | string;
     peopleInExpense: string[];
     equal: boolean;
     perPerson: number;
@@ -35,4 +35,5 @@ export interface Traveler {
     name: string;
     owed: number;
     paid: boolean;
+    me?: boolean;
 }
