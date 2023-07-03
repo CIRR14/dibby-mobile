@@ -70,7 +70,7 @@ const TopBar: React.FC<ITopBarProps> = ({
       <TouchableOpacity onPress={onPressBack} style={styles.innerContainer}>
         {user && (
           <Avatar
-            size="medium"
+            size="small"
             rounded
             title={getInitials(user?.displayName)}
             containerStyle={{

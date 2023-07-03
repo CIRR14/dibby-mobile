@@ -1,4 +1,4 @@
-import { Trip } from "../constants/DibbyTypes";
+import { Traveler, Trip } from "../constants/DibbyTypes";
 
 export const getInitials = (name?: string | null): string => {
     if (name) {
@@ -12,6 +12,10 @@ export const getInitials = (name?: string | null): string => {
     } else {
         return ''
     }
+}
+
+export const getTravelerFromId = (tripInfo: Trip | undefined, id: string | undefined): Traveler | undefined => {
+    return tripInfo && id ? tripInfo.travelers.find((t) => t.id === id) : undefined;
 }
 
 
@@ -47,3 +51,18 @@ export const getInfoFromTravelerId = (tripInfo: Trip, id: string): {
         inputLabel: traveler?.name || ''
     }
 }
+
+export const capitalizeName = (stringToCap: string): string => {
+    const words = stringToCap.toLowerCase().split(' ');
+    const capitalizedWords = words.map((w) => w.charAt(0).toUpperCase() + w.slice(1) )
+    const newString = capitalizedWords.join(' ');
+    return newString;
+}
+
+export const sumOfValues = (values?: number[]): number => {
+    return values ? values.reduce((partialSum, a) => partialSum + a, 0) : 0;
+}
+
+export const inRange = (x: number, min: number, max: number): boolean => {
+    return (x - min) * (x - max) <= 0;
+  };

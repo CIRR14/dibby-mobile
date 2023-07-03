@@ -69,6 +69,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors, theme);
+  console.log({ tripInfo });
 
   const initialValues: Expense = {
     id: "",
@@ -76,7 +77,9 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     created: Timestamp.now(),
     updated: Timestamp.now(),
     amount: "",
-    peopleInExpense: [currentUser.uid],
+    peopleInExpense: tripInfo
+      ? tripInfo?.travelers.map((t) => t.id)
+      : [currentUser.uid],
     payer: currentUser.uid,
     equal: true,
     perPerson: 0,
@@ -91,9 +94,8 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const peopleInExpense = watch("peopleInExpense");
 
   useEffect(() => {
-    const perPersonValue = parseFloat(
-      (parseFloat(amount as string) / peopleInExpense.length).toFixed(2)
-    );
+    const perPersonValue =
+      parseFloat(amount as string) / peopleInExpense.length;
     setValue("perPerson", perPersonValue || 0);
   }, [amount, peopleInExpense]);
 
@@ -149,11 +151,13 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
       const tripUpdate = {
         ...tripInfo,
         updated: Timestamp.now(),
-        amount: tripInfo.amount + amount,
+        amount: tripInfo.amount + amount, // increment(amount)s
         travelers: updatedTravelers,
-        expenses: [...tripInfo.expenses, data],
+        expenses: [...tripInfo.expenses, data], // arrayUnion(data)
         perPerson: tripPerPerson,
       };
+
+      console.log({ tripUpdate });
 
       try {
         await updateDoc(doc(db, currentUser.uid, tripInfo.id), tripUpdate);
@@ -227,6 +231,12 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
               name="name"
               rules={{
                 required: true,
+                validate: (value) =>
+                  tripInfo?.expenses.every(
+                    (exp) =>
+                      exp.name.toUpperCase().trim() !==
+                      value.toUpperCase().trim()
+                  ),
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput

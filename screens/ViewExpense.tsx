@@ -18,7 +18,7 @@ import { useNavigation, useTheme } from "@react-navigation/native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
-import { Avatar } from "@rneui/themed";
+import { Avatar, Divider } from "@rneui/themed";
 import {
   collection,
   doc,
@@ -31,7 +31,13 @@ import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import { Card } from "../components/Card";
 import CreateExpense from "../components/CreateExpense";
-import { getInitials } from "../helpers/AppHelpers";
+import {
+  getInfoFromTravelerId,
+  getInitials,
+  getTravelerFromId,
+  inRange,
+  sumOfValues,
+} from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
 
 const windowWidth = Dimensions.get("window").width;
@@ -90,17 +96,47 @@ const ViewExpense = ({ route }: any) => {
           <Text style={styles.title}>${currentExpense?.amount}</Text>
         </View>
 
+        <View
+          style={{
+            marginTop: 16,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: getTravelerFromId(
+              currentTrip,
+              currentExpense?.payer
+            )?.color,
+            padding: 10,
+            borderRadius: 10,
+          }}
+        >
+          <Text style={{ color: colors.background.default }}>
+            {getTravelerFromId(currentTrip, currentExpense?.payer)?.name}
+          </Text>
+          <Text style={{ color: colors.background.default }}>
+            $
+            {getTravelerFromId(
+              currentTrip,
+              currentExpense?.payer
+            )?.owed.toFixed(2)}
+          </Text>
+        </View>
+
         {currentExpense && (
           <FlatList
-            data={currentExpense.peopleInExpense}
+            data={currentExpense.peopleInExpense.filter(
+              (p) => p !== currentExpense.payer
+            )}
             key={numColumns}
             numColumns={numColumns}
             listKey={numColumns.toString()}
             keyExtractor={(item) => item}
             style={{ marginVertical: 16 }}
             renderItem={({ item }) => {
-              const traveler: Traveler | undefined =
-                currentTrip?.travelers.find((t) => t.id === item);
+              const traveler: Traveler | undefined = getTravelerFromId(
+                currentTrip,
+                item
+              );
               return (
                 <View
                   style={{
@@ -125,13 +161,77 @@ const ViewExpense = ({ route }: any) => {
                       color: colors.background.default,
                     }}
                   >
-                    ${currentTrip?.perPerson.toFixed(2)}{" "}
+                    {traveler && Math.sign(traveler?.owed) === -1
+                      ? `($${Math.abs(traveler.owed).toFixed(2)})`
+                      : `$${traveler?.owed.toFixed(2)}`}
                   </Text>
                 </View>
               );
             }}
           />
         )}
+        <Divider
+          color={colors.disabled.button}
+          style={{
+            marginBottom: 16,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: 10,
+            borderRadius: 10,
+          }}
+        >
+          <Text></Text>
+          <Text
+            style={{
+              color: inRange(
+                sumOfValues(
+                  currentExpense?.peopleInExpense.map((p: string) => {
+                    const traveler = getTravelerFromId(currentTrip, p);
+                    return traveler!!.owed;
+                  })
+                ),
+                -0.01,
+                0.01
+              )
+                ? colors.info.button
+                : colors.danger.button,
+            }}
+          >
+            $
+            {inRange(
+              sumOfValues(
+                currentExpense?.peopleInExpense.map((p: string) => {
+                  const traveler = getTravelerFromId(currentTrip, p);
+                  return traveler!!.owed;
+                })
+              ),
+              -0.01,
+              0.01
+            )
+              ? Math.sign(
+                  sumOfValues(
+                    currentExpense?.peopleInExpense.map((p: string) => {
+                      const traveler = getTravelerFromId(currentTrip, p);
+                      return traveler!!.owed;
+                    })
+                  )
+                ) === -1
+                ? -0.01
+                : 0.01
+              : sumOfValues(
+                  currentExpense?.peopleInExpense.map((p: string) => {
+                    const traveler = getTravelerFromId(currentTrip, p);
+                    return traveler!!.owed;
+                  })
+                )}
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );

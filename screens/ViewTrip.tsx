@@ -20,6 +20,7 @@ import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
 import { Avatar } from "@rneui/themed";
 import {
+  Timestamp,
   collection,
   doc,
   onSnapshot,
@@ -27,12 +28,26 @@ import {
   query,
   updateDoc,
 } from "firebase/firestore";
-import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
+import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import { Card } from "../components/Card";
 import CreateExpense from "../components/CreateExpense";
-import { getInitials } from "../helpers/AppHelpers";
+import { getInitials, inRange, sumOfValues } from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
+import {
+  ITransactionResponse,
+  calculateTrip,
+  getAmountOfTransactionsString,
+  getTransactionString,
+} from "../helpers/DibbyLogic";
+import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import {
+  faArrowDown,
+  faCaretDown,
+  faCaretUp,
+} from "@fortawesome/free-solid-svg-icons";
+import { Divider } from "@rneui/base";
 
 const windowWidth = Dimensions.get("window").width;
 const numColumns = Math.floor(windowWidth / 500);
@@ -47,8 +62,18 @@ const ViewTrip = ({ route }: any) => {
     useUser();
   const [currentTrip, setCurrentTrip] = useState<Trip>();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [calculatedTrip, setCalculatedTrip] = useState<ITransactionResponse>();
+  const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
   const [isCreateExpenseModalVisible, setIsCreateExpenseModalVisible] =
     useState(false);
+
+  useEffect(() => {
+    if (loggedInUser && loggedInUser.uid && currentTrip) {
+      const copyOfTrip = JSON.parse(JSON.stringify(currentTrip));
+      const newCalculatedTrip = calculateTrip(copyOfTrip);
+      setCalculatedTrip(newCalculatedTrip);
+    }
+  }, [loggedInUser, currentTrip]);
 
   useEffect(() => {
     if (loggedInUser && loggedInUser.uid) {
@@ -64,6 +89,10 @@ const ViewTrip = ({ route }: any) => {
   }, [loggedInUser, tripId]);
 
   useEffect(() => {
+    console.log({ currentTrip, calculatedTrip });
+  }, [currentTrip, calculatedTrip]);
+
+  useEffect(() => {
     if (currentTrip) {
       setExpenses(
         currentTrip.expenses.sort(
@@ -74,14 +103,53 @@ const ViewTrip = ({ route }: any) => {
   }, [currentTrip]);
 
   const deleteExpense = async (expense: Expense) => {
-    if (loggedInUser) {
-      const newExpArr = currentTrip?.expenses.filter(
+    // TODO: update rest of the trip?
+    // use TRIP updates (expenseUpdate())
+    if (loggedInUser && currentTrip) {
+      const newExpArr: Expense[] = currentTrip.expenses.filter(
         (e) => e.id !== expense.id
       );
-      const expenseRef = doc(db, loggedInUser.uid, tripId);
-      await updateDoc(expenseRef, {
-        expenses: newExpArr,
+
+      const newTravelerArr: Traveler[] = currentTrip.travelers.map((t) => {
+        if (expense.peopleInExpense.find((p) => p === t.id)) {
+          if (expense.payer === t.id) {
+            // payer
+            const newAmountPaid = t.amountPaid - +expense.amount;
+            const newOwed =
+              t.owed -
+              +expense.perPerson * (expense.peopleInExpense.length - 1);
+            return {
+              ...t,
+              amountPaid: newAmountPaid,
+              owed: newOwed,
+            };
+          } else {
+            // involved but not payer
+            const newOwed = t.owed + +expense.perPerson;
+            return {
+              ...t,
+              owed: newOwed,
+            };
+          }
+        } else {
+          return {
+            ...t,
+          };
+        }
       });
+
+      const newTrip = {
+        ...currentTrip,
+        expenses: newExpArr,
+        amount: currentTrip.amount - +expense.amount, //increment(+expense.amount)
+        updated: Timestamp.now(),
+        perPerson:
+          (currentTrip.amount - +expense.amount) / currentTrip.travelers.length,
+        travelers: newTravelerArr,
+      };
+
+      const tripRef = doc(db, loggedInUser.uid, tripId);
+      await updateDoc(tripRef, newTrip);
     }
   };
 
@@ -110,6 +178,180 @@ const ViewTrip = ({ route }: any) => {
         onPressBack={() => navigation.navigate("Home")}
       />
 
+      <TouchableOpacity
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginHorizontal: 16,
+          marginTop: 16,
+          marginBottom: summaryOpen ? 0 : 16,
+        }}
+        onPress={() => setSummaryOpen(!summaryOpen)}
+      >
+        <Text style={[styles.title]}>Summary</Text>
+        <FontAwesomeIcon
+          icon={summaryOpen ? faCaretUp : faCaretDown}
+          size={16}
+          color={colors.background.text}
+        />
+      </TouchableOpacity>
+
+      {calculatedTrip && summaryOpen && (
+        <View
+          style={{
+            alignItems: "center",
+            backgroundColor: colors.background.paper,
+            margin: 16,
+            // padding: 8,
+            borderRadius: 10,
+          }}
+        >
+          <View style={styles.table}>
+            <View style={[styles.tableRow, styles.tableHeader]}>
+              <Text style={[styles.tableText, styles.headerText]}>
+                Traveler
+              </Text>
+              <Text style={[styles.tableText, styles.headerText]}>Status</Text>
+              <Text style={[styles.tableText, styles.headerText]}>Owed</Text>
+              <Text style={[styles.tableText, styles.headerText]}>Paid</Text>
+            </View>
+            <Divider
+              color={colors.disabled.button}
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 16,
+              }}
+            />
+            {currentTrip?.travelers.map((t) => {
+              return (
+                <View key={t.id} style={styles.tableRow}>
+                  <Text style={{ color: t.color }}>{t.name}</Text>
+                  <Text
+                    style={{
+                      color:
+                        t.owed > 0
+                          ? colors.info.background
+                          : t.owed < 0
+                          ? colors.danger.button
+                          : colors.background.text,
+                    }}
+                  >
+                    {t.owed > 0 ? "is owed" : t.owed < 0 ? "owes" : ""}
+                  </Text>
+                  <Text style={styles.tableText}>
+                    {Math.abs(t.owed).toFixed(2)}
+                  </Text>
+                  <Text style={styles.tableText}>
+                    ${t.amountPaid.toFixed(2)}
+                  </Text>
+                </View>
+              );
+            })}
+            <Divider
+              color={colors.disabled.button}
+              style={{
+                marginBottom: 16,
+              }}
+            />
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableText, styles.headerText]}>Total</Text>
+              <Text style={[styles.tableText, styles.headerText]}></Text>
+              <Text
+                style={[
+                  styles.tableText,
+                  styles.headerText,
+                  {
+                    color: inRange(
+                      sumOfValues(currentTrip?.travelers.map((t) => t.owed)),
+                      -0.01,
+                      0.01
+                    )
+                      ? colors.success.background
+                      : colors.danger.button,
+                  },
+                ]}
+              >
+                $
+                {inRange(
+                  sumOfValues(
+                    currentTrip?.travelers.map((t) => {
+                      return t.owed;
+                    })
+                  ),
+                  -0.01,
+                  0.01
+                )
+                  ? Math.sign(
+                      sumOfValues(
+                        currentTrip?.travelers.map((t) => {
+                          return t.owed;
+                        })
+                      )
+                    ) === -1
+                    ? -0.01
+                    : 0.01
+                  : sumOfValues(
+                      currentTrip?.travelers.map((t) => {
+                        return t.owed;
+                      })
+                    )}
+              </Text>
+              <Text
+                style={[
+                  styles.tableText,
+                  styles.headerText,
+                  {
+                    color:
+                      sumOfValues(
+                        currentTrip?.travelers.map((t) => t.amountPaid)
+                      ) === currentTrip?.amount
+                        ? colors.success.background
+                        : colors.danger.button,
+                  },
+                ]}
+              >
+                ${sumOfValues(currentTrip?.travelers.map((t) => t.amountPaid))}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ padding: 16, width: "100%" }}>
+            {calculatedTrip?.transactions?.map((t, i) => (
+              <Text
+                style={{
+                  color: colors.background.text,
+                  fontSize: 14,
+                  marginTop: 16,
+                }}
+                key={i}
+              >
+                {getTransactionString(t)}
+              </Text>
+            ))}
+
+            <Text
+              numberOfLines={1}
+              style={{
+                color: colors.background.text,
+                fontSize: 14,
+                marginVertical: 16,
+              }}
+            >
+              {getAmountOfTransactionsString(
+                calculatedTrip.finalNumberOfTransactions
+              )}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <Divider
+        color={colors.disabled.button}
+        style={{
+          marginHorizontal: 16,
+        }}
+      />
+
       <View
         style={{
           flexDirection: "row",
@@ -124,40 +366,39 @@ const ViewTrip = ({ route }: any) => {
             flexDirection: "row",
           }}
         >
-          {currentTrip?.travelers.map((item, index) => {
-            return (
-              <Avatar
-                key={item.id}
-                size="small"
-                rounded
-                title={
-                  index !== 3
-                    ? getInitials(item.name)
-                    : `+${currentTrip?.travelers.length!! - 3}`
-                }
-                titleStyle={{
-                  color: item.me
-                    ? userColors[0].text
-                    : index !== 3
-                    ? colors.background.paper
-                    : colors.light.text,
-                }}
-                containerStyle={{
-                  marginLeft: -10,
-                  borderWidth: 1,
-                  borderStyle: "solid",
-                  borderColor: item.me ? userColors[0].border : item.color,
-                }}
-                overlayContainerStyle={{
-                  backgroundColor: item.me
-                    ? userColors[0].background
-                    : index !== 3
-                    ? item.color
-                    : colors.light.background,
-                  opacity: 0.95,
-                }}
-              />
-            );
+          {currentTrip?.travelers?.map((item, index) => {
+            if (index < 4) {
+              return (
+                <Avatar
+                  key={item.id}
+                  size="small"
+                  rounded
+                  title={
+                    index !== 3
+                      ? getInitials(item.name)
+                      : `+${currentTrip?.travelers.length!! - 3}`
+                  }
+                  titleStyle={{
+                    color:
+                      index !== 3 ? colors.background.paper : colors.light.text,
+                  }}
+                  containerStyle={{
+                    marginLeft: -10,
+                    borderWidth: 1,
+                    borderStyle: "solid",
+                    borderColor: item.me ? userColors[0].border : item.color,
+                  }}
+                  overlayContainerStyle={{
+                    backgroundColor: item.me
+                      ? userColors[0].background
+                      : index !== 3
+                      ? item.color
+                      : colors.light.background,
+                    opacity: 0.95,
+                  }}
+                />
+              );
+            }
           })}
         </View>
       </View>
@@ -247,5 +488,27 @@ const makeStyles = (colors: ThemeColors) =>
       //   flexDirection: "row",
       //   justifyContent: "center",
       //   marginTop: 8,
+    },
+    table: {
+      display: "flex",
+      alignSelf: "stretch",
+      marginHorizontal: 16,
+    },
+    tableRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 20,
+      textTransform: "capitalize",
+    },
+    tableHeader: {
+      paddingTop: 16,
+      paddingHorizontal: 8,
+    },
+    tableText: {
+      color: colors.background.text,
+    },
+    headerText: {
+      // color: colors.background.default,
+      fontWeight: "bold",
     },
   });

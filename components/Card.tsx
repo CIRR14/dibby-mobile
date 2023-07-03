@@ -152,7 +152,7 @@ export const Card: React.FC<ICardProps> = ({
                 : `No expenses yet!`}
             </Text>
           </View>
-          {expense && trip?.travelers.length ? (
+          {expense && trip?.travelers?.length ? (
             <FlatList
               data={getAvatarArray(
                 expense.peopleInExpense,

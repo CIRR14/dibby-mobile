@@ -10,6 +10,12 @@ export interface TripDoc {
     completed: boolean;
     expenses: Expense[];
     travelers: Traveler[];
+
+
+    // TODO: 
+    updateTravelers?: (Traveler: Traveler) => void;
+    updateExpenses?: (expense: Expense) => void;
+    updateAmount?: (amount: number) => void;
 }
 
 export interface Trip extends TripDoc {
