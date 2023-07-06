@@ -24,6 +24,7 @@ export type RootStackParamList = {
   Login: undefined;
   CreateProfile: undefined;
   ViewTrip: { tripName: string; tripId: string };
+  ViewTravelers: { tripName: string; tripId: string };
   ViewExpense: {
     tripName: string;
     tripId: string;

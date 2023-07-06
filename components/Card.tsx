@@ -144,9 +144,9 @@ export const Card: React.FC<ICardProps> = ({
               ]}
             >
               {expense && trip && (expense.amount as number) > 0
-                ? `Total Cost: $${expense?.amount}`
+                ? `Total Cost: $${(+expense?.amount).toFixed(2)}`
                 : !expense && trip && trip.amount > 0
-                ? `Total Cost: $${trip?.amount}`
+                ? `Total Cost: $${trip?.amount.toFixed(2)}`
                 : expense && trip
                 ? "No cost yet!"
                 : `No expenses yet!`}

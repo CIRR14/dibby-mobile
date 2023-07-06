@@ -225,9 +225,12 @@ const ViewTrip = ({ route }: any) => {
             {currentTrip?.travelers.map((t) => {
               return (
                 <View key={t.id} style={styles.tableRow}>
-                  <Text style={{ color: t.color }}>{t.name}</Text>
+                  <Text style={{ ...styles.tableText, color: t.color }}>
+                    {t.name}
+                  </Text>
                   <Text
                     style={{
+                      ...styles.tableText,
                       color:
                         t.owed > 0
                           ? colors.info.background
@@ -239,7 +242,7 @@ const ViewTrip = ({ route }: any) => {
                     {t.owed > 0 ? "is owed" : t.owed < 0 ? "owes" : ""}
                   </Text>
                   <Text style={styles.tableText}>
-                    {Math.abs(t.owed).toFixed(2)}
+                    ${Math.abs(t.owed).toFixed(2)}
                   </Text>
                   <Text style={styles.tableText}>
                     ${t.amountPaid.toFixed(2)}
@@ -310,7 +313,10 @@ const ViewTrip = ({ route }: any) => {
                   },
                 ]}
               >
-                ${sumOfValues(currentTrip?.travelers.map((t) => t.amountPaid))}
+                $
+                {sumOfValues(
+                  currentTrip?.travelers.map((t) => t.amountPaid)
+                ).toFixed(2)}
               </Text>
             </View>
           </View>
@@ -360,11 +366,19 @@ const ViewTrip = ({ route }: any) => {
           margin: 16,
         }}
       >
-        <Text style={styles.title}> Expenses - ${currentTrip?.amount} </Text>
-        <View
+        <Text style={styles.title}>
+          Expenses - ${currentTrip?.amount.toFixed(2)}
+        </Text>
+        <TouchableOpacity
           style={{
             flexDirection: "row",
           }}
+          onPress={() =>
+            navigation.navigate("ViewTravelers", {
+              tripName: currentTrip!!.name,
+              tripId: currentTrip!!.id,
+            })
+          }
         >
           {currentTrip?.travelers?.map((item, index) => {
             if (index < 4) {
@@ -400,7 +414,7 @@ const ViewTrip = ({ route }: any) => {
               );
             }
           })}
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.container}>
@@ -496,19 +510,23 @@ const makeStyles = (colors: ThemeColors) =>
     },
     tableRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
+      justifyContent: "space-around",
       marginBottom: 20,
       textTransform: "capitalize",
     },
     tableHeader: {
       paddingTop: 16,
-      paddingHorizontal: 8,
+      // paddingHorizontal: 8,
     },
     tableText: {
       color: colors.background.text,
+      // marginHorizontal: 16,
+      // paddingHorizontal: 8,
     },
     headerText: {
       // color: colors.background.default,
+      // marginHorizontal: 16,
+      // paddingHorizontal: 8,
       fontWeight: "bold",
     },
   });
