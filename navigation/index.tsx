@@ -27,6 +27,7 @@ import {
 import LinkingConfiguration from "./LinkingConfiguration";
 import CreateTrip from "../components/CreateTrip";
 import ViewTrip from "../screens/ViewTrip";
+import ViewExpense from "../screens/ViewExpense";
 
 export default function Navigation({
   colorScheme,
@@ -75,6 +76,11 @@ function RootNavigator() {
       <Stack.Screen
         name="ViewTrip"
         component={ViewTrip}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ViewExpense"
+        component={ViewExpense}
         options={{ headerShown: false }}
       />
       <Stack.Screen

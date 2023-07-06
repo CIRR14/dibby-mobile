@@ -23,6 +23,7 @@ import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { Timestamp, addDoc, collection } from "firebase/firestore";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { generateColor, userColors } from "../helpers/GenerateColor";
+import { capitalizeName } from "../helpers/AppHelpers";
 
 interface ICreateTripProps {
   currentUser: User;
@@ -89,8 +90,15 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
   };
 
   const onSubmit = async (data: TripDoc) => {
-    const updateTimestampedData = {
+    const updateTimestampedData: TripDoc = {
       ...data,
+      travelers: data.travelers.map((t) => {
+        return {
+          ...t,
+          name: capitalizeName(t.name),
+        };
+      }),
+      name: capitalizeName(data.name),
       created: Timestamp.now(),
       updated: Timestamp.now(),
     };

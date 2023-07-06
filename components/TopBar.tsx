@@ -11,10 +11,10 @@ import { faChevronLeft, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { Avatar } from "@rneui/base";
-import { getInitials } from "../helpers/AppHelpers";
 import { User } from "firebase/auth";
 import { userColors } from "../helpers/GenerateColor";
 import { Traveler } from "../constants/DibbyTypes";
+import { getInitials } from "../helpers/AppHelpers";
 
 interface ITopBarProps {
   title: string;
@@ -64,13 +64,13 @@ const TopBar: React.FC<ITopBarProps> = ({
         )}
       </TouchableOpacity>
       <View style={styles.innerContainer}>
-        <Text style={styles.title}> {title} </Text>
+        <Text style={styles.title}>{title}</Text>
       </View>
 
       <TouchableOpacity onPress={onPressBack} style={styles.innerContainer}>
         {user && (
           <Avatar
-            size="medium"
+            size="small"
             rounded
             title={getInitials(user?.displayName)}
             containerStyle={{
@@ -108,21 +108,27 @@ const makeStyles = (colors: ThemeColors) =>
     },
     title: {
       color: colors.background.text,
+      textTransform: "capitalize",
       fontSize: 22,
-      minWidth: 120,
+      // minWidth: 120,
+      flexWrap: "wrap",
       fontWeight: "bold",
       textAlign: "center",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     },
     innerContainer: {
-      minWidth: 120,
+      // minWidth: 120,
       display: "flex",
       alignItems: "flex-end",
       justifyContent: "center",
+      flexWrap: "wrap",
     },
     leftButton: {
       flexDirection: "row",
       borderRadius: 8,
-      height: 32,
+      // height: 32,
       justifyContent: "flex-start",
       alignItems: "flex-start",
     },
