@@ -36,6 +36,7 @@ import {
   getInitials,
   getTravelerFromId,
   inRange,
+  numberWithCommas,
   sumOfValues,
 } from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
@@ -115,10 +116,12 @@ const ViewExpense = ({ route }: any) => {
           </Text>
           <Text style={{ color: colors.background.default }}>
             $
-            {getTravelerFromId(
-              currentTrip,
-              currentExpense?.payer
-            )?.owed.toFixed(2)}
+            {numberWithCommas(
+              getTravelerFromId(
+                currentTrip,
+                currentExpense?.payer
+              )?.owed.toString()
+            )}
           </Text>
         </View>
 
@@ -162,8 +165,10 @@ const ViewExpense = ({ route }: any) => {
                     }}
                   >
                     {traveler && Math.sign(traveler?.owed) === -1
-                      ? `($${Math.abs(traveler.owed).toFixed(2)})`
-                      : `$${traveler?.owed.toFixed(2)}`}
+                      ? `($${numberWithCommas(
+                          Math.abs(traveler.owed).toString()
+                        )})`
+                      : `$${numberWithCommas(traveler?.owed.toString())}`}
                   </Text>
                 </View>
               );

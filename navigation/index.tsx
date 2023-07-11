@@ -58,7 +58,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={({ route }) => ({
+        title: `Dibby - ${route.name}`,
+      })}
+    >
       <Stack.Screen
         name="Login"
         component={LoginScreen}

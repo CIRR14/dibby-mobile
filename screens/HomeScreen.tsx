@@ -32,8 +32,8 @@ import { TouchableOpacity } from "react-native-gesture-handler";
 import { Platform } from "react-native";
 
 const windowWidth = Dimensions.get("window").width;
-
-const numColumns = Math.floor(windowWidth / 500);
+const cardWidth = 500;
+const numColumns = Math.floor(windowWidth / cardWidth);
 
 const HomeScreen = () => {
   const [currentTrips, setCurrentTrips] = useState<Trip[]>([]);
@@ -132,6 +132,8 @@ const HomeScreen = () => {
               data={currentTrips}
               renderItem={({ item }) => (
                 <Card
+                  web={Platform.OS === "web"}
+                  cardWidth={cardWidth}
                   trip={item}
                   onDeleteItem={() => deleteAlert(item)}
                   onPress={() =>
@@ -152,7 +154,11 @@ const HomeScreen = () => {
               </Text>
             </View>
           )}
-          <Card add onPress={toggleCreateTripModal} />
+          <Card
+            add
+            onPress={toggleCreateTripModal}
+            web={Platform.OS === "web"}
+          />
           <Modal
             animationType="slide"
             visible={isCreateTripModalVisible}

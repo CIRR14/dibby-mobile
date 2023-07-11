@@ -1,4 +1,5 @@
 import { Trip, Expense, Traveler } from "../constants/DibbyTypes";
+import { numberWithCommas } from "./AppHelpers";
 
 export interface ITransactions {
     owed: Traveler, 
@@ -137,7 +138,7 @@ export const calculateTrip = (
 };
 
 export const getTransactionString = (transaction: ITransactions): string => {
-    return `💰 ${transaction.owee.name} owes ${transaction.owed.name}: $${transaction.amount.toFixed(2)}`
+    return `💰 ${transaction.owee.name} owes ${transaction.owed.name}: $${numberWithCommas(transaction.amount.toString())}`
 }
 
 export const getAmountOfTransactionsString = (numberOfTransactions: number): string => {

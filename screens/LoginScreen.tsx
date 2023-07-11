@@ -39,6 +39,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { Platform } from "react-native";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -54,7 +55,25 @@ const LoginScreen = () => {
 
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
-  const styles = makeStyles(colors as unknown as ThemeColors, theme);
+  const styles = makeStyles(
+    colors as unknown as ThemeColors,
+    Platform.OS === "web"
+  );
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      const listener = (event) => {
+        if (event.code === "Enter") {
+          event.preventDefault();
+          handleLogin();
+        }
+      };
+      document.addEventListener("keydown", listener);
+      return () => {
+        document.removeEventListener("keydown", listener);
+      };
+    }
+  }, [Platform.OS]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (userObj) => {
@@ -67,51 +86,6 @@ const LoginScreen = () => {
     });
     return unsubscribe;
   }, [method]);
-
-  const exampleGET = () => {
-    getDocs(collection(db, "users"))
-      .then((docRef: QuerySnapshot<DocumentData>) => {
-        docRef.forEach((doc) => {
-          console.log(doc.id, doc.data());
-        });
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
-  const examplePOST = (data: any = { first: "example", last: "POST" }) => {
-    addDoc(collection(db, "users"), data)
-      .then((docRef) => {
-        console.log("Document written with ID: ", docRef.id);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
-  const exampleDELETEDoc = () => {
-    deleteDoc(doc(db, "users", "yo"))
-      .then((res) => {
-        console.log("deleted", res);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
-  const exampleDELETEField = () => {
-    const docRef = doc(db, "users", "yo");
-    updateDoc(docRef, {
-      one: deleteField(),
-    })
-      .then((res) => {
-        console.log("deleted", res);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
 
   const isPasswordValid = (): boolean => {
     return password.length >= 8 ? true : false;
@@ -131,17 +105,17 @@ const LoginScreen = () => {
     setError("");
   };
 
-  const createProfile = async (user: User): Promise<DocumentReference> => {
-    const { uid, displayName, phoneNumber, photoURL, email, emailVerified } =
-      user;
-    return addDoc(collection(db, "users"), {
-      uid,
-      displayName,
-      phoneNumber,
-      photoURL,
-      email,
-    });
-  };
+  // const createProfile = async (user: User): Promise<DocumentReference> => {
+  //   const { uid, displayName, phoneNumber, photoURL, email, emailVerified } =
+  //     user;
+  //   return addDoc(collection(db, "users"), {
+  //     uid,
+  //     displayName,
+  //     phoneNumber,
+  //     photoURL,
+  //     email,
+  //   });
+  // };
 
   const handleSignUp = () => {
     // add an extra field to verify password
@@ -198,7 +172,7 @@ const LoginScreen = () => {
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       {!user && (
-        <>
+        <View style={styles.innerContainer}>
           <View style={styles.titleContainer}>
             <Text style={styles.titleText}>Dibby</Text>
             <Text style={styles.descriptionText}>Money Splitting</Text>
@@ -294,7 +268,7 @@ const LoginScreen = () => {
               />
             </TouchableOpacity>
           </View>
-        </>
+        </View>
       )}
     </KeyboardAvoidingView>
   );
@@ -302,16 +276,20 @@ const LoginScreen = () => {
 
 export default LoginScreen;
 
-const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
+const makeStyles = (colors: ThemeColors, web?: boolean) =>
   StyleSheet.create({
     container: {
       backgroundColor: colors.background.default,
       flex: 1,
+    },
+    innerContainer: {
+      flex: 1,
       justifyContent: "center",
       alignItems: "center",
+      margin: web ? "25%" : 0,
     },
     inputContainer: {
-      width: "80%",
+      width: web ? "90%" : "80%",
       margin: 12,
     },
     input: {
@@ -323,14 +301,16 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       marginTop: 5,
     },
     buttonContainer: {
-      width: "60%",
+      width: web ? "40%" : "60%",
+      margin: 12,
       justifyContent: "center",
       alignItems: "center",
     },
     button: {
       backgroundColor: colors.primary.button,
       width: "100%",
-      padding: 15,
+      padding: 16,
+      margin: 16,
       borderRadius: 10,
       alignItems: "center",
     },
@@ -384,7 +364,7 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
     orContainer: {
       flexDirection: "row",
       alignItems: "center",
-      margin: 10,
+      margin: 16,
       width: "80%",
     },
     orLines: {
