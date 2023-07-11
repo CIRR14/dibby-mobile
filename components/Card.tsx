@@ -24,7 +24,7 @@ import { timestampToString } from "../helpers/TypeHelpers";
 import { RectButton, Swipeable } from "react-native-gesture-handler";
 import { Avatar } from "@rneui/themed";
 import { userColors } from "../helpers/GenerateColor";
-import { getInitials } from "../helpers/AppHelpers";
+import { getInitials, numberWithCommas } from "../helpers/AppHelpers";
 
 interface ICardProps {
   add?: boolean;
@@ -33,6 +33,8 @@ interface ICardProps {
   onPress?: () => void;
   onDeleteItem?: () => void;
   expandable?: boolean;
+  cardWidth?: number;
+  web: boolean;
 }
 
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -44,10 +46,12 @@ export const Card: React.FC<ICardProps> = ({
   onPress,
   onDeleteItem,
   expandable,
+  cardWidth,
+  web,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
-  const styles = makeStyles(colors as unknown as ThemeColors);
+  const styles = makeStyles(colors as unknown as ThemeColors, web, cardWidth);
   const swipeableRef = useRef(null);
   const numberOfPeople = expense
     ? expense?.peopleInExpense?.length
@@ -144,9 +148,9 @@ export const Card: React.FC<ICardProps> = ({
               ]}
             >
               {expense && trip && (expense.amount as number) > 0
-                ? `Total Cost: $${(+expense?.amount).toFixed(2)}`
+                ? `Total Cost: $${numberWithCommas(expense?.amount.toString())}`
                 : !expense && trip && trip.amount > 0
-                ? `Total Cost: $${trip?.amount.toFixed(2)}`
+                ? `Total Cost: $${numberWithCommas(trip?.amount.toString())}`
                 : expense && trip
                 ? "No cost yet!"
                 : `No expenses yet!`}
@@ -284,7 +288,7 @@ export const Card: React.FC<ICardProps> = ({
   );
 };
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, web: boolean, cardWidth: number) =>
   StyleSheet.create({
     addCard: {
       flex: 1,
@@ -302,7 +306,7 @@ const makeStyles = (colors: ThemeColors) =>
       borderColor: colors.info.background,
     },
     card: {
-      flex: 1,
+      minWidth: web ? cardWidth : 0,
       margin: 8,
       backgroundColor: colors.primary.background,
       padding: 16,

@@ -66,3 +66,13 @@ export const sumOfValues = (values?: number[]): number => {
 export const inRange = (x: number, min: number, max: number): boolean => {
     return (x - min) * (x - max) <= 0;
   };
+
+
+export const numberWithCommas = (value?: string, decimal = 2) => {
+    return value ? parseFloat(parseFloat(value).toFixed(decimal)).toLocaleString(
+      "en-IN",
+      {
+        useGrouping: true,
+      }
+    ) : value
+};

@@ -69,7 +69,6 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors, theme);
-  console.log({ tripInfo });
 
   const initialValues: Expense = {
     id: "",
@@ -156,8 +155,6 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
         expenses: [...tripInfo.expenses, data], // arrayUnion(data)
         perPerson: tripPerPerson,
       };
-
-      console.log({ tripUpdate });
 
       try {
         await updateDoc(doc(db, currentUser.uid, tripInfo.id), tripUpdate);

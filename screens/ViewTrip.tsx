@@ -11,6 +11,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
@@ -32,7 +33,12 @@ import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import { Card } from "../components/Card";
 import CreateExpense from "../components/CreateExpense";
-import { getInitials, inRange, sumOfValues } from "../helpers/AppHelpers";
+import {
+  getInitials,
+  inRange,
+  numberWithCommas,
+  sumOfValues,
+} from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
 import {
   ITransactionResponse,
@@ -49,8 +55,9 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Divider } from "@rneui/base";
 
+const cardWidth = 500;
 const windowWidth = Dimensions.get("window").width;
-const numColumns = Math.floor(windowWidth / 500);
+const numColumns = Math.floor(windowWidth / cardWidth);
 
 const ViewTrip = ({ route }: any) => {
   const { colors } = useTheme() as unknown as ColorTheme;
@@ -177,7 +184,6 @@ const ViewTrip = ({ route }: any) => {
         title={`${tripName}`}
         onPressBack={() => navigation.navigate("Home")}
       />
-
       <TouchableOpacity
         style={{
           flexDirection: "row",
@@ -242,10 +248,10 @@ const ViewTrip = ({ route }: any) => {
                     {t.owed > 0 ? "is owed" : t.owed < 0 ? "owes" : ""}
                   </Text>
                   <Text style={styles.tableText}>
-                    ${Math.abs(t.owed).toFixed(2)}
+                    ${numberWithCommas(Math.abs(t.owed).toString())}
                   </Text>
                   <Text style={styles.tableText}>
-                    ${t.amountPaid.toFixed(2)}
+                    ${numberWithCommas(t.amountPaid.toString())}
                   </Text>
                 </View>
               );
@@ -314,9 +320,11 @@ const ViewTrip = ({ route }: any) => {
                 ]}
               >
                 $
-                {sumOfValues(
-                  currentTrip?.travelers.map((t) => t.amountPaid)
-                ).toFixed(2)}
+                {numberWithCommas(
+                  sumOfValues(
+                    currentTrip?.travelers.map((t) => t.amountPaid)
+                  ).toString()
+                )}
               </Text>
             </View>
           </View>
@@ -367,7 +375,7 @@ const ViewTrip = ({ route }: any) => {
         }}
       >
         <Text style={styles.title}>
-          Expenses - ${currentTrip?.amount.toFixed(2)}
+          Expenses - ${numberWithCommas(currentTrip?.amount.toString())}
         </Text>
         <TouchableOpacity
           style={{
@@ -431,6 +439,8 @@ const ViewTrip = ({ route }: any) => {
                   expense={item}
                   trip={currentTrip}
                   onDeleteItem={() => deleteAlert(item)}
+                  cardWidth={cardWidth}
+                  web={Platform.OS === "web"}
                   onPress={() =>
                     navigation.navigate("ViewExpense", {
                       tripName,
@@ -449,7 +459,11 @@ const ViewTrip = ({ route }: any) => {
               </Text>
             </View>
           )}
-          <Card add onPress={toggleCreateExpenseModal} />
+          <Card
+            web={Platform.OS === "web"}
+            add
+            onPress={toggleCreateExpenseModal}
+          />
           <Modal
             animationType="slide"
             visible={isCreateExpenseModalVisible}
