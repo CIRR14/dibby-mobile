@@ -41,6 +41,7 @@
     "expo-system-ui": "~2.2.1",
     "expo-web-browser": "~12.1.1",
     "firebase": "^9.6.11",
+    "firebase-tools": "^12.4.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.45.0",

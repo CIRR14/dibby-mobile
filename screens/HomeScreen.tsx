@@ -155,6 +155,24 @@ const HomeScreen = () => {
             </View>
           )}
           <Card add onPress={toggleCreateTripModal} wideScreen={wideScreen} />
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              width: "100%",
+              alignItems: "center",
+              zIndex: 1999,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 8,
+                color: colors.background.text,
+              }}
+            >
+              v1.0.1
+            </Text>
+          </View>
           <Modal
             animationType="slide"
             visible={isCreateTripModalVisible}

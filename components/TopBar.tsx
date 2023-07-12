@@ -132,7 +132,6 @@ const makeStyles = (colors: ThemeColors) =>
       flexWrap: "wrap",
       fontWeight: "bold",
       textAlign: "center",
-      whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
     },

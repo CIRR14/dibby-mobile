@@ -312,6 +312,7 @@ const makeStyles = (
       borderWidth: 1,
       borderStyle: "solid",
       borderColor: colors.info.background,
+      zIndex: 2000,
     },
     card: {
       minWidth: wideScreen ? cardWidth : 0,
@@ -352,7 +353,6 @@ const makeStyles = (
       fontSize: 24,
       fontWeight: "bold",
       textTransform: "capitalize",
-      whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
     },

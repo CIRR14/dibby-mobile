@@ -29,6 +29,7 @@ import CreateTrip from "../components/CreateTrip";
 import ViewTrip from "../screens/ViewTrip";
 import ViewExpense from "../screens/ViewExpense";
 import ViewTravelers from "../screens/ViewTravelers";
+import PdfScreen from "../screens/PdfScreen";
 
 export default function Navigation({
   colorScheme,
@@ -91,6 +92,11 @@ function RootNavigator() {
       <Stack.Screen
         name="ViewTravelers"
         component={ViewTravelers}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="PrintPDF"
+        component={PdfScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

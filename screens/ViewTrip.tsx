@@ -13,10 +13,11 @@ import {
   Modal,
   Platform,
   Button,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
-import { useNavigation, useTheme } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/core";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
@@ -59,7 +60,9 @@ import * as Print from "expo-print";
 import { shareAsync } from "expo-sharing";
 import { generateHTML } from "../constants/PdfTemplate";
 import { wideScreen, windowWidth } from "../constants/DeviceWidth";
-import PdfScreen from "../components/PdfScreen";
+import PdfScreen from "./PdfScreen";
+import { TypedNavigator, useTheme } from "@react-navigation/native";
+import { RootStackParamList } from "../types";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -78,9 +81,10 @@ const ViewTrip = ({ route }: any) => {
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
   const [isCreateExpenseModalVisible, setIsCreateExpenseModalVisible] =
     useState(false);
-  const [isPDFModalVisible, setIsPDFModalVisible] = useState(false);
+  // const [isPDFModalVisible, setIsPDFModalVisible] = useState(false);
 
   const [html, setHtml] = useState<string>("");
+  const [loadingIndicator, setLoadingIndicator] = useState<boolean>(false);
 
   useEffect(() => {
     if (calculatedTrip && currentTrip) {
@@ -188,14 +192,16 @@ const ViewTrip = ({ route }: any) => {
     setIsCreateExpenseModalVisible(!isCreateExpenseModalVisible);
   };
 
-  const togglePDFModal = () => {
-    setIsPDFModalVisible(!isPDFModalVisible);
-  };
+  // const togglePDFModal = () => {
+  //   setIsPDFModalVisible(!isPDFModalVisible);
+  // };
 
   const printToFile = async () => {
+    setLoadingIndicator(true);
     // On iOS/android prints the given html. On web prints the HTML from the current page.
     Print.printToFileAsync({ html })
       .then(async (res) => {
+        setLoadingIndicator(false);
         if (res) {
           await shareAsync(res.uri, {
             UTI: ".pdf",
@@ -204,6 +210,7 @@ const ViewTrip = ({ route }: any) => {
         }
       })
       .catch((err) => {
+        setLoadingIndicator(false);
         console.log(err);
       });
   };
@@ -214,9 +221,16 @@ const ViewTrip = ({ route }: any) => {
         title={`${tripName}`}
         onPressBack={() => navigation.navigate("Home")}
         exportPDF={() =>
-          Platform.OS === "web" ? togglePDFModal() : printToFile()
+          Platform.OS === "web"
+            ? navigation.navigate("PrintPDF", { tripId })
+            : printToFile()
         }
       />
+      {loadingIndicator && (
+        <View style={[styles.loadingContainer]}>
+          <ActivityIndicator size="large" color={colors.primary.background} />
+        </View>
+      )}
 
       <TouchableOpacity
         style={{
@@ -458,7 +472,6 @@ const ViewTrip = ({ route }: any) => {
               data={expenses}
               key={numColumns}
               numColumns={numColumns}
-              listKey={numColumns.toString()}
               keyExtractor={(expense) => expense.id}
               renderItem={({ item }) => (
                 <Card
@@ -491,7 +504,6 @@ const ViewTrip = ({ route }: any) => {
             onPress={toggleCreateExpenseModal}
           />
           <Modal
-            propagateSwipe={true}
             animationType="slide"
             visible={isCreateExpenseModalVisible}
             onRequestClose={toggleCreateExpenseModal}
@@ -505,8 +517,7 @@ const ViewTrip = ({ route }: any) => {
             )}
           </Modal>
 
-          <Modal
-            propagateSwipe={true}
+          {/* <Modal
             animationType="slide"
             visible={isPDFModalVisible}
             onRequestClose={togglePDFModal}
@@ -519,7 +530,7 @@ const ViewTrip = ({ route }: any) => {
                 printToFile={printToFile}
               />
             )}
-          </Modal>
+          </Modal> */}
         </View>
       </View>
     </SafeAreaView>
@@ -536,6 +547,15 @@ const makeStyles = (colors: ThemeColors) =>
     },
     container: {
       flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      position: "absolute",
+      height: "100%",
+      width: "100%",
+      zIndex: 3000,
+      backgroundColor: "#00000099",
     },
     grid: {
       flex: 1,

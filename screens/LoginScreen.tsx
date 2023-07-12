@@ -245,6 +245,24 @@ const LoginScreen = () => {
           </View>
         </View>
       )}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          width: "100%",
+          alignItems: "center",
+          zIndex: 1999,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 8,
+            color: colors.background.text,
+          }}
+        >
+          v1.0.1
+        </Text>
+      </View>
     </KeyboardAvoidingView>
   );
 };
