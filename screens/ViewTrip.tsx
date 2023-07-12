@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   Modal,
   Platform,
+  Button,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
@@ -54,9 +55,13 @@ import {
   faCaretUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { Divider } from "@rneui/base";
+import * as Print from "expo-print";
+import { shareAsync } from "expo-sharing";
+import { generateHTML } from "../constants/PdfTemplate";
+import { wideScreen, windowWidth } from "../constants/DeviceWidth";
+import PdfScreen from "../components/PdfScreen";
 
 const cardWidth = 500;
-const windowWidth = Dimensions.get("window").width;
 const numColumns = Math.floor(windowWidth / cardWidth);
 
 const ViewTrip = ({ route }: any) => {
@@ -73,6 +78,15 @@ const ViewTrip = ({ route }: any) => {
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
   const [isCreateExpenseModalVisible, setIsCreateExpenseModalVisible] =
     useState(false);
+  const [isPDFModalVisible, setIsPDFModalVisible] = useState(false);
+
+  const [html, setHtml] = useState<string>("");
+
+  useEffect(() => {
+    if (calculatedTrip && currentTrip) {
+      setHtml(generateHTML(calculatedTrip, currentTrip));
+    }
+  }, [calculatedTrip, currentTrip]);
 
   useEffect(() => {
     if (loggedInUser && loggedInUser.uid && currentTrip) {
@@ -94,10 +108,6 @@ const ViewTrip = ({ route }: any) => {
       };
     }
   }, [loggedInUser, tripId]);
-
-  useEffect(() => {
-    console.log({ currentTrip, calculatedTrip });
-  }, [currentTrip, calculatedTrip]);
 
   useEffect(() => {
     if (currentTrip) {
@@ -178,12 +188,36 @@ const ViewTrip = ({ route }: any) => {
     setIsCreateExpenseModalVisible(!isCreateExpenseModalVisible);
   };
 
+  const togglePDFModal = () => {
+    setIsPDFModalVisible(!isPDFModalVisible);
+  };
+
+  const printToFile = async () => {
+    // On iOS/android prints the given html. On web prints the HTML from the current page.
+    Print.printToFileAsync({ html })
+      .then(async (res) => {
+        if (res) {
+          await shareAsync(res.uri, {
+            UTI: ".pdf",
+            mimeType: "application/pdf",
+          });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   return (
     <SafeAreaView style={styles.topContainer}>
       <TopBar
         title={`${tripName}`}
         onPressBack={() => navigation.navigate("Home")}
+        exportPDF={() =>
+          Platform.OS === "web" ? togglePDFModal() : printToFile()
+        }
       />
+
       <TouchableOpacity
         style={{
           flexDirection: "row",
@@ -290,15 +324,7 @@ const ViewTrip = ({ route }: any) => {
                   -0.01,
                   0.01
                 )
-                  ? Math.sign(
-                      sumOfValues(
-                        currentTrip?.travelers.map((t) => {
-                          return t.owed;
-                        })
-                      )
-                    ) === -1
-                    ? -0.01
-                    : 0.01
+                  ? 0
                   : sumOfValues(
                       currentTrip?.travelers.map((t) => {
                         return t.owed;
@@ -440,7 +466,7 @@ const ViewTrip = ({ route }: any) => {
                   trip={currentTrip}
                   onDeleteItem={() => deleteAlert(item)}
                   cardWidth={cardWidth}
-                  web={Platform.OS === "web"}
+                  wideScreen={wideScreen}
                   onPress={() =>
                     navigation.navigate("ViewExpense", {
                       tripName,
@@ -460,11 +486,12 @@ const ViewTrip = ({ route }: any) => {
             </View>
           )}
           <Card
-            web={Platform.OS === "web"}
+            wideScreen={wideScreen}
             add
             onPress={toggleCreateExpenseModal}
           />
           <Modal
+            propagateSwipe={true}
             animationType="slide"
             visible={isCreateExpenseModalVisible}
             onRequestClose={toggleCreateExpenseModal}
@@ -474,6 +501,22 @@ const ViewTrip = ({ route }: any) => {
                 currentUser={loggedInUser}
                 onPressBack={toggleCreateExpenseModal}
                 tripInfo={currentTrip}
+              />
+            )}
+          </Modal>
+
+          <Modal
+            propagateSwipe={true}
+            animationType="slide"
+            visible={isPDFModalVisible}
+            onRequestClose={togglePDFModal}
+          >
+            {loggedInUser && calculatedTrip && currentTrip && (
+              <PdfScreen
+                calculatedTrip={calculatedTrip}
+                tripInfo={currentTrip}
+                onPressBack={togglePDFModal}
+                printToFile={printToFile}
               />
             )}
           </Modal>

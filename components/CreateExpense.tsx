@@ -203,287 +203,284 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <View>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onPressBack}>
-              <FontAwesomeIcon
-                icon={faClose}
-                size={24}
-                color={colors.background.text}
-              />
-            </TouchableOpacity>
-            <Text style={[styles.title, { flex: 1 }]}>
-              Add Expense to '{tripInfo?.name}'
+      {/* <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}> */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onPressBack}>
+          <FontAwesomeIcon
+            icon={faClose}
+            size={24}
+            color={colors.background.text}
+          />
+        </TouchableOpacity>
+        <Text style={[styles.title, { flex: 1 }]}>
+          Add Expense to '{tripInfo?.name}'
+        </Text>
+      </View>
+      <ScrollView>
+        <View style={styles.content}>
+          <View style={styles.inputLabelContainer}>
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              Name of expense
             </Text>
           </View>
-          <View style={styles.content}>
-            <View style={styles.inputLabelContainer}>
-              <Text style={styles.inputLabel} numberOfLines={1}>
-                Name of expense
-              </Text>
-            </View>
-            <Controller
-              control={control}
-              name="name"
-              rules={{
-                required: true,
-                validate: (value) =>
-                  tripInfo?.expenses.every(
-                    (exp) =>
-                      exp.name.toUpperCase().trim() !==
-                      value.toUpperCase().trim()
-                  ),
-              }}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  placeholder="Name of Expense"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  clearButtonMode="always"
-                  style={styles.input}
-                  placeholderTextColor={colors.disabled.text}
-                />
-              )}
-            />
-            {formState.errors.name && (
-              <Text style={styles.errorText}>Expense must have a name.</Text>
+          <Controller
+            control={control}
+            name="name"
+            rules={{
+              required: true,
+              validate: (value) =>
+                tripInfo?.expenses.every(
+                  (exp) =>
+                    exp.name.toUpperCase().trim() !== value.toUpperCase().trim()
+                ),
+            }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                placeholder="Name of Expense"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                clearButtonMode="always"
+                style={styles.input}
+                placeholderTextColor={colors.disabled.text}
+              />
             )}
+          />
+          {formState.errors.name && (
+            <Text style={styles.errorText}>Expense must have a name.</Text>
+          )}
 
-            <View style={styles.inputLabelContainer}>
-              <Text style={styles.inputLabel} numberOfLines={1}>
-                Expense Amount
-              </Text>
-            </View>
-            <Controller
-              control={control}
-              name="amount"
-              rules={{
-                required: true,
-                validate: (value) => parseFloat(value as string) > 0,
-              }}
-              defaultValue={0}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  keyboardType="numeric"
-                  value={value.toString()}
-                  placeholder="How much did this cost?"
-                  onBlur={onBlur}
-                  returnKeyType="done"
-                  onChangeText={(text) => onChange(text)}
-                  style={styles.input}
-                  clearButtonMode="always"
-                  placeholderTextColor={colors.disabled.text}
-                />
-              )}
-            />
-            {formState.errors.amount && (
-              <Text style={styles.errorText}>Expense must cost something.</Text>
+          <View style={styles.inputLabelContainer}>
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              Expense Amount
+            </Text>
+          </View>
+          <Controller
+            control={control}
+            name="amount"
+            rules={{
+              required: true,
+              validate: (value) => parseFloat(value as string) > 0,
+            }}
+            defaultValue={0}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                keyboardType="numeric"
+                value={value.toString()}
+                placeholder="How much did this cost?"
+                onBlur={onBlur}
+                returnKeyType="done"
+                onChangeText={(text) => onChange(text)}
+                style={styles.input}
+                clearButtonMode="always"
+                placeholderTextColor={colors.disabled.text}
+              />
             )}
+          />
+          {formState.errors.amount && (
+            <Text style={styles.errorText}>Expense must cost something.</Text>
+          )}
 
-            <View style={styles.inputLabelContainer}>
-              <Text style={styles.inputLabel} numberOfLines={1}>
-                Payer
-              </Text>
-            </View>
-            <Controller
-              control={control}
-              name="payer"
-              rules={{
-                required: true,
-              }}
-              defaultValue={currentUser.uid}
-              render={({ field: { onChange, onBlur, value } }) => {
-                return Platform.OS === "web" ? (
-                  <View>
-                    <FlatList
-                      key={numColumns}
-                      data={
-                        tripInfo ? getItemFormatFromTravelerIds(tripInfo) : []
-                      }
-                      renderItem={({ item }) => (
-                        <CheckBox
-                          checked={value === item.key}
-                          onPress={() => setValue("payer", item.key)}
-                          title={item.label}
-                          containerStyle={{
-                            backgroundColor: colors.input.background,
-                            borderRadius: 10,
-                          }}
-                          wrapperStyle={{
-                            backgroundColor: colors.input.background,
-                          }}
-                          textStyle={{
-                            color: colors.input.text,
-                          }}
-                        />
-                      )}
-                    />
-                  </View>
-                ) : (
-                  <RNPickerSelect
-                    onValueChange={onChange}
-                    onClose={onBlur}
-                    value={value}
-                    placeholder={{
-                      label: "Select who paid for this expense",
-                      value: null,
-                    }}
-                    items={
+          <View style={styles.inputLabelContainer}>
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              Payer
+            </Text>
+          </View>
+          <Controller
+            control={control}
+            name="payer"
+            rules={{
+              required: true,
+            }}
+            defaultValue={currentUser.uid}
+            render={({ field: { onChange, onBlur, value } }) => {
+              return Platform.OS === "web" ? (
+                <View>
+                  <FlatList
+                    key={numColumns}
+                    data={
                       tripInfo ? getItemFormatFromTravelerIds(tripInfo) : []
                     }
-                    style={{
-                      inputIOS: {
-                        color: tripInfo
-                          ? getItemFormatFromTravelerIds(tripInfo).filter(
-                              (i) => i.key === value
-                            )[0]?.color
-                          : colors.disabled.text,
-                        paddingRight: 30,
-                      },
-                      inputIOSContainer: {
-                        backgroundColor: colors.background.paper,
-                        paddingHorizontal: 24,
-                        paddingVertical: 12,
-                        borderRadius: 12,
-                        marginTop: 8,
-                        minWidth: "90%",
-                      },
-                      placeholder: {
-                        color: colors.disabled.text,
-                      },
-                    }}
+                    renderItem={({ item }) => (
+                      <CheckBox
+                        checked={value === item.key}
+                        onPress={() => setValue("payer", item.key)}
+                        title={item.label}
+                        containerStyle={{
+                          backgroundColor: colors.input.background,
+                          borderRadius: 10,
+                        }}
+                        wrapperStyle={{
+                          backgroundColor: colors.input.background,
+                        }}
+                        textStyle={{
+                          color: colors.input.text,
+                        }}
+                      />
+                    )}
                   />
-                );
-              }}
-            />
-
-            <View style={styles.inputLabelContainer}>
-              <Text style={styles.inputLabel} numberOfLines={1}>
-                People In Expense
-              </Text>
-            </View>
-            <Controller
-              control={control}
-              name="peopleInExpense"
-              rules={{
-                required: true,
-                validate: (value) => value.length > 0,
-              }}
-              defaultValue={[]}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <MultiSelect
-                  items={
-                    tripInfo
-                      ? getItemFormatFromTravelerIds(tripInfo)
-                      : [currentUser.uid]
-                  }
-                  styleDropdownMenuSubsection={{
-                    paddingLeft: 16,
-                    borderRadius: 10,
-                    backgroundColor: colors.input.background,
-                  }}
-                  textColor={colors.input.text}
-                  styleListContainer={{
-                    backgroundColor: colors.input.background,
-                  }}
-                  searchInputStyle={{
-                    backgroundColor: colors.input.background,
-                  }}
-                  uniqueKey={"key"}
-                  onSelectedItemsChange={onChange}
-                  onAddItem={onChange}
-                  onToggleList={onBlur}
-                  selectedItems={value}
-                  selectText={getSelectText(value, "label")}
-                  displayKey="label"
-                  submitButtonText="Done"
-                  selectedItemTextColor={colors.info.button}
-                  selectedItemIconColor={colors.info.button}
-                  itemTextColor={colors.input.text}
-                  submitButtonColor={colors.info.button}
-                  tagRemoveIconColor={colors.danger.button}
-                  tagBorderColor={colors.info.button}
-                  tagTextColor={colors.info.button}
-                  styleMainWrapper={{
-                    marginTop: 8,
-                  }}
-                />
-              )}
-            />
-            {formState.errors.peopleInExpense && (
-              <Text style={styles.errorText}>Select at least one user.</Text>
-            )}
-
-            <View style={styles.inputLabelContainer}>
-              <Text style={styles.inputLabel} numberOfLines={1}>
-                Equal Amounts?
-              </Text>
-            </View>
-            <Controller
-              control={control}
-              name="equal"
-              rules={{
-                required: true,
-              }}
-              defaultValue={true}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Switch
-                  trackColor={{
-                    false: colors.disabled.button,
-                    true: colors.primary.text,
-                  }}
-                  thumbColor={
-                    value ? colors.info.button : colors.background.paper
-                  }
-                  ios_backgroundColor={colors.disabled.button}
+                </View>
+              ) : (
+                <RNPickerSelect
                   onValueChange={onChange}
+                  onClose={onBlur}
                   value={value}
-                  disabled={true}
+                  placeholder={{
+                    label: "Select who paid for this expense",
+                    value: null,
+                  }}
+                  items={tripInfo ? getItemFormatFromTravelerIds(tripInfo) : []}
                   style={{
-                    marginTop: 8,
+                    inputIOS: {
+                      color: tripInfo
+                        ? getItemFormatFromTravelerIds(tripInfo).filter(
+                            (i) => i.key === value
+                          )[0]?.color
+                        : colors.disabled.text,
+                      paddingRight: 30,
+                    },
+                    inputIOSContainer: {
+                      backgroundColor: colors.background.paper,
+                      paddingHorizontal: 24,
+                      paddingVertical: 12,
+                      borderRadius: 12,
+                      marginTop: 8,
+                      minWidth: "90%",
+                    },
+                    placeholder: {
+                      color: colors.disabled.text,
+                    },
                   }}
                 />
-              )}
-            />
+              );
+            }}
+          />
 
-            <View style={styles.inputLabelContainer}>
-              <Text style={styles.inputLabel} numberOfLines={1}>
-                Per Person
-              </Text>
-            </View>
-            <Controller
-              control={control}
-              name="perPerson"
-              defaultValue={0}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  editable={false}
-                  selectTextOnFocus={false}
-                  value={
-                    typeof value === "number" ? `$${value.toString()}` : "$0"
-                  }
-                  style={[styles.input]}
-                  placeholderTextColor={colors.disabled.text}
-                />
-              )}
-            />
-
-            <TouchableOpacity
-              style={
-                !formState.isValid
-                  ? [styles.submitButton, styles.disabledButton]
-                  : styles.submitButton
-              }
-              disabled={!formState.isValid}
-              onPress={handleSubmit(onSubmit)}
-            >
-              <Text style={styles.buttonText}>Add Expense</Text>
-            </TouchableOpacity>
+          <View style={styles.inputLabelContainer}>
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              People In Expense
+            </Text>
           </View>
+          <Controller
+            control={control}
+            name="peopleInExpense"
+            rules={{
+              required: true,
+              validate: (value) => value.length > 0,
+            }}
+            defaultValue={[]}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <MultiSelect
+                items={
+                  tripInfo
+                    ? getItemFormatFromTravelerIds(tripInfo)
+                    : [currentUser.uid]
+                }
+                styleDropdownMenuSubsection={{
+                  paddingLeft: 16,
+                  borderRadius: 10,
+                  backgroundColor: colors.input.background,
+                }}
+                textColor={colors.input.text}
+                styleListContainer={{
+                  backgroundColor: colors.input.background,
+                }}
+                searchInputStyle={{
+                  backgroundColor: colors.input.background,
+                }}
+                uniqueKey={"key"}
+                onSelectedItemsChange={onChange}
+                onAddItem={onChange}
+                onToggleList={onBlur}
+                selectedItems={value}
+                selectText={getSelectText(value, "label")}
+                displayKey="label"
+                submitButtonText="Done"
+                selectedItemTextColor={colors.info.button}
+                selectedItemIconColor={colors.info.button}
+                itemTextColor={colors.input.text}
+                submitButtonColor={colors.info.button}
+                tagRemoveIconColor={colors.danger.button}
+                tagBorderColor={colors.info.button}
+                tagTextColor={colors.info.button}
+                styleMainWrapper={{
+                  marginTop: 8,
+                }}
+              />
+            )}
+          />
+          {formState.errors.peopleInExpense && (
+            <Text style={styles.errorText}>Select at least one user.</Text>
+          )}
+
+          <View style={styles.inputLabelContainer}>
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              Equal Amounts?
+            </Text>
+          </View>
+          <Controller
+            control={control}
+            name="equal"
+            rules={{
+              required: true,
+            }}
+            defaultValue={true}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Switch
+                trackColor={{
+                  false: colors.disabled.button,
+                  true: colors.primary.text,
+                }}
+                thumbColor={
+                  value ? colors.info.button : colors.background.paper
+                }
+                ios_backgroundColor={colors.disabled.button}
+                onValueChange={onChange}
+                value={value}
+                disabled={true}
+                style={{
+                  marginTop: 8,
+                }}
+              />
+            )}
+          />
+
+          <View style={styles.inputLabelContainer}>
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              Per Person
+            </Text>
+          </View>
+          <Controller
+            control={control}
+            name="perPerson"
+            defaultValue={0}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                editable={false}
+                selectTextOnFocus={false}
+                value={
+                  typeof value === "number" ? `$${value.toString()}` : "$0"
+                }
+                style={[styles.input]}
+                placeholderTextColor={colors.disabled.text}
+              />
+            )}
+          />
+
+          <TouchableOpacity
+            style={
+              !formState.isValid
+                ? [styles.submitButton, styles.disabledButton]
+                : styles.submitButton
+            }
+            disabled={!formState.isValid}
+            onPress={handleSubmit(onSubmit)}
+          >
+            <Text style={styles.buttonText}>Add Expense</Text>
+          </TouchableOpacity>
         </View>
-      </TouchableWithoutFeedback>
+      </ScrollView>
+      {/* </TouchableWithoutFeedback> */}
     </SafeAreaView>
   );
 };

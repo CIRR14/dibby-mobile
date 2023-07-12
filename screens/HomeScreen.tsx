@@ -28,10 +28,10 @@ import {
 } from "firebase/firestore";
 import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
 import CreateTrip from "../components/CreateTrip";
-import { TouchableOpacity } from "react-native-gesture-handler";
+import { TextInput, TouchableOpacity } from "react-native-gesture-handler";
 import { Platform } from "react-native";
+import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 
-const windowWidth = Dimensions.get("window").width;
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
 
@@ -132,7 +132,7 @@ const HomeScreen = () => {
               data={currentTrips}
               renderItem={({ item }) => (
                 <Card
-                  web={Platform.OS === "web"}
+                  wideScreen={wideScreen}
                   cardWidth={cardWidth}
                   trip={item}
                   onDeleteItem={() => deleteAlert(item)}
@@ -154,11 +154,7 @@ const HomeScreen = () => {
               </Text>
             </View>
           )}
-          <Card
-            add
-            onPress={toggleCreateTripModal}
-            web={Platform.OS === "web"}
-          />
+          <Card add onPress={toggleCreateTripModal} wideScreen={wideScreen} />
           <Modal
             animationType="slide"
             visible={isCreateTripModalVisible}
