@@ -32,6 +32,8 @@ import { TextInput, TouchableOpacity } from "react-native-gesture-handler";
 import { Platform } from "react-native";
 import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 
+import { REACT_APP_VERSION } from "@env";
+
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
 
@@ -166,11 +168,13 @@ const HomeScreen = () => {
           >
             <Text
               style={{
-                fontSize: 8,
+                fontSize: 10,
                 color: colors.background.text,
               }}
             >
-              v1.0.1
+              {Platform.OS === "web"
+                ? process.env.REACT_APP_VERSION
+                : REACT_APP_VERSION}
             </Text>
           </View>
           <Modal

@@ -8,11 +8,18 @@ import {
   useColorScheme,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { auth } from "../firebase";
+import {
+  appleProvider,
+  auth,
+  facebookProvider,
+  googleProvider,
+} from "../firebase";
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   User,
   UserCredential,
 } from "firebase/auth";
@@ -28,13 +35,16 @@ import {
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { Platform } from "react-native";
 import { wideScreen } from "../constants/DeviceWidth";
+import { REACT_APP_VERSION } from "@env";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
   const [user, setUser] = useState<User | undefined>(undefined);
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const [method, setMethod] = useState<string>("");
+  const [method, setMethod] = useState<"signUp" | "logIn" | undefined>(
+    undefined
+  );
   const [passwordVerification, setPasswordVerification] = useState<string>("");
   const [passwordVerificationRequired, setPasswordVerificationRequired] =
     useState<boolean>(false);
@@ -83,7 +93,7 @@ const LoginScreen = () => {
   };
 
   const resetToLogin = (): void => {
-    setMethod("");
+    setMethod(undefined);
     setPassword("");
     setPasswordVerification("");
     setPasswordVerificationRequired(false);
@@ -144,6 +154,42 @@ const LoginScreen = () => {
       });
   };
 
+  const handleFacebookLogin = () => {
+    setError("");
+    signInWithPopup(auth, facebookProvider)
+      .then((user: UserCredential) => {
+        console.log("logging in", { user });
+      })
+      .catch((err) => {
+        console.log({ err });
+        setError(errorMessage(err?.code));
+      });
+  };
+
+  const handleGoogleLogIn = () => {
+    setError("");
+    signInWithPopup(auth, googleProvider)
+      .then((user: UserCredential) => {
+        console.log("logging in", { user });
+      })
+      .catch((err) => {
+        console.log({ err });
+        setError(errorMessage(err?.code));
+      });
+  };
+
+  const handleAppleLogin = () => {
+    setError("");
+    signInWithPopup(auth, appleProvider)
+      .then((user: UserCredential) => {
+        console.log("logging in", { user });
+      })
+      .catch((err) => {
+        console.log({ err });
+        setError(errorMessage(err?.code));
+      });
+  };
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       {!user && (
@@ -185,13 +231,14 @@ const LoginScreen = () => {
               />
             )}
 
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
             {passwordVerificationRequired && (
               <Text style={styles.loginText} onPress={() => resetToLogin()}>
                 Login
               </Text>
             )}
           </View>
-          {error && <Text style={styles.errorText}>{error}</Text>}
 
           <View style={styles.buttonContainer}>
             {!passwordVerificationRequired && (
@@ -221,21 +268,21 @@ const LoginScreen = () => {
           </View>
 
           <View style={styles.providerContainer}>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleFacebookLogin}>
               <FontAwesomeIcon
                 icon={faFacebookSquare}
                 size={32}
                 color={colors.background.text}
               />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleGoogleLogIn}>
               <FontAwesomeIcon
                 icon={faGoogle}
                 size={32}
                 color={colors.background.text}
               />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleAppleLogin}>
               <FontAwesomeIcon
                 icon={faApple}
                 size={32}
@@ -248,7 +295,7 @@ const LoginScreen = () => {
       <View
         style={{
           position: "absolute",
-          bottom: 0,
+          bottom: 30,
           width: "100%",
           alignItems: "center",
           zIndex: 1999,
@@ -256,11 +303,13 @@ const LoginScreen = () => {
       >
         <Text
           style={{
-            fontSize: 8,
+            fontSize: 12,
             color: colors.background.text,
           }}
         >
-          v1.0.1
+          {Platform.OS === "web"
+            ? process.env.REACT_APP_VERSION
+            : REACT_APP_VERSION}
         </Text>
       </View>
     </KeyboardAvoidingView>
@@ -349,7 +398,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     loginText: {
       textAlign: "center",
-      marginTop: 8,
+      marginTop: 24,
       color: colors.background.text,
       fontSize: 16,
       fontWeight: "500",
