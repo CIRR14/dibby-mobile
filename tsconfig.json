@@ -5,6 +5,7 @@
     "jsx": "react",
     "strict": true
   },
+  "typeRoots": ["./types"],
   "include": [
     "**.ts"
   ]

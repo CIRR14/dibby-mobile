@@ -98,7 +98,11 @@ const CreateProfile = () => {
           clearButtonMode="always"
         />
       </View>
-      <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+      <TouchableOpacity
+        style={!username ? styles.disabledButton : styles.nextButton}
+        onPress={handleNext}
+        disabled={!username}
+      >
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -150,6 +154,13 @@ const makeStyles = (colors: ThemeColors) =>
     },
     nextButton: {
       backgroundColor: colors.primary.button,
+      width: "100%",
+      padding: 15,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+    disabledButton: {
+      backgroundColor: colors.disabled.button,
       width: "100%",
       padding: 15,
       borderRadius: 10,
