@@ -12,10 +12,12 @@ import {
   TouchableOpacity,
   Modal,
   Platform,
+  Button,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
-import { useNavigation, useTheme } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/core";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
@@ -54,9 +56,15 @@ import {
   faCaretUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { Divider } from "@rneui/base";
+import * as Print from "expo-print";
+import { shareAsync } from "expo-sharing";
+import { generateHTML } from "../constants/PdfTemplate";
+import { wideScreen, windowWidth } from "../constants/DeviceWidth";
+import PdfScreen from "./PdfScreen";
+import { TypedNavigator, useTheme } from "@react-navigation/native";
+import { RootStackParamList } from "../types";
 
 const cardWidth = 500;
-const windowWidth = Dimensions.get("window").width;
 const numColumns = Math.floor(windowWidth / cardWidth);
 
 const ViewTrip = ({ route }: any) => {
@@ -73,6 +81,16 @@ const ViewTrip = ({ route }: any) => {
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
   const [isCreateExpenseModalVisible, setIsCreateExpenseModalVisible] =
     useState(false);
+  // const [isPDFModalVisible, setIsPDFModalVisible] = useState(false);
+
+  const [html, setHtml] = useState<string>("");
+  const [loadingIndicator, setLoadingIndicator] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (calculatedTrip && currentTrip) {
+      setHtml(generateHTML(calculatedTrip, currentTrip));
+    }
+  }, [calculatedTrip, currentTrip]);
 
   useEffect(() => {
     if (loggedInUser && loggedInUser.uid && currentTrip) {
@@ -94,10 +112,6 @@ const ViewTrip = ({ route }: any) => {
       };
     }
   }, [loggedInUser, tripId]);
-
-  useEffect(() => {
-    console.log({ currentTrip, calculatedTrip });
-  }, [currentTrip, calculatedTrip]);
 
   useEffect(() => {
     if (currentTrip) {
@@ -178,12 +192,46 @@ const ViewTrip = ({ route }: any) => {
     setIsCreateExpenseModalVisible(!isCreateExpenseModalVisible);
   };
 
+  // const togglePDFModal = () => {
+  //   setIsPDFModalVisible(!isPDFModalVisible);
+  // };
+
+  const printToFile = async () => {
+    setLoadingIndicator(true);
+    // On iOS/android prints the given html. On web prints the HTML from the current page.
+    Print.printToFileAsync({ html })
+      .then(async (res) => {
+        setLoadingIndicator(false);
+        if (res) {
+          await shareAsync(res.uri, {
+            UTI: ".pdf",
+            mimeType: "application/pdf",
+          });
+        }
+      })
+      .catch((err) => {
+        setLoadingIndicator(false);
+        console.log(err);
+      });
+  };
+
   return (
     <SafeAreaView style={styles.topContainer}>
       <TopBar
         title={`${tripName}`}
         onPressBack={() => navigation.navigate("Home")}
+        exportPDF={() =>
+          Platform.OS === "web"
+            ? navigation.navigate("PrintPDF", { tripId })
+            : printToFile()
+        }
       />
+      {loadingIndicator && (
+        <View style={[styles.loadingContainer]}>
+          <ActivityIndicator size="large" color={colors.primary.background} />
+        </View>
+      )}
+
       <TouchableOpacity
         style={{
           flexDirection: "row",
@@ -290,15 +338,7 @@ const ViewTrip = ({ route }: any) => {
                   -0.01,
                   0.01
                 )
-                  ? Math.sign(
-                      sumOfValues(
-                        currentTrip?.travelers.map((t) => {
-                          return t.owed;
-                        })
-                      )
-                    ) === -1
-                    ? -0.01
-                    : 0.01
+                  ? 0
                   : sumOfValues(
                       currentTrip?.travelers.map((t) => {
                         return t.owed;
@@ -432,7 +472,6 @@ const ViewTrip = ({ route }: any) => {
               data={expenses}
               key={numColumns}
               numColumns={numColumns}
-              listKey={numColumns.toString()}
               keyExtractor={(expense) => expense.id}
               renderItem={({ item }) => (
                 <Card
@@ -440,7 +479,7 @@ const ViewTrip = ({ route }: any) => {
                   trip={currentTrip}
                   onDeleteItem={() => deleteAlert(item)}
                   cardWidth={cardWidth}
-                  web={Platform.OS === "web"}
+                  wideScreen={wideScreen}
                   onPress={() =>
                     navigation.navigate("ViewExpense", {
                       tripName,
@@ -460,7 +499,7 @@ const ViewTrip = ({ route }: any) => {
             </View>
           )}
           <Card
-            web={Platform.OS === "web"}
+            wideScreen={wideScreen}
             add
             onPress={toggleCreateExpenseModal}
           />
@@ -477,6 +516,21 @@ const ViewTrip = ({ route }: any) => {
               />
             )}
           </Modal>
+
+          {/* <Modal
+            animationType="slide"
+            visible={isPDFModalVisible}
+            onRequestClose={togglePDFModal}
+          >
+            {loggedInUser && calculatedTrip && currentTrip && (
+              <PdfScreen
+                calculatedTrip={calculatedTrip}
+                tripInfo={currentTrip}
+                onPressBack={togglePDFModal}
+                printToFile={printToFile}
+              />
+            )}
+          </Modal> */}
         </View>
       </View>
     </SafeAreaView>
@@ -493,6 +547,15 @@ const makeStyles = (colors: ThemeColors) =>
     },
     container: {
       flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      position: "absolute",
+      height: "100%",
+      width: "100%",
+      zIndex: 3000,
+      backgroundColor: "#00000099",
     },
     grid: {
       flex: 1,

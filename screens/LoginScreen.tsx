@@ -1,5 +1,4 @@
 import {
-  ColorSchemeName,
   KeyboardAvoidingView,
   StyleSheet,
   Text,
@@ -9,7 +8,7 @@ import {
   useColorScheme,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { auth, db } from "../firebase";
+import { auth } from "../firebase";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -26,20 +25,9 @@ import {
   faGoogle,
   faApple,
 } from "@fortawesome/free-brands-svg-icons";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  deleteField,
-  doc,
-  DocumentData,
-  DocumentReference,
-  getDocs,
-  QuerySnapshot,
-  updateDoc,
-} from "firebase/firestore";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { Platform } from "react-native";
+import { wideScreen } from "../constants/DeviceWidth";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -55,10 +43,7 @@ const LoginScreen = () => {
 
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
-  const styles = makeStyles(
-    colors as unknown as ThemeColors,
-    Platform.OS === "web"
-  );
+  const styles = makeStyles(colors as unknown as ThemeColors);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -132,16 +117,6 @@ const LoginScreen = () => {
             email,
             emailVerified,
           } = userCredentials.user;
-          console.log({
-            uid,
-            displayName,
-            phoneNumber,
-            photoURL,
-            email,
-            emailVerified,
-          });
-          // const profile = await createProfile(userCredentials.user);
-          // console.log("created", profile.id);
         })
         .catch((err: FirebaseError) => {
           console.log({ err });
@@ -270,13 +245,31 @@ const LoginScreen = () => {
           </View>
         </View>
       )}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          width: "100%",
+          alignItems: "center",
+          zIndex: 1999,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 8,
+            color: colors.background.text,
+          }}
+        >
+          v1.0.1
+        </Text>
+      </View>
     </KeyboardAvoidingView>
   );
 };
 
 export default LoginScreen;
 
-const makeStyles = (colors: ThemeColors, web?: boolean) =>
+const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       backgroundColor: colors.background.default,
@@ -286,10 +279,10 @@ const makeStyles = (colors: ThemeColors, web?: boolean) =>
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      margin: web ? "25%" : 0,
+      margin: wideScreen ? "25%" : 0,
     },
     inputContainer: {
-      width: web ? "90%" : "80%",
+      width: wideScreen ? "90%" : "80%",
       margin: 12,
     },
     input: {
@@ -301,7 +294,7 @@ const makeStyles = (colors: ThemeColors, web?: boolean) =>
       marginTop: 5,
     },
     buttonContainer: {
-      width: web ? "40%" : "60%",
+      width: wideScreen ? "40%" : "60%",
       margin: 12,
       justifyContent: "center",
       alignItems: "center",

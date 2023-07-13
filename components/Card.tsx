@@ -34,7 +34,7 @@ interface ICardProps {
   onDeleteItem?: () => void;
   expandable?: boolean;
   cardWidth?: number;
-  web: boolean;
+  wideScreen: boolean;
 }
 
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -47,11 +47,15 @@ export const Card: React.FC<ICardProps> = ({
   onDeleteItem,
   expandable,
   cardWidth,
-  web,
+  wideScreen,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
-  const styles = makeStyles(colors as unknown as ThemeColors, web, cardWidth);
+  const styles = makeStyles(
+    colors as unknown as ThemeColors,
+    wideScreen,
+    cardWidth
+  );
   const swipeableRef = useRef(null);
   const numberOfPeople = expense
     ? expense?.peopleInExpense?.length
@@ -60,11 +64,11 @@ export const Card: React.FC<ICardProps> = ({
     : 0;
 
   const renderRightActions = (
-    progress: Animated.AnimatedInterpolation,
-    dragX: Animated.AnimatedInterpolation
+    progress: Animated.AnimatedInterpolation<any>,
+    dragX: Animated.AnimatedInterpolation<any>
   ) => {
     const scale = dragX.interpolate({
-      inputRange: [-80, 1],
+      inputRange: [0, 80],
       outputRange: [1, 0],
       extrapolate: "clamp",
     });
@@ -121,7 +125,7 @@ export const Card: React.FC<ICardProps> = ({
       renderRightActions={renderRightActions}
       onSwipeableOpen={swipeFromRightOpen}
       enableTrackpadTwoFingerGesture
-      friction={2}
+      friction={1}
       ref={swipeableRef}
     >
       <TouchableOpacity onPress={onPress}>
@@ -288,7 +292,11 @@ export const Card: React.FC<ICardProps> = ({
   );
 };
 
-const makeStyles = (colors: ThemeColors, web: boolean, cardWidth: number) =>
+const makeStyles = (
+  colors: ThemeColors,
+  wideScreen: boolean,
+  cardWidth?: number
+) =>
   StyleSheet.create({
     addCard: {
       flex: 1,
@@ -304,9 +312,10 @@ const makeStyles = (colors: ThemeColors, web: boolean, cardWidth: number) =>
       borderWidth: 1,
       borderStyle: "solid",
       borderColor: colors.info.background,
+      zIndex: 2000,
     },
     card: {
-      minWidth: web ? cardWidth : 0,
+      minWidth: wideScreen ? cardWidth : 0,
       margin: 8,
       backgroundColor: colors.primary.background,
       padding: 16,
@@ -344,7 +353,6 @@ const makeStyles = (colors: ThemeColors, web: boolean, cardWidth: number) =>
       fontSize: 24,
       fontWeight: "bold",
       textTransform: "capitalize",
-      whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
     },

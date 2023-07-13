@@ -21,7 +21,12 @@ import { faAdd, faClose, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { Timestamp, addDoc, collection } from "firebase/firestore";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import {
+  Controller,
+  useController,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
 import { generateColor, userColors } from "../helpers/GenerateColor";
 import { capitalizeName } from "../helpers/AppHelpers";
 
@@ -138,127 +143,128 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <View>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onPressBack}>
-              <FontAwesomeIcon
-                icon={faClose}
-                size={24}
-                color={colors.background.text}
+      {/* <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}> */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onPressBack}>
+          <FontAwesomeIcon
+            icon={faClose}
+            size={24}
+            color={colors.background.text}
+          />
+        </TouchableOpacity>
+        <Text style={styles.title}>Add Trip</Text>
+        <View></View>
+      </View>
+      <ScrollView>
+        <View style={styles.content}>
+          <Controller
+            control={control}
+            name="name"
+            rules={{
+              required: true,
+            }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                placeholder="Name of Trip"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                clearButtonMode="always"
+                style={styles.input}
+                placeholderTextColor={colors.disabled?.text}
               />
-            </TouchableOpacity>
-            <Text style={styles.title}>Add Trip</Text>
-            <View></View>
-          </View>
-          <View style={styles.content}>
-            <Controller
-              control={control}
-              name="name"
-              rules={{
-                required: true,
-              }}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  placeholder="Name of Trip"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  clearButtonMode="always"
-                  style={styles.input}
-                  placeholderTextColor={colors.disabled?.text}
-                />
-              )}
-            />
-            {formState.errors.name && (
-              <Text style={styles.errorText}>Trip must have a name.</Text>
             )}
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>Travelers</Text>
-            </View>
-
-            <KeyboardAvoidingView
-              style={styles.travelersContainer}
-              behavior="padding"
-              enabled
-              keyboardVerticalOffset={150}
-            >
-              <ScrollView>
-                {fields.map(({ name, id }: any, index: number) => {
-                  return (
-                    <View style={styles.travelerContainer} key={id}>
-                      <Controller
-                        control={control}
-                        rules={{ required: true }}
-                        name={`travelers.${index}.name`}
-                        render={({ field: { onChange, onBlur, value } }) => (
-                          <TextInput
-                            placeholder={
-                              index === 0
-                                ? currentUser.displayName!!
-                                : `Name of Traveler ${index + 1}`
-                            }
-                            placeholderTextColor={colors.disabled?.text}
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                            editable={index !== 0}
-                            style={styles.input}
-                            clearButtonMode="always"
-                            returnKeyType="next"
-                            onSubmitEditing={addTraveler}
-                          />
-                        )}
-                      />
-                      {index !== 0 && (
-                        <TouchableOpacity
-                          style={styles.deleteButton}
-                          onPress={() => removeTraveler(index)}
-                        >
-                          <FontAwesomeIcon
-                            icon={faTrash}
-                            size={16}
-                            color={colors.danger.background}
-                          />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                })}
-                {formState.errors.travelers && (
-                  <Text style={styles.errorText}>
-                    All travelers must have a name.
-                  </Text>
-                )}
-                <View style={styles.addContainer}>
-                  <TouchableOpacity
-                    style={styles.addButton}
-                    onPress={addTraveler}
-                  >
-                    <FontAwesomeIcon
-                      style={{ margin: 8 }}
-                      icon={faAdd}
-                      size={16}
-                      color={colors.primary.text}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity
-                  style={
-                    !formState.isValid
-                      ? [styles.submitButton, styles.disabledButton]
-                      : styles.submitButton
-                  }
-                  disabled={!formState.isValid}
-                  onPress={handleSubmit(onSubmit)}
-                >
-                  <Text style={styles.buttonText}>Add Trip</Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </KeyboardAvoidingView>
+          />
+          {formState.errors.name && (
+            <Text style={styles.errorText}>Trip must have a name.</Text>
+          )}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Travelers</Text>
           </View>
+
+          <KeyboardAvoidingView
+            style={styles.travelersContainer}
+            behavior="padding"
+            enabled
+            keyboardVerticalOffset={150}
+          >
+            <ScrollView>
+              {fields.map(({ name, id }: any, index: number) => {
+                return (
+                  <View style={styles.travelerContainer} key={id}>
+                    <Controller
+                      control={control}
+                      rules={{ required: true }}
+                      name={`travelers.${index}.name`}
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <TextInput
+                          placeholder={
+                            index === 0
+                              ? currentUser.displayName!!
+                              : `Name of Traveler ${index + 1}`
+                          }
+                          placeholderTextColor={colors.disabled?.text}
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          value={value}
+                          editable={index !== 0}
+                          style={styles.input}
+                          clearButtonMode="always"
+                          returnKeyType="next"
+                          onSubmitEditing={addTraveler}
+                        />
+                      )}
+                    />
+                    {index !== 0 && (
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => removeTraveler(index)}
+                      >
+                        <FontAwesomeIcon
+                          icon={faTrash}
+                          size={16}
+                          color={colors.danger.background}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })}
+              {formState.errors.travelers && (
+                <Text style={styles.errorText}>
+                  All travelers must have a name.
+                </Text>
+              )}
+              <View style={styles.addContainer}>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={addTraveler}
+                >
+                  <FontAwesomeIcon
+                    style={{ margin: 8 }}
+                    icon={faAdd}
+                    size={16}
+                    color={colors.primary.text}
+                  />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={
+                  !formState.isValid
+                    ? [styles.submitButton, styles.disabledButton]
+                    : styles.submitButton
+                }
+                disabled={!formState.isValid}
+                onPress={handleSubmit(onSubmit)}
+              >
+                <Text style={styles.buttonText}>Add Trip</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </View>
-      </TouchableWithoutFeedback>
+      </ScrollView>
+
+      {/* </TouchableWithoutFeedback> */}
     </SafeAreaView>
   );
 };

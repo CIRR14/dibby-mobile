@@ -29,9 +29,9 @@ const CreateProfile = () => {
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   useEffect(() => {
-    // if (loggedInUser && loggedInUser.displayName) {
-    //   navigation.navigate("Home");
-    // }
+    if (loggedInUser && loggedInUser.displayName) {
+      navigation.navigate("Home");
+    }
   }, [loggedInUser]);
 
   const handleNext = () => {

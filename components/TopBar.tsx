@@ -1,4 +1,5 @@
 import {
+  Button,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -7,7 +8,11 @@ import {
 } from "react-native";
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faChevronLeft, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChevronLeft,
+  faFilePdf,
+  faSignOutAlt,
+} from "@fortawesome/free-solid-svg-icons";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { Avatar } from "@rneui/base";
@@ -21,7 +26,7 @@ interface ITopBarProps {
   onPressBack?: () => void;
   signOut?: () => void;
   user?: User | null;
-  travelers?: Traveler[];
+  exportPDF?: (() => Promise<void>) | (() => void);
 }
 
 const TopBar: React.FC<ITopBarProps> = ({
@@ -29,7 +34,7 @@ const TopBar: React.FC<ITopBarProps> = ({
   onPressBack,
   signOut,
   user,
-  travelers,
+  exportPDF,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
@@ -38,16 +43,20 @@ const TopBar: React.FC<ITopBarProps> = ({
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        onPress={signOut}
-        style={[styles.innerContainer, styles.leftButton]}
+      <View
+      // style={[styles.innerContainer, styles.leftButton]}
       >
         {signOut ? (
-          <FontAwesomeIcon
-            icon={faSignOutAlt}
-            size={24}
-            color={colors.background.text}
-          />
+          <TouchableOpacity
+            onPress={signOut}
+            style={[styles.innerContainer, styles.leftButton]}
+          >
+            <FontAwesomeIcon
+              icon={faSignOutAlt}
+              size={24}
+              color={colors.background.text}
+            />
+          </TouchableOpacity>
         ) : (
           <TouchableOpacity
             onPress={onPressBack}
@@ -62,12 +71,12 @@ const TopBar: React.FC<ITopBarProps> = ({
             )}
           </TouchableOpacity>
         )}
-      </TouchableOpacity>
+      </View>
       <View style={styles.innerContainer}>
         <Text style={styles.title}>{title}</Text>
       </View>
 
-      <TouchableOpacity onPress={onPressBack} style={styles.innerContainer}>
+      <View style={styles.innerContainer}>
         {user && (
           <Avatar
             size="small"
@@ -88,7 +97,16 @@ const TopBar: React.FC<ITopBarProps> = ({
             onPress={() => navigation.navigate("CreateProfile")}
           />
         )}
-      </TouchableOpacity>
+        {exportPDF && (
+          <TouchableOpacity style={styles.container} onPress={exportPDF}>
+            <FontAwesomeIcon
+              icon={faFilePdf}
+              size={24}
+              color={colors.background.text}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
@@ -114,7 +132,6 @@ const makeStyles = (colors: ThemeColors) =>
       flexWrap: "wrap",
       fontWeight: "bold",
       textAlign: "center",
-      whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
     },
