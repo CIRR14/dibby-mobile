@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
   useColorScheme,
 } from "react-native";
@@ -16,7 +15,6 @@ import {
 } from "../firebase";
 import {
   createUserWithEmailAndPassword,
-  GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -36,6 +34,7 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { Platform } from "react-native";
 import { wideScreen } from "../constants/DeviceWidth";
 import { REACT_APP_VERSION } from "@env";
+import DibbyButton from "../components/DibbyButton";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -113,7 +112,6 @@ const LoginScreen = () => {
   // };
 
   const handleSignUp = () => {
-    // add an extra field to verify password
     setPasswordVerificationRequired(true);
     setMethod("signUp");
     if (isPasswordValid() && isPasswordVerified()) {
@@ -127,6 +125,7 @@ const LoginScreen = () => {
             email,
             emailVerified,
           } = userCredentials.user;
+          console.log("logged in as ", email, displayName);
         })
         .catch((err: FirebaseError) => {
           console.log({ err });
@@ -232,32 +231,18 @@ const LoginScreen = () => {
             )}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
-
-            {passwordVerificationRequired && (
-              <Text style={styles.loginText} onPress={() => resetToLogin()}>
-                Login
-              </Text>
-            )}
           </View>
 
-          <View style={styles.buttonContainer}>
-            {!passwordVerificationRequired && (
-              <TouchableOpacity
-                style={styles.button}
-                onPress={handleLogin}
-                disabled={passwordVerificationRequired}
-              >
-                <Text style={styles.buttonText}> Login </Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={[styles.button, styles.buttonOutline]}
-              onPress={handleSignUp}
-            >
-              <Text style={styles.buttonOutlineText}> Register </Text>
-            </TouchableOpacity>
-          </View>
+          <DibbyButton
+            onPress={passwordVerificationRequired ? resetToLogin : handleLogin}
+            type={passwordVerificationRequired ? "clear" : "solid"}
+            title="Login"
+          />
+          <DibbyButton
+            type="outline"
+            onPress={handleSignUp}
+            title={"Register"}
+          />
 
           <View style={styles.orContainer}>
             <View style={styles.orLines} />
@@ -268,27 +253,39 @@ const LoginScreen = () => {
           </View>
 
           <View style={styles.providerContainer}>
-            <TouchableOpacity onPress={handleFacebookLogin}>
-              <FontAwesomeIcon
-                icon={faFacebookSquare}
-                size={32}
-                color={colors.background.text}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleGoogleLogIn}>
-              <FontAwesomeIcon
-                icon={faGoogle}
-                size={32}
-                color={colors.background.text}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleAppleLogin}>
-              <FontAwesomeIcon
-                icon={faApple}
-                size={32}
-                color={colors.background.text}
-              />
-            </TouchableOpacity>
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faFacebookSquare}
+                  size={32}
+                  color={colors.background.text}
+                />
+              }
+              type="clear"
+              onPress={handleFacebookLogin}
+            />
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faGoogle}
+                  size={32}
+                  color={colors.background.text}
+                />
+              }
+              type="clear"
+              onPress={handleGoogleLogIn}
+            />
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faApple}
+                  size={32}
+                  color={colors.background.text}
+                />
+              }
+              type="clear"
+              onPress={handleAppleLogin}
+            />
           </View>
         </View>
       )}
@@ -328,98 +325,59 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      margin: wideScreen ? "25%" : 0,
+      margin: wideScreen ? "25%" : "10%",
     },
     inputContainer: {
-      width: wideScreen ? "90%" : "80%",
-      margin: 12,
+      width: "100%",
+      marginVertical: 12,
     },
     input: {
       backgroundColor: colors.input.background,
       color: colors.background.text,
       paddingHorizontal: 15,
-      paddingVertical: 10,
+      paddingVertical: 12,
       borderRadius: 10,
-      marginTop: 5,
-    },
-    buttonContainer: {
-      width: wideScreen ? "40%" : "60%",
-      margin: 12,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    button: {
-      backgroundColor: colors.primary.button,
-      width: "100%",
-      padding: 16,
-      margin: 16,
-      borderRadius: 10,
-      alignItems: "center",
-    },
-    buttonOutline: {
-      backgroundColor: colors.transparent,
-      marginTop: 5,
-      borderColor: colors.primary.button,
-      borderWidth: 2,
-    },
-    buttonText: {
-      color: colors.primary.text,
-      fontWeight: "700",
-      fontSize: 16,
-    },
-    buttonOutlineText: {
-      color: colors.primary.text,
-      fontWeight: "700",
-      fontSize: 16,
+      marginTop: 12,
     },
     errorText: {
       color: colors.danger.button,
       fontWeight: "500",
       fontSize: 12,
-      marginTop: 12,
       textTransform: "uppercase",
     },
     titleContainer: {
       alignSelf: "flex-start",
-      width: "60%",
       marginBottom: 50,
     },
     titleText: {
       color: colors.background.text,
       fontSize: 50,
       fontWeight: "bold",
-      marginLeft: 40,
     },
     descriptionText: {
       color: colors.background.text,
       fontSize: 20,
       fontWeight: "400",
-      marginLeft: 40,
-    },
-    loginText: {
-      textAlign: "center",
-      marginTop: 24,
-      color: colors.background.text,
-      fontSize: 16,
-      fontWeight: "500",
     },
     orContainer: {
       flexDirection: "row",
       alignItems: "center",
-      margin: 16,
-      width: "80%",
+      marginVertical: 16,
     },
     orLines: {
       flex: 1,
       height: 1,
       backgroundColor: colors.background.text,
-      width: 100,
     },
-    orText: { width: 50, textAlign: "center", color: colors.background.text },
+    orText: {
+      width: 50,
+      textAlign: "center",
+      color: colors.background.text,
+    },
     providerContainer: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-evenly",
-      width: "80%",
+      width: "40%",
     },
   });

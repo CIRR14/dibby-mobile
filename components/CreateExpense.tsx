@@ -1,17 +1,13 @@
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   StyleSheet,
   SafeAreaView,
   View,
   useColorScheme,
   Text,
-  TouchableOpacity,
   TextInput,
   ColorSchemeName,
-  TouchableWithoutFeedback,
-  Keyboard,
   ScrollView,
-  KeyboardAvoidingView,
   Switch,
   Dimensions,
 } from "react-native";
@@ -19,37 +15,24 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useTheme } from "@react-navigation/native";
 import { User } from "firebase/auth";
 import { db } from "../firebase";
-import {
-  faAdd,
-  faArrowDown,
-  faClose,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
+import { faClose } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
-import {
-  Timestamp,
-  addDoc,
-  collection,
-  doc,
-  onSnapshot,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { generateColor, userColors } from "../helpers/GenerateColor";
+import { Expense, Traveler, Trip } from "../constants/DibbyTypes";
+import { Timestamp, doc, updateDoc } from "firebase/firestore";
+import { Controller, useForm } from "react-hook-form";
 import "react-native-get-random-values";
 import { v4 as uuid } from "uuid";
 import {
   getInfoFromTravelerId,
   getItemFormatFromTravelerIds,
 } from "../helpers/AppHelpers";
-import { ListItemChevron } from "@rneui/base/dist/ListItem/ListItem.Chevron";
 import MultiSelect from "react-native-multiple-select";
 import RNPickerSelect from "react-native-picker-select";
 import { Platform } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import { CheckBox } from "@rneui/themed";
+import DibbyButton from "./DibbyButton";
+import TopBar from "./TopBar";
 
 interface ICreateExpenseProps {
   currentUser: User;
@@ -203,19 +186,23 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      {/* <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}> */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onPressBack}>
-          <FontAwesomeIcon
-            icon={faClose}
-            size={24}
-            color={colors.background.text}
+      <TopBar
+        title={`Add Expense to ${tripInfo?.name}`}
+        leftButton={
+          <DibbyButton
+            type="clear"
+            onPress={onPressBack}
+            title={
+              <FontAwesomeIcon
+                icon={faClose}
+                size={24}
+                color={colors.background.text}
+              />
+            }
           />
-        </TouchableOpacity>
-        <Text style={[styles.title, { flex: 1 }]}>
-          Add Expense to '{tripInfo?.name}'
-        </Text>
-      </View>
+        }
+      />
+
       <ScrollView>
         <View style={styles.content}>
           <View style={styles.inputLabelContainer}>
@@ -466,21 +453,13 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
               />
             )}
           />
-
-          <TouchableOpacity
-            style={
-              !formState.isValid
-                ? [styles.submitButton, styles.disabledButton]
-                : styles.submitButton
-            }
-            disabled={!formState.isValid}
-            onPress={handleSubmit(onSubmit)}
-          >
-            <Text style={styles.buttonText}>Add Expense</Text>
-          </TouchableOpacity>
         </View>
+        <DibbyButton
+          disabled={!formState.isValid}
+          onPress={handleSubmit(onSubmit)}
+          title={"Add Expense"}
+        />
       </ScrollView>
-      {/* </TouchableWithoutFeedback> */}
     </SafeAreaView>
   );
 };
@@ -505,12 +484,6 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       justifyContent: "center",
       margin: "auto",
       padding: 12,
-    },
-    header: {
-      display: "flex",
-      margin: 16,
-      justifyContent: "space-between",
-      flexDirection: "row",
     },
     titleContainer: {
       display: "flex",
@@ -548,6 +521,7 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       paddingVertical: 12,
       borderRadius: 12,
       marginTop: 8,
+      marginBottom: 16,
       minWidth: "90%",
     },
     submitButton: {

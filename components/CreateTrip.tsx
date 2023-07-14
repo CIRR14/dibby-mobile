@@ -5,11 +5,8 @@ import {
   View,
   useColorScheme,
   Text,
-  TouchableOpacity,
   TextInput,
   ColorSchemeName,
-  TouchableWithoutFeedback,
-  Keyboard,
   ScrollView,
   KeyboardAvoidingView,
 } from "react-native";
@@ -19,16 +16,13 @@ import { User } from "firebase/auth";
 import { db } from "../firebase";
 import { faAdd, faClose, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
+import { Expense, Traveler, TripDoc } from "../constants/DibbyTypes";
 import { Timestamp, addDoc, collection } from "firebase/firestore";
-import {
-  Controller,
-  useController,
-  useFieldArray,
-  useForm,
-} from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { generateColor, userColors } from "../helpers/GenerateColor";
 import { capitalizeName } from "../helpers/AppHelpers";
+import DibbyButton from "./DibbyButton";
+import TopBar from "./TopBar";
 
 interface ICreateTripProps {
   currentUser: User;
@@ -143,18 +137,22 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      {/* <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}> */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onPressBack}>
-          <FontAwesomeIcon
-            icon={faClose}
-            size={24}
-            color={colors.background.text}
+      <TopBar
+        title={"Add Trip"}
+        leftButton={
+          <DibbyButton
+            onPress={onPressBack}
+            type="clear"
+            title={
+              <FontAwesomeIcon
+                icon={faClose}
+                size={24}
+                color={colors.background.text}
+              />
+            }
           />
-        </TouchableOpacity>
-        <Text style={styles.title}>Add Trip</Text>
-        <View></View>
-      </View>
+        }
+      />
       <ScrollView>
         <View style={styles.content}>
           <Controller
@@ -183,7 +181,6 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
           </View>
 
           <KeyboardAvoidingView
-            style={styles.travelersContainer}
             behavior="padding"
             enabled
             keyboardVerticalOffset={150}
@@ -216,16 +213,19 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
                       )}
                     />
                     {index !== 0 && (
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => removeTraveler(index)}
-                      >
-                        <FontAwesomeIcon
-                          icon={faTrash}
-                          size={16}
-                          color={colors.danger.background}
+                      <View>
+                        <DibbyButton
+                          type="clear"
+                          onPress={() => removeTraveler(index)}
+                          title={
+                            <FontAwesomeIcon
+                              icon={faTrash}
+                              size={16}
+                              color={colors.danger.background}
+                            />
+                          }
                         />
-                      </TouchableOpacity>
+                      </View>
                     )}
                   </View>
                 );
@@ -235,36 +235,34 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
                   All travelers must have a name.
                 </Text>
               )}
-              <View style={styles.addContainer}>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={addTraveler}
+            </ScrollView>
+            <DibbyButton
+              type="clear"
+              onPress={addTraveler}
+              title={
+                <View
+                  style={{
+                    borderRadius: 100,
+                    backgroundColor: colors.primary.background,
+                    padding: 8,
+                  }}
                 >
                   <FontAwesomeIcon
-                    style={{ margin: 8 }}
                     icon={faAdd}
-                    size={16}
+                    size={24}
                     color={colors.primary.text}
                   />
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                style={
-                  !formState.isValid
-                    ? [styles.submitButton, styles.disabledButton]
-                    : styles.submitButton
-                }
-                disabled={!formState.isValid}
-                onPress={handleSubmit(onSubmit)}
-              >
-                <Text style={styles.buttonText}>Add Trip</Text>
-              </TouchableOpacity>
-            </ScrollView>
+                </View>
+              }
+            />
+            <DibbyButton
+              onPress={() => handleSubmit(onSubmit)}
+              disabled={!formState.isValid}
+              title="Add Trip"
+            />
           </KeyboardAvoidingView>
         </View>
       </ScrollView>
-
-      {/* </TouchableWithoutFeedback> */}
     </SafeAreaView>
   );
 };
@@ -274,46 +272,28 @@ export default CreateTrip;
 const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
   StyleSheet.create({
     topContainer: {
+      flex: 1,
       backgroundColor: colors.background.default,
-      height: "100%",
-    },
-    travelersContainer: {
-      flexDirection: "column",
-      justifyContent: "center",
     },
     travelerContainer: {
       display: "flex",
       flexDirection: "row",
-    },
-    deleteButton: {
-      justifyContent: "center",
-      margin: "auto",
-      padding: 12,
-    },
-    header: {
-      display: "flex",
-      margin: 16,
       justifyContent: "space-between",
-      flexDirection: "row",
     },
     titleContainer: {
-      display: "flex",
       alignItems: "center",
-      marginTop: 16,
+      marginTop: 20,
     },
     title: {
       color: colors.background.text,
       fontSize: 22,
-      width: 120,
     },
     errorText: {
       color: colors.danger.background,
       marginTop: 8,
     },
     content: {
-      backgroundColor: colors.background.default,
       margin: 16,
-      display: "flex",
     },
     input: {
       backgroundColor: colors.disabled?.button,
@@ -322,31 +302,6 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       paddingVertical: 12,
       borderRadius: 12,
       marginTop: 8,
-      minWidth: "90%",
-    },
-    submitButton: {
-      backgroundColor: colors.primary.button,
-      width: "100%",
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-      marginTop: 32,
-    },
-    disabledButton: {
-      opacity: 0.5,
-    },
-    addContainer: {
-      display: "flex",
-      alignItems: "center",
-      marginTop: 16,
-    },
-    addButton: {
-      backgroundColor: colors.primary.button,
-      borderRadius: 100,
-    },
-    buttonText: {
-      color: colors.primary.text,
-      fontWeight: "700",
-      fontSize: 16,
+      minWidth: "80%",
     },
   });

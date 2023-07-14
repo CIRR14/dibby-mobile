@@ -27,7 +27,6 @@ import { userColors } from "../helpers/GenerateColor";
 import { getInitials, numberWithCommas } from "../helpers/AppHelpers";
 
 interface ICardProps {
-  add?: boolean;
   trip?: Trip;
   expense?: Expense;
   onPress?: () => void;
@@ -40,7 +39,6 @@ interface ICardProps {
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 export const Card: React.FC<ICardProps> = ({
-  add = false,
   trip,
   expense,
   onPress,
@@ -50,7 +48,6 @@ export const Card: React.FC<ICardProps> = ({
   wideScreen,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
   const styles = makeStyles(
     colors as unknown as ThemeColors,
     wideScreen,
@@ -68,7 +65,7 @@ export const Card: React.FC<ICardProps> = ({
     dragX: Animated.AnimatedInterpolation<any>
   ) => {
     const scale = dragX.interpolate({
-      inputRange: [0, 80],
+      inputRange: [0, 50],
       outputRange: [1, 0],
       extrapolate: "clamp",
     });
@@ -112,14 +109,7 @@ export const Card: React.FC<ICardProps> = ({
     return arr;
   };
 
-  return add ? (
-    <TouchableOpacity
-      style={add ? styles.addCard : styles.card}
-      onPress={onPress}
-    >
-      <FontAwesomeIcon icon={faCirclePlus} size={24} color={colors.info.text} />
-    </TouchableOpacity>
-  ) : (
+  return (
     <Swipeable
       containerStyle={styles.card}
       renderRightActions={renderRightActions}
@@ -279,13 +269,6 @@ export const Card: React.FC<ICardProps> = ({
               <Text> Neither </Text>
             </View>
           )}
-
-          {/* {
-              trip && trip.perPerson > 0 &&
-              <Text style={[styles.text, styles.subtitle, { color: colors.success.text }]}>
-                Per Person: ${trip.perPerson}
-              </Text>
-            } */}
         </View>
       </TouchableOpacity>
     </Swipeable>
@@ -298,22 +281,6 @@ const makeStyles = (
   cardWidth?: number
 ) =>
   StyleSheet.create({
-    addCard: {
-      flex: 1,
-      display: "flex",
-      alignItems: "center",
-      position: "absolute",
-      bottom: 16,
-      margin: "auto",
-      width: "100%",
-      padding: 20,
-      borderRadius: 16,
-      backgroundColor: colors.info.button,
-      borderWidth: 1,
-      borderStyle: "solid",
-      borderColor: colors.info.background,
-      zIndex: 2000,
-    },
     card: {
       minWidth: wideScreen ? cardWidth : 0,
       margin: 8,
@@ -322,25 +289,19 @@ const makeStyles = (
       borderRadius: 16,
       display: "flex",
       justifyContent: "center",
-      // alignContent: "center",
-      // flexDirection: 'row',
-      // width: '100%'
     },
     cardContent: {
       display: "flex",
       justifyContent: "space-between",
-      // flexDirection: "column",
       flexDirection: "row",
     },
     cardTextContainer: {
-      // flexDirection: 'row',
       maxWidth: "70%",
       display: "flex",
       justifyContent: "space-between",
     },
     text: {
       color: colors.primary.text,
-      // textAlign: "center",
       padding: 8,
     },
     avatarContainer: {

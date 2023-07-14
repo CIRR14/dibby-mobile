@@ -2,7 +2,6 @@ import {
   Text,
   StyleSheet,
   View,
-  TouchableOpacity,
   TextInput,
   useColorScheme,
 } from "react-native";
@@ -10,13 +9,12 @@ import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateProfile } from "firebase/auth";
 import { useNavigation, useTheme } from "@react-navigation/native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faCamera } from "@fortawesome/free-solid-svg-icons";
 import { useUser } from "../hooks/useUser";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { Avatar } from "@rneui/themed";
 import { getInitials } from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
+import DibbyButton from "../components/DibbyButton";
 
 const CreateProfile = () => {
   const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
@@ -55,28 +53,28 @@ const CreateProfile = () => {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Complete Profile</Text>
       <View style={styles.sectionContainer}>
-        <TouchableOpacity>
-          <View style={styles.profilePictureContainer}>
-            <Avatar
-              rounded
-              source={{
-                uri: loggedInUser
-                  ? loggedInUser.photoURL || undefined
-                  : undefined,
-              }}
-              title={getInitials(loggedInUser?.displayName)}
-              titleStyle={{ color: colors.background.paper }}
-              containerStyle={{
-                backgroundColor: userColors[0].background,
-              }}
-              icon={{
-                name: "user",
-                type: "font-awesome",
-                color: colors.background.paper,
-              }}
-            />
-          </View>
-        </TouchableOpacity>
+        {/* <TouchableOpacity> */}
+        <View style={styles.profilePictureContainer}>
+          <Avatar
+            rounded
+            source={{
+              uri: loggedInUser
+                ? loggedInUser.photoURL || undefined
+                : undefined,
+            }}
+            title={getInitials(loggedInUser?.displayName)}
+            titleStyle={{ color: colors.background.paper }}
+            containerStyle={{
+              backgroundColor: userColors[0].background,
+            }}
+            icon={{
+              name: "user",
+              type: "font-awesome",
+              color: colors.background.paper,
+            }}
+          />
+        </View>
+        {/* </TouchableOpacity> */}
         <View style={styles.userNameEmailContainer}>
           <Text style={{ fontWeight: "bold", color: colors.background.text }}>
             {username || "Display Name"}
@@ -98,13 +96,7 @@ const CreateProfile = () => {
           clearButtonMode="always"
         />
       </View>
-      <TouchableOpacity
-        style={!username ? styles.disabledButton : styles.nextButton}
-        onPress={handleNext}
-        disabled={!username}
-      >
-        <Text style={styles.buttonText}>Next</Text>
-      </TouchableOpacity>
+      <DibbyButton disabled={!!!username} onPress={handleNext} title="Next" />
     </SafeAreaView>
   );
 };
@@ -151,24 +143,5 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.input.text,
       fontWeight: "bold",
       width: "100%",
-    },
-    nextButton: {
-      backgroundColor: colors.primary.button,
-      width: "100%",
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-    },
-    disabledButton: {
-      backgroundColor: colors.disabled.button,
-      width: "100%",
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-    },
-    buttonText: {
-      color: colors.primary.text,
-      fontWeight: "700",
-      fontSize: 16,
     },
   });

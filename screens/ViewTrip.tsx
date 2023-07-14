@@ -1,18 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   useColorScheme,
   StyleSheet,
-  Dimensions,
   Alert,
-  Animated,
-  ImageBackground,
-  ScrollView,
   TouchableOpacity,
   Modal,
   Platform,
-  Button,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,15 +17,7 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
 import { Avatar } from "@rneui/themed";
-import {
-  Timestamp,
-  collection,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  updateDoc,
-} from "firebase/firestore";
+import { Timestamp, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import { Card } from "../components/Card";
@@ -48,40 +35,36 @@ import {
   getAmountOfTransactionsString,
   getTransactionString,
 } from "../helpers/DibbyLogic";
-import { FontAwesome } from "@expo/vector-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
-  faArrowDown,
   faCaretDown,
   faCaretUp,
+  faChevronLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { Divider } from "@rneui/base";
 import * as Print from "expo-print";
 import { shareAsync } from "expo-sharing";
 import { generateHTML } from "../constants/PdfTemplate";
 import { wideScreen, windowWidth } from "../constants/DeviceWidth";
-import PdfScreen from "./PdfScreen";
-import { TypedNavigator, useTheme } from "@react-navigation/native";
-import { RootStackParamList } from "../types";
+import { useTheme } from "@react-navigation/native";
+import DibbyButton from "../components/DibbyButton";
+import { faFilePdf } from "@fortawesome/free-regular-svg-icons";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
 
 const ViewTrip = ({ route }: any) => {
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId } = route.params;
-  const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
-    useUser();
+  const { loggedInUser } = useUser();
   const [currentTrip, setCurrentTrip] = useState<Trip>();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [calculatedTrip, setCalculatedTrip] = useState<ITransactionResponse>();
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
   const [isCreateExpenseModalVisible, setIsCreateExpenseModalVisible] =
     useState(false);
-  // const [isPDFModalVisible, setIsPDFModalVisible] = useState(false);
 
   const [html, setHtml] = useState<string>("");
   const [loadingIndicator, setLoadingIndicator] = useState<boolean>(false);
@@ -192,10 +175,6 @@ const ViewTrip = ({ route }: any) => {
     setIsCreateExpenseModalVisible(!isCreateExpenseModalVisible);
   };
 
-  // const togglePDFModal = () => {
-  //   setIsPDFModalVisible(!isPDFModalVisible);
-  // };
-
   const printToFile = async () => {
     setLoadingIndicator(true);
     // On iOS/android prints the given html. On web prints the HTML from the current page.
@@ -219,11 +198,35 @@ const ViewTrip = ({ route }: any) => {
     <SafeAreaView style={styles.topContainer}>
       <TopBar
         title={`${tripName}`}
-        onPressBack={() => navigation.navigate("Home")}
-        exportPDF={() =>
-          Platform.OS === "web"
-            ? navigation.navigate("PrintPDF", { tripId })
-            : printToFile()
+        leftButton={
+          <DibbyButton
+            type="clear"
+            onPress={() => navigation.navigate("Home")}
+            title={
+              <FontAwesomeIcon
+                icon={faChevronLeft}
+                size={24}
+                color={colors.background.text}
+              />
+            }
+          />
+        }
+        rightButton={
+          <DibbyButton
+            onPress={() =>
+              Platform.OS === "web"
+                ? navigation.navigate("PrintPDF", { tripId })
+                : printToFile()
+            }
+            type="clear"
+            title={
+              <FontAwesomeIcon
+                icon={faFilePdf}
+                size={24}
+                color={colors.background.text}
+              />
+            }
+          />
         }
       />
       {loadingIndicator && (
@@ -498,11 +501,8 @@ const ViewTrip = ({ route }: any) => {
               </Text>
             </View>
           )}
-          <Card
-            wideScreen={wideScreen}
-            add
-            onPress={toggleCreateExpenseModal}
-          />
+
+          <DibbyButton add onPress={toggleCreateExpenseModal} />
           <Modal
             animationType="slide"
             visible={isCreateExpenseModalVisible}
@@ -516,21 +516,6 @@ const ViewTrip = ({ route }: any) => {
               />
             )}
           </Modal>
-
-          {/* <Modal
-            animationType="slide"
-            visible={isPDFModalVisible}
-            onRequestClose={togglePDFModal}
-          >
-            {loggedInUser && calculatedTrip && currentTrip && (
-              <PdfScreen
-                calculatedTrip={calculatedTrip}
-                tripInfo={currentTrip}
-                onPressBack={togglePDFModal}
-                printToFile={printToFile}
-              />
-            )}
-          </Modal> */}
         </View>
       </View>
     </SafeAreaView>
@@ -563,23 +548,14 @@ const makeStyles = (colors: ThemeColors) =>
       margin: 16,
     },
     title: {
-      //   marginLeft: 16,
-      //   marginTop: 16,
       fontSize: 20,
-      // fontWeight: 'bold',
-      // textAlign: 'center',
       color: colors.background.text,
     },
     emptyText: {
       color: colors.background.text,
       textAlign: "center",
     },
-    avatarContainer: {
-      //   display: "flex",
-      //   flexDirection: "row",
-      //   justifyContent: "center",
-      //   marginTop: 8,
-    },
+    avatarContainer: {},
     table: {
       display: "flex",
       alignSelf: "stretch",
@@ -593,17 +569,11 @@ const makeStyles = (colors: ThemeColors) =>
     },
     tableHeader: {
       paddingTop: 16,
-      // paddingHorizontal: 8,
     },
     tableText: {
       color: colors.background.text,
-      // marginHorizontal: 16,
-      // paddingHorizontal: 8,
     },
     headerText: {
-      // color: colors.background.default,
-      // marginHorizontal: 16,
-      // paddingHorizontal: 8,
       fontWeight: "bold",
     },
   });

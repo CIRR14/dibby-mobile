@@ -1,16 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   useColorScheme,
   StyleSheet,
   Dimensions,
-  Alert,
-  Animated,
-  ImageBackground,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
@@ -18,28 +12,19 @@ import { useNavigation, useTheme } from "@react-navigation/native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
-import { Avatar, Divider } from "@rneui/themed";
-import {
-  collection,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  updateDoc,
-} from "firebase/firestore";
+import { Divider } from "@rneui/themed";
+import { doc, onSnapshot } from "firebase/firestore";
 import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { db } from "../firebase";
-import { Card } from "../components/Card";
-import CreateExpense from "../components/CreateExpense";
 import {
-  getInfoFromTravelerId,
-  getInitials,
   getTravelerFromId,
   inRange,
   numberWithCommas,
   sumOfValues,
 } from "../helpers/AppHelpers";
-import { userColors } from "../helpers/GenerateColor";
+import DibbyButton from "../components/DibbyButton";
+import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 
 const windowWidth = Dimensions.get("window").width;
 const numColumns = Math.floor(windowWidth / 500);
@@ -74,8 +59,20 @@ const ViewExpense = ({ route }: any) => {
     <SafeAreaView style={styles.topContainer}>
       <TopBar
         title={`${currentExpense?.name}`}
-        onPressBack={() =>
-          navigation.navigate("ViewTrip", { tripName, tripId })
+        leftButton={
+          <DibbyButton
+            type="clear"
+            onPress={() =>
+              navigation.navigate("ViewTrip", { tripName, tripId })
+            }
+            title={
+              <FontAwesomeIcon
+                icon={faChevronLeft}
+                size={24}
+                color={colors.background.text}
+              />
+            }
+          />
         }
       />
 

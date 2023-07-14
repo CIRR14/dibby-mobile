@@ -28,11 +28,16 @@ import {
 } from "firebase/firestore";
 import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
 import CreateTrip from "../components/CreateTrip";
-import { TextInput, TouchableOpacity } from "react-native-gesture-handler";
 import { Platform } from "react-native";
 import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 
 import { REACT_APP_VERSION } from "@env";
+import DibbyButton from "../components/DibbyButton";
+import { faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { Avatar } from "@rneui/themed";
+import { userColors } from "../helpers/GenerateColor";
+import { getInitials } from "../helpers/AppHelpers";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -125,7 +130,48 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      <TopBar title="Trips" signOut={handleSignOut} user={loggedInUser} />
+      <TopBar
+        title="Trips"
+        leftButton={
+          <DibbyButton
+            type="clear"
+            onPress={handleSignOut}
+            title={
+              <FontAwesomeIcon
+                icon={faSignOutAlt}
+                size={24}
+                color={colors.background.text}
+              />
+            }
+          />
+        }
+        rightButton={
+          <DibbyButton
+            type="clear"
+            onPress={() => navigation.navigate("CreateProfile")}
+            title={
+              <Avatar
+                size="small"
+                rounded
+                title={getInitials(loggedInUser?.displayName)}
+                containerStyle={{
+                  borderWidth: 1,
+                  borderStyle: "solid",
+                  borderColor:
+                    userColors[0].border || colors.primary.background,
+                }}
+                overlayContainerStyle={{
+                  backgroundColor:
+                    userColors[0].background || colors.primary.background,
+                }}
+                titleStyle={{
+                  color: userColors[0].text || colors.primary.text,
+                }}
+              />
+            }
+          />
+        }
+      />
       {loggedInUser && (
         <View style={styles.grid}>
           {currentTrips.length > 0 ? (
@@ -156,7 +202,7 @@ const HomeScreen = () => {
               </Text>
             </View>
           )}
-          <Card add onPress={toggleCreateTripModal} wideScreen={wideScreen} />
+          <DibbyButton add onPress={toggleCreateTripModal} />
           <View
             style={{
               position: "absolute",
