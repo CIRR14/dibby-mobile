@@ -59,6 +59,7 @@ function RootNavigator() {
     <Stack.Navigator
       screenOptions={({ route }) => ({
         title: `Dibby - ${route.name}`,
+        contentStyle: { backgroundColor: "white" },
       })}
     >
       <Stack.Screen

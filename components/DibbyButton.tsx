@@ -5,11 +5,12 @@ import { useTheme } from "@react-navigation/native";
 import { Button } from "@rneui/themed";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface IButtonProps {
   onPress: () => void;
   title?: string | ReactElement<{}, string | JSXElementConstructor<any>>;
-  type?: "solid" | "clear" | "outline" | undefined;
+  type?: "solid" | "clear" | "outline";
   disabled?: boolean;
   add?: boolean;
   fullWidth?: boolean;
@@ -24,7 +25,7 @@ const DibbyButton: React.FC<IButtonProps> = ({
   fullWidth = false,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
-  const styles = makeStyles(colors as unknown as ThemeColors, fullWidth);
+  const styles = makeStyles(colors as unknown as ThemeColors, type, fullWidth);
 
   return (
     <Button
@@ -58,13 +59,29 @@ const DibbyButton: React.FC<IButtonProps> = ({
       uppercase
       radius={10}
       size={"lg"}
+      ViewComponent={LinearGradient}
+      linearGradientProps={
+        type === "solid"
+          ? {
+              colors: [colors.gradient.start, colors.gradient.end],
+              start: { x: 0, y: 0.5 },
+              end: { x: 1, y: 0.5 },
+            }
+          : {
+              colors: ["transparent"],
+            }
+      }
     />
   );
 };
 
 export default DibbyButton;
 
-const makeStyles = (colors: ThemeColors, fullWidth?: boolean) =>
+const makeStyles = (
+  colors: ThemeColors,
+  type: "solid" | "clear" | "outline",
+  fullWidth?: boolean
+) =>
   StyleSheet.create({
     buttonContainer: {
       width: fullWidth ? "100%" : "auto",
@@ -77,26 +94,23 @@ const makeStyles = (colors: ThemeColors, fullWidth?: boolean) =>
       borderColor: colors.primary.button,
     },
     buttonText: {
-      color: colors.primary.text,
+      color:
+        type === "solid" ? colors.light.background : colors.outlinedButtonText,
       fontWeight: "700",
       fontSize: 16,
     },
     addButton: {
       backgroundColor: colors.info.button,
-      paddingVertical: 16,
     },
     addButtonContainer: {
       position: "absolute",
       bottom: 16,
       width: "100%",
-      borderWidth: 2,
-      borderStyle: "solid",
-      borderColor: colors.info.background,
       zIndex: 2000,
     },
     buttonDisabled: {
       backgroundColor: colors.disabled.button,
-      opacity: 0.5,
+      opacity: 0.3,
     },
     buttonTextDisabled: {
       color: colors.disabled.text,

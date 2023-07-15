@@ -15,6 +15,7 @@ import { Avatar } from "@rneui/themed";
 import { getInitials } from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
 import DibbyButton from "../components/DibbyButton";
+import { LinearGradient } from "expo-linear-gradient";
 
 const CreateProfile = () => {
   const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
@@ -50,54 +51,67 @@ const CreateProfile = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Complete Profile</Text>
-      <View style={styles.sectionContainer}>
-        {/* <TouchableOpacity> */}
-        <View style={styles.profilePictureContainer}>
-          <Avatar
-            rounded
-            source={{
-              uri: loggedInUser
-                ? loggedInUser.photoURL || undefined
-                : undefined,
-            }}
-            title={getInitials(loggedInUser?.displayName)}
-            titleStyle={{ color: colors.background.paper }}
-            containerStyle={{
-              backgroundColor: userColors[0].background,
-            }}
-            icon={{
-              name: "user",
-              type: "font-awesome",
-              color: colors.background.paper,
-            }}
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[
+        colors.background.gradient.start,
+        colors.background.gradient.end,
+      ]}
+    >
+      <SafeAreaView style={styles.topContainer}>
+        <Text style={styles.title}>Complete Profile</Text>
+        <View style={styles.sectionContainer}>
+          {/* <TouchableOpacity> */}
+          <View style={styles.profilePictureContainer}>
+            <Avatar
+              rounded
+              source={{
+                uri: loggedInUser
+                  ? loggedInUser.photoURL || undefined
+                  : undefined,
+              }}
+              title={getInitials(loggedInUser?.displayName)}
+              titleStyle={{ color: colors.background.paper }}
+              containerStyle={{
+                backgroundColor: userColors[0].background,
+              }}
+              icon={{
+                name: "user",
+                type: "font-awesome",
+                color: colors.background.paper,
+              }}
+            />
+          </View>
+          {/* </TouchableOpacity> */}
+          <View style={styles.userNameEmailContainer}>
+            <Text style={{ fontWeight: "bold", color: colors.background.text }}>
+              {username || "Display Name"}
+            </Text>
+            <Text style={{ color: colors.background.text }}>
+              {loggedInUser?.email}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.sectionContainer}>
+          <TextInput
+            textContentType="name"
+            autoCapitalize="words"
+            placeholder="Display Name"
+            value={username}
+            placeholderTextColor={colors.input.text}
+            onChangeText={(text: string) => setUsername(text)}
+            style={styles.displayNameInput}
+            clearButtonMode="always"
           />
         </View>
-        {/* </TouchableOpacity> */}
-        <View style={styles.userNameEmailContainer}>
-          <Text style={{ fontWeight: "bold", color: colors.background.text }}>
-            {username || "Display Name"}
-          </Text>
-          <Text style={{ color: colors.background.text }}>
-            {loggedInUser?.email}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.sectionContainer}>
-        <TextInput
-          textContentType="name"
-          autoCapitalize="words"
-          placeholder="Display Name"
-          value={username}
-          placeholderTextColor={colors.input.text}
-          onChangeText={(text: string) => setUsername(text)}
-          style={styles.displayNameInput}
-          clearButtonMode="always"
+        <DibbyButton
+          fullWidth
+          disabled={!!!username}
+          onPress={handleNext}
+          title="Next"
         />
-      </View>
-      <DibbyButton disabled={!!!username} onPress={handleNext} title="Next" />
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -105,8 +119,8 @@ export default CreateProfile;
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      backgroundColor: colors.background.default,
+    topContainer: {
+      // backgroundColor: colors.background.default,
       flex: 1,
       padding: 32,
       alignItems: "center",

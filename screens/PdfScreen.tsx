@@ -13,6 +13,7 @@ import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
+import { LinearGradient } from "expo-linear-gradient";
 
 const PdfScreen = ({ route }: any) => {
   const { colors } = useTheme() as unknown as ColorTheme;
@@ -46,50 +47,58 @@ const PdfScreen = ({ route }: any) => {
   }, [loggedInUser, currentTrip]);
 
   return (
-    <SafeAreaView style={styles.topContainer}>
-      <TopBar
-        title={"Summary"}
-        leftButton={
-          <DibbyButton
-            title={
-              <FontAwesomeIcon
-                icon={faClose}
-                size={24}
-                color={colors.light.text}
-              />
-            }
-            type="clear"
-            onPress={() => navigation.goBack()}
-          />
-        }
-        rightButton={
-          <DibbyButton
-            title={
-              <FontAwesomeIcon
-                icon={faDownload}
-                size={24}
-                color={colors.light.text}
-              />
-            }
-            type="clear"
-            onPress={() => {
-              try {
-                document.execCommand("print", false, undefined);
-              } catch (e) {
-                window.print();
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[
+        colors.background.gradient.start,
+        colors.background.gradient.end,
+      ]}
+    >
+      <SafeAreaView style={styles.topContainer}>
+        <TopBar
+          title={"Summary"}
+          leftButton={
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faClose}
+                  size={24}
+                  color={colors.light.text}
+                />
               }
+              type="clear"
+              onPress={() => navigation.goBack()}
+            />
+          }
+          rightButton={
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faDownload}
+                  size={24}
+                  color={colors.light.text}
+                />
+              }
+              type="clear"
+              onPress={() => {
+                try {
+                  document.execCommand("print", false, undefined);
+                } catch (e) {
+                  window.print();
+                }
+              }}
+            />
+          }
+        />
+        {calculatedTrip && currentTrip && (
+          <div
+            dangerouslySetInnerHTML={{
+              __html: generateHTML(calculatedTrip, currentTrip),
             }}
           />
-        }
-      />
-      {calculatedTrip && currentTrip && (
-        <div
-          dangerouslySetInnerHTML={{
-            __html: generateHTML(calculatedTrip, currentTrip),
-          }}
-        />
-      )}
-    </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -99,7 +108,7 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      backgroundColor: colors.light.background,
+      // backgroundColor: colors.light.background,
       margin: 16,
     },
     title: {

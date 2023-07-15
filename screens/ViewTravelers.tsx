@@ -22,6 +22,7 @@ import { capitalizeName } from "../helpers/AppHelpers";
 import { generateColor } from "../helpers/GenerateColor";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const ViewTravelers = ({ route }: any) => {
   const { colors } = useTheme() as unknown as ColorTheme;
@@ -85,94 +86,102 @@ const ViewTravelers = ({ route }: any) => {
   };
 
   return (
-    <SafeAreaView style={styles.topContainer}>
-      <TopBar
-        title={`${currentTrip?.name}`}
-        leftButton={
-          <DibbyButton
-            type="clear"
-            onPress={() =>
-              navigation.navigate("ViewTrip", { tripName, tripId })
-            }
-            title={
-              <FontAwesomeIcon
-                icon={faChevronLeft}
-                size={24}
-                color={colors.background.text}
-              />
-            }
-          />
-        }
-      />
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[
+        colors.background.gradient.start,
+        colors.background.gradient.end,
+      ]}
+    >
+      <SafeAreaView style={styles.topContainer}>
+        <TopBar
+          title={`${currentTrip?.name}`}
+          leftButton={
+            <DibbyButton
+              type="clear"
+              onPress={() =>
+                navigation.navigate("ViewTrip", { tripName, tripId })
+              }
+              title={
+                <FontAwesomeIcon
+                  icon={faChevronLeft}
+                  size={24}
+                  color={colors.background.text}
+                />
+              }
+            />
+          }
+        />
 
-      <View
-        style={{
-          flexDirection: "column",
-          justifyContent: "space-between",
-          margin: 16,
-        }}
-      >
         <View
           style={{
-            marginTop: 16,
-            flexDirection: "row",
+            flexDirection: "column",
             justifyContent: "space-between",
-            alignItems: "center",
-            padding: 10,
-            borderRadius: 10,
+            margin: 16,
           }}
         >
-          {currentTrip?.travelers.map((t) => {
-            return (
-              <View
-                key={t.id}
-                style={{
-                  margin: 8,
-                  borderRadius: 20,
-                  backgroundColor: t.color,
-                  padding: 8,
-                  alignItems: "flex-start",
-                  flexDirection: "column",
-                }}
-              >
-                <Text style={{ color: colors.background.text, fontSize: 16 }}>
-                  {t.name}
-                </Text>
-              </View>
-            );
-          })}
+          <View
+            style={{
+              marginTop: 16,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: 10,
+              borderRadius: 10,
+            }}
+          >
+            {currentTrip?.travelers.map((t) => {
+              return (
+                <View
+                  key={t.id}
+                  style={{
+                    margin: 8,
+                    borderRadius: 20,
+                    backgroundColor: t.color,
+                    padding: 8,
+                    alignItems: "flex-start",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Text style={{ color: colors.background.text, fontSize: 16 }}>
+                    {t.name}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
         </View>
-      </View>
-      <View style={styles.formContainer}>
-        <Controller
-          control={control}
-          name="name"
-          rules={{
-            required: true,
-          }}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              placeholder="Name of Traveler"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-              clearButtonMode="always"
-              style={styles.input}
-              placeholderTextColor={colors.disabled?.text}
-            />
+        <View style={styles.formContainer}>
+          <Controller
+            control={control}
+            name="name"
+            rules={{
+              required: true,
+            }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                placeholder="Name of Traveler"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                clearButtonMode="always"
+                style={styles.input}
+                placeholderTextColor={colors.disabled?.text}
+              />
+            )}
+          />
+          {formState.errors.name && (
+            <Text style={styles.errorText}>Traveler must have a name.</Text>
           )}
-        />
-        {formState.errors.name && (
-          <Text style={styles.errorText}>Traveler must have a name.</Text>
-        )}
 
-        <DibbyButton
-          disabled={!formState.isValid}
-          title={`Add traveler to ${currentTrip?.name}`}
-          onPress={handleSubmit(onSubmit)}
-        />
-      </View>
-    </SafeAreaView>
+          <DibbyButton
+            disabled={!formState.isValid}
+            title={`Add traveler to ${currentTrip?.name}`}
+            onPress={handleSubmit(onSubmit)}
+          />
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -182,7 +191,7 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      backgroundColor: colors.background.default,
+      // backgroundColor: colors.background.default,
     },
     title: {
       fontSize: 20,

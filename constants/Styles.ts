@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { ThemeColors } from "./Colors";
 
 // TODO: Add global styles to use in components
 
@@ -22,3 +23,10 @@ export const TextStyles = StyleSheet.create({
     caption: {},
 })
 
+
+export const TopContainer = (colors: ThemeColors) => StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: colors.primary.background
+    }
+})

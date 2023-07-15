@@ -25,18 +25,17 @@ import {
 import DibbyButton from "../components/DibbyButton";
 import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { LinearGradient } from "expo-linear-gradient";
 
 const windowWidth = Dimensions.get("window").width;
 const numColumns = Math.floor(windowWidth / 500);
 
 const ViewExpense = ({ route }: any) => {
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId, expenseId } = route.params;
-  const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
-    useUser();
+  const { loggedInUser } = useUser();
   const [currentExpense, setCurrentExpense] = useState<Expense>();
   const [currentTrip, setCurrentTrip] = useState<Trip>();
 
@@ -56,142 +55,164 @@ const ViewExpense = ({ route }: any) => {
   }, [loggedInUser, tripId]);
 
   return (
-    <SafeAreaView style={styles.topContainer}>
-      <TopBar
-        title={`${currentExpense?.name}`}
-        leftButton={
-          <DibbyButton
-            type="clear"
-            onPress={() =>
-              navigation.navigate("ViewTrip", { tripName, tripId })
-            }
-            title={
-              <FontAwesomeIcon
-                icon={faChevronLeft}
-                size={24}
-                color={colors.background.text}
-              />
-            }
-          />
-        }
-      />
-
-      <View
-        style={{
-          flexDirection: "column",
-          justifyContent: "space-between",
-          margin: 16,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Text style={styles.title}>{currentExpense?.name}</Text>
-          <Text style={styles.title}>${currentExpense?.amount}</Text>
-        </View>
-
-        <View
-          style={{
-            marginTop: 16,
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            backgroundColor: getTravelerFromId(
-              currentTrip,
-              currentExpense?.payer
-            )?.color,
-            padding: 10,
-            borderRadius: 10,
-          }}
-        >
-          <Text style={{ color: colors.background.default }}>
-            {getTravelerFromId(currentTrip, currentExpense?.payer)?.name}
-          </Text>
-          <Text style={{ color: colors.background.default }}>
-            $
-            {numberWithCommas(
-              getTravelerFromId(
-                currentTrip,
-                currentExpense?.payer
-              )?.owed.toString()
-            )}
-          </Text>
-        </View>
-
-        {currentExpense && (
-          <FlatList
-            data={currentExpense.peopleInExpense.filter(
-              (p) => p !== currentExpense.payer
-            )}
-            key={numColumns}
-            numColumns={numColumns}
-            listKey={numColumns.toString()}
-            keyExtractor={(item) => item}
-            style={{ marginVertical: 16 }}
-            renderItem={({ item }) => {
-              const traveler: Traveler | undefined = getTravelerFromId(
-                currentTrip,
-                item
-              );
-              return (
-                <View
-                  style={{
-                    marginTop: 16,
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    backgroundColor: traveler?.color,
-                    padding: 10,
-                    borderRadius: 10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: colors.background.default,
-                    }}
-                  >
-                    {traveler?.name}
-                  </Text>
-                  <Text
-                    style={{
-                      color: colors.background.default,
-                    }}
-                  >
-                    {traveler && Math.sign(traveler?.owed) === -1
-                      ? `($${numberWithCommas(
-                          Math.abs(traveler.owed).toString()
-                        )})`
-                      : `$${numberWithCommas(traveler?.owed.toString())}`}
-                  </Text>
-                </View>
-              );
-            }}
-          />
-        )}
-        <Divider
-          color={colors.disabled.button}
-          style={{
-            marginBottom: 16,
-          }}
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[
+        colors.background.gradient.start,
+        colors.background.gradient.end,
+      ]}
+    >
+      <SafeAreaView style={styles.topContainer}>
+        <TopBar
+          title={`${currentExpense?.name}`}
+          leftButton={
+            <DibbyButton
+              type="clear"
+              onPress={() =>
+                navigation.navigate("ViewTrip", { tripName, tripId })
+              }
+              title={
+                <FontAwesomeIcon
+                  icon={faChevronLeft}
+                  size={24}
+                  color={colors.background.text}
+                />
+              }
+            />
+          }
         />
 
         <View
           style={{
-            flexDirection: "row",
+            flexDirection: "column",
             justifyContent: "space-between",
-            alignItems: "center",
-            padding: 10,
-            borderRadius: 10,
+            margin: 16,
           }}
         >
-          <Text></Text>
-          <Text
+          <View
             style={{
-              color: inRange(
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={styles.title}>{currentExpense?.name}</Text>
+            <Text style={styles.title}>${currentExpense?.amount}</Text>
+          </View>
+
+          <View
+            style={{
+              marginTop: 16,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              backgroundColor: getTravelerFromId(
+                currentTrip,
+                currentExpense?.payer
+              )?.color,
+              padding: 10,
+              borderRadius: 10,
+            }}
+          >
+            <Text style={{ color: colors.background.default }}>
+              {getTravelerFromId(currentTrip, currentExpense?.payer)?.name}
+            </Text>
+            <Text style={{ color: colors.background.default }}>
+              $
+              {numberWithCommas(
+                getTravelerFromId(
+                  currentTrip,
+                  currentExpense?.payer
+                )?.owed.toString()
+              )}
+            </Text>
+          </View>
+
+          {currentExpense && (
+            <FlatList
+              data={currentExpense.peopleInExpense.filter(
+                (p) => p !== currentExpense.payer
+              )}
+              key={numColumns}
+              numColumns={numColumns}
+              listKey={numColumns.toString()}
+              keyExtractor={(item) => item}
+              style={{ marginVertical: 16 }}
+              renderItem={({ item }) => {
+                const traveler: Traveler | undefined = getTravelerFromId(
+                  currentTrip,
+                  item
+                );
+                return (
+                  <View
+                    style={{
+                      marginTop: 16,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      backgroundColor: traveler?.color,
+                      padding: 10,
+                      borderRadius: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.background.default,
+                      }}
+                    >
+                      {traveler?.name}
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.background.default,
+                      }}
+                    >
+                      {traveler && Math.sign(traveler?.owed) === -1
+                        ? `($${numberWithCommas(
+                            Math.abs(traveler.owed).toString()
+                          )})`
+                        : `$${numberWithCommas(traveler?.owed.toString())}`}
+                    </Text>
+                  </View>
+                );
+              }}
+            />
+          )}
+          <Divider
+            color={colors.disabled.button}
+            style={{
+              marginBottom: 16,
+            }}
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: 10,
+              borderRadius: 10,
+            }}
+          >
+            <Text></Text>
+            <Text
+              style={{
+                color: inRange(
+                  sumOfValues(
+                    currentExpense?.peopleInExpense.map((p: string) => {
+                      const traveler = getTravelerFromId(currentTrip, p);
+                      return traveler!!.owed;
+                    })
+                  ),
+                  -0.01,
+                  0.01
+                )
+                  ? colors.info.button
+                  : colors.danger.button,
+              }}
+            >
+              $
+              {inRange(
                 sumOfValues(
                   currentExpense?.peopleInExpense.map((p: string) => {
                     const traveler = getTravelerFromId(currentTrip, p);
@@ -201,41 +222,27 @@ const ViewExpense = ({ route }: any) => {
                 -0.01,
                 0.01
               )
-                ? colors.info.button
-                : colors.danger.button,
-            }}
-          >
-            $
-            {inRange(
-              sumOfValues(
-                currentExpense?.peopleInExpense.map((p: string) => {
-                  const traveler = getTravelerFromId(currentTrip, p);
-                  return traveler!!.owed;
-                })
-              ),
-              -0.01,
-              0.01
-            )
-              ? Math.sign(
-                  sumOfValues(
+                ? Math.sign(
+                    sumOfValues(
+                      currentExpense?.peopleInExpense.map((p: string) => {
+                        const traveler = getTravelerFromId(currentTrip, p);
+                        return traveler!!.owed;
+                      })
+                    )
+                  ) === -1
+                  ? -0.01
+                  : 0.01
+                : sumOfValues(
                     currentExpense?.peopleInExpense.map((p: string) => {
                       const traveler = getTravelerFromId(currentTrip, p);
                       return traveler!!.owed;
                     })
-                  )
-                ) === -1
-                ? -0.01
-                : 0.01
-              : sumOfValues(
-                  currentExpense?.peopleInExpense.map((p: string) => {
-                    const traveler = getTravelerFromId(currentTrip, p);
-                    return traveler!!.owed;
-                  })
-                )}
-          </Text>
+                  )}
+            </Text>
+          </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -245,7 +252,7 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      backgroundColor: colors.background.default,
+      // backgroundColor: colors.background.default,
     },
     title: {
       fontSize: 20,
