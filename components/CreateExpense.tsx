@@ -426,6 +426,8 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                 label="Per Person"
                 value={typeof value === "number" ? `${value.toString()}` : "0"}
                 placeholder="Per Person Average"
+                disabled
+                clearButtonMode="never"
                 onChangeText={onChange}
               />
             )}

@@ -164,7 +164,7 @@ export const darkTheme: ThemeColors = {
   },
   disabled: {
     background: '#b4b5b5',
-    text: '#eaeaea',
+    text: '#a6a6a6',
     button: '#6a6a6a'
   },
   input: {

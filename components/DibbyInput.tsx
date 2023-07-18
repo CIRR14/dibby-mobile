@@ -38,8 +38,8 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
   onSubmitEditing = () => {},
   keyboardType = "default",
   clearButtonMode = "always",
-  secureTextEntry = false,
-  disabled = true,
+  secureTextEntry,
+  disabled,
   returnKeyType = "next",
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
@@ -58,7 +58,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
         clearButtonMode={clearButtonMode}
         secureTextEntry={secureTextEntry}
         placeholderTextColor={colors.disabled.text}
-        editable={disabled}
+        disabled={disabled}
         returnKeyType={returnKeyType}
         onSubmitEditing={onSubmitEditing}
         inputContainerStyle={{ borderBottomWidth: 0 }}
