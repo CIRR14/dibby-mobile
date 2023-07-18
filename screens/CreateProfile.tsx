@@ -1,31 +1,23 @@
-import {
-  Text,
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  TextInput,
-  useColorScheme,
-} from "react-native";
+import { Text, StyleSheet, View } from "react-native";
 import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateProfile } from "firebase/auth";
 import { useNavigation, useTheme } from "@react-navigation/native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faCamera } from "@fortawesome/free-solid-svg-icons";
 import { useUser } from "../hooks/useUser";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { Avatar } from "@rneui/themed";
 import { getInitials } from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
+import DibbyButton from "../components/DibbyButton";
+import { LinearGradient } from "expo-linear-gradient";
+import DibbyInput from "../components/DibbyInput";
 
 const CreateProfile = () => {
-  const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
-    useUser();
+  const { username, loggedInUser, photoURL, setUsername } = useUser();
 
   const navigation = useNavigation();
 
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   useEffect(() => {
@@ -52,10 +44,13 @@ const CreateProfile = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Complete Profile</Text>
-      <View style={styles.sectionContainer}>
-        <TouchableOpacity>
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[...colors.background.gradient]}
+    >
+      <SafeAreaView>
+        <Text style={styles.title}>Complete Profile</Text>
+        <View style={styles.sectionContainer}>
           <View style={styles.profilePictureContainer}>
             <Avatar
               rounded
@@ -76,36 +71,28 @@ const CreateProfile = () => {
               }}
             />
           </View>
-        </TouchableOpacity>
-        <View style={styles.userNameEmailContainer}>
-          <Text style={{ fontWeight: "bold", color: colors.background.text }}>
-            {username || "Display Name"}
-          </Text>
-          <Text style={{ color: colors.background.text }}>
-            {loggedInUser?.email}
-          </Text>
+          <View style={styles.userNameEmailContainer}>
+            <Text style={{ fontWeight: "bold", color: colors.background.text }}>
+              {username || "Display Name"}
+            </Text>
+            <Text style={{ color: colors.background.text }}>
+              {loggedInUser?.email}
+            </Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.sectionContainer}>
-        <TextInput
-          textContentType="name"
-          autoCapitalize="words"
+        <DibbyInput
           placeholder="Display Name"
           value={username}
-          placeholderTextColor={colors.input.text}
-          onChangeText={(text: string) => setUsername(text)}
-          style={styles.displayNameInput}
-          clearButtonMode="always"
+          onChangeText={setUsername}
         />
-      </View>
-      <TouchableOpacity
-        style={!username ? styles.disabledButton : styles.nextButton}
-        onPress={handleNext}
-        disabled={!username}
-      >
-        <Text style={styles.buttonText}>Next</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        <DibbyButton
+          fullWidth
+          disabled={!!!username}
+          onPress={handleNext}
+          title="Next"
+        />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -113,8 +100,7 @@ export default CreateProfile;
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      backgroundColor: colors.background.default,
+    topContainer: {
       flex: 1,
       padding: 32,
       alignItems: "center",
@@ -146,29 +132,5 @@ const makeStyles = (colors: ThemeColors) =>
     userNameEmailContainer: {
       alignItems: "flex-start",
       paddingLeft: 20,
-    },
-    displayNameInput: {
-      color: colors.input.text,
-      fontWeight: "bold",
-      width: "100%",
-    },
-    nextButton: {
-      backgroundColor: colors.primary.button,
-      width: "100%",
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-    },
-    disabledButton: {
-      backgroundColor: colors.disabled.button,
-      width: "100%",
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-    },
-    buttonText: {
-      color: colors.primary.text,
-      fontWeight: "700",
-      fontSize: 16,
     },
   });

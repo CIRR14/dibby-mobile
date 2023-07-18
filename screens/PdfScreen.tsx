@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  StyleSheet,
-  SafeAreaView,
-  View,
-  useColorScheme,
-  Text,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, SafeAreaView, useColorScheme } from "react-native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useTheme } from "@react-navigation/native";
 import { faClose, faDownload } from "@fortawesome/free-solid-svg-icons";
@@ -15,19 +8,19 @@ import { Trip, TripDoc } from "../constants/DibbyTypes";
 import { ITransactionResponse, calculateTrip } from "../helpers/DibbyLogic";
 import { generateHTML } from "../constants/PdfTemplate";
 import { useNavigation } from "@react-navigation/core";
-import { ScrollView } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
 import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../firebase";
+import TopBar from "../components/TopBar";
+import DibbyButton from "../components/DibbyButton";
+import { LinearGradient } from "expo-linear-gradient";
 
 const PdfScreen = ({ route }: any) => {
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripId } = route.params;
-  const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
-    useUser();
+  const { loggedInUser } = useUser();
 
   const [calculatedTrip, setCalculatedTrip] = useState<ITransactionResponse>();
   const [currentTrip, setCurrentTrip] = useState<Trip>();
@@ -54,36 +47,58 @@ const PdfScreen = ({ route }: any) => {
   }, [loggedInUser, currentTrip]);
 
   return (
-    <SafeAreaView style={styles.topContainer}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <FontAwesomeIcon icon={faClose} size={24} color={colors.light.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Summary</Text>
-        <TouchableOpacity
-          onPress={() => {
-            try {
-              document.execCommand("print", false, undefined);
-            } catch (e) {
-              window.print();
-            }
-          }}
-        >
-          <FontAwesomeIcon
-            icon={faDownload}
-            size={24}
-            style={{ color: colors.light.text }}
-          />
-        </TouchableOpacity>
-      </View>
-      {calculatedTrip && currentTrip && (
-        <div
-          dangerouslySetInnerHTML={{
-            __html: generateHTML(calculatedTrip, currentTrip),
-          }}
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[
+        colors.background.gradient.start,
+        colors.background.gradient.end,
+      ]}
+    >
+      <SafeAreaView style={styles.topContainer}>
+        <TopBar
+          title={"Summary"}
+          leftButton={
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faClose}
+                  size={24}
+                  color={colors.light.text}
+                />
+              }
+              type="clear"
+              onPress={() => navigation.goBack()}
+            />
+          }
+          rightButton={
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faDownload}
+                  size={24}
+                  color={colors.light.text}
+                />
+              }
+              type="clear"
+              onPress={() => {
+                try {
+                  document.execCommand("print", false, undefined);
+                } catch (e) {
+                  window.print();
+                }
+              }}
+            />
+          }
         />
-      )}
-    </SafeAreaView>
+        {calculatedTrip && currentTrip && (
+          <div
+            dangerouslySetInnerHTML={{
+              __html: generateHTML(calculatedTrip, currentTrip),
+            }}
+          />
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -92,15 +107,9 @@ export default PdfScreen;
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
-      backgroundColor: colors.light.background,
+      flex: 1,
+      // backgroundColor: colors.light.background,
       margin: 16,
-      // height: "100%",
-      // flex: 1,
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      flexDirection: "row",
     },
     title: {
       color: colors.light.text,

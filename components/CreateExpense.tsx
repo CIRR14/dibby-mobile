@@ -1,17 +1,10 @@
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   StyleSheet,
   SafeAreaView,
   View,
-  useColorScheme,
   Text,
-  TouchableOpacity,
-  TextInput,
-  ColorSchemeName,
-  TouchableWithoutFeedback,
-  Keyboard,
   ScrollView,
-  KeyboardAvoidingView,
   Switch,
   Dimensions,
 } from "react-native";
@@ -19,37 +12,25 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useTheme } from "@react-navigation/native";
 import { User } from "firebase/auth";
 import { db } from "../firebase";
-import {
-  faAdd,
-  faArrowDown,
-  faClose,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
+import { faClose } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
-import {
-  Timestamp,
-  addDoc,
-  collection,
-  doc,
-  onSnapshot,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { generateColor, userColors } from "../helpers/GenerateColor";
+import { Expense, Traveler, Trip } from "../constants/DibbyTypes";
+import { Timestamp, doc, updateDoc } from "firebase/firestore";
+import { Controller, useForm } from "react-hook-form";
 import "react-native-get-random-values";
 import { v4 as uuid } from "uuid";
 import {
   getInfoFromTravelerId,
   getItemFormatFromTravelerIds,
 } from "../helpers/AppHelpers";
-import { ListItemChevron } from "@rneui/base/dist/ListItem/ListItem.Chevron";
 import MultiSelect from "react-native-multiple-select";
 import RNPickerSelect from "react-native-picker-select";
 import { Platform } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import { CheckBox } from "@rneui/themed";
+import DibbyButton from "./DibbyButton";
+import TopBar from "./TopBar";
+import DibbyInput from "./DibbyInput";
 
 interface ICreateExpenseProps {
   currentUser: User;
@@ -67,8 +48,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   tripInfo,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
-  const styles = makeStyles(colors as unknown as ThemeColors, theme);
+  const styles = makeStyles(colors as unknown as ThemeColors);
 
   const initialValues: Expense = {
     id: "",
@@ -203,26 +183,25 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
 
   return (
     <SafeAreaView style={styles.topContainer}>
-      {/* <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}> */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onPressBack}>
-          <FontAwesomeIcon
-            icon={faClose}
-            size={24}
-            color={colors.background.text}
+      <TopBar
+        title={`Add Expense to ${tripInfo?.name}`}
+        leftButton={
+          <DibbyButton
+            type="clear"
+            onPress={onPressBack}
+            title={
+              <FontAwesomeIcon
+                icon={faClose}
+                size={24}
+                color={colors.background.text}
+              />
+            }
           />
-        </TouchableOpacity>
-        <Text style={[styles.title, { flex: 1 }]}>
-          Add Expense to '{tripInfo?.name}'
-        </Text>
-      </View>
+        }
+      />
+
       <ScrollView>
         <View style={styles.content}>
-          <View style={styles.inputLabelContainer}>
-            <Text style={styles.inputLabel} numberOfLines={1}>
-              Name of expense
-            </Text>
-          </View>
           <Controller
             control={control}
             name="name"
@@ -235,14 +214,12 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                 ),
             }}
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
+              <DibbyInput
+                label="Name of Expense"
                 placeholder="Name of Expense"
                 onBlur={onBlur}
-                onChangeText={onChange}
+                onChangeText={(val) => onChange(val as string)}
                 value={value}
-                clearButtonMode="always"
-                style={styles.input}
-                placeholderTextColor={colors.disabled.text}
               />
             )}
           />
@@ -250,11 +227,6 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             <Text style={styles.errorText}>Expense must have a name.</Text>
           )}
 
-          <View style={styles.inputLabelContainer}>
-            <Text style={styles.inputLabel} numberOfLines={1}>
-              Expense Amount
-            </Text>
-          </View>
           <Controller
             control={control}
             name="amount"
@@ -264,16 +236,15 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             }}
             defaultValue={0}
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
+              <DibbyInput
+                label={"Expense Amount"}
+                money
                 keyboardType="numeric"
                 value={value.toString()}
                 placeholder="How much did this cost?"
                 onBlur={onBlur}
                 returnKeyType="done"
-                onChangeText={(text) => onChange(text)}
-                style={styles.input}
-                clearButtonMode="always"
-                placeholderTextColor={colors.disabled.text}
+                onChangeText={onChange}
               />
             )}
           />
@@ -281,7 +252,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             <Text style={styles.errorText}>Expense must cost something.</Text>
           )}
 
-          <View style={styles.inputLabelContainer}>
+          <View>
             <Text style={styles.inputLabel} numberOfLines={1}>
               Payer
             </Text>
@@ -356,181 +327,129 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             }}
           />
 
-          <View style={styles.inputLabelContainer}>
+          <View style={styles.inputContainer}>
             <Text style={styles.inputLabel} numberOfLines={1}>
               People In Expense
             </Text>
+            <Controller
+              control={control}
+              name="peopleInExpense"
+              rules={{
+                required: true,
+                validate: (value) => value.length > 0,
+              }}
+              defaultValue={[]}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <MultiSelect
+                  items={
+                    tripInfo
+                      ? getItemFormatFromTravelerIds(tripInfo)
+                      : [currentUser.uid]
+                  }
+                  styleDropdownMenuSubsection={{
+                    paddingLeft: 16,
+                    borderRadius: 10,
+                    backgroundColor: colors.input.background,
+                  }}
+                  textColor={colors.input.text}
+                  styleListContainer={{
+                    backgroundColor: colors.input.background,
+                  }}
+                  searchInputStyle={{
+                    backgroundColor: colors.input.background,
+                  }}
+                  uniqueKey={"key"}
+                  onSelectedItemsChange={onChange}
+                  onAddItem={onChange}
+                  onToggleList={onBlur}
+                  selectedItems={value}
+                  selectText={getSelectText(value, "label")}
+                  displayKey="label"
+                  submitButtonText="Done"
+                  selectedItemTextColor={colors.info.button}
+                  selectedItemIconColor={colors.info.button}
+                  itemTextColor={colors.input.text}
+                  submitButtonColor={colors.info.button}
+                  tagRemoveIconColor={colors.danger.button}
+                  tagBorderColor={colors.info.button}
+                  tagTextColor={colors.info.button}
+                  styleMainWrapper={{
+                    marginTop: 8,
+                  }}
+                />
+              )}
+            />
           </View>
-          <Controller
-            control={control}
-            name="peopleInExpense"
-            rules={{
-              required: true,
-              validate: (value) => value.length > 0,
-            }}
-            defaultValue={[]}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <MultiSelect
-                items={
-                  tripInfo
-                    ? getItemFormatFromTravelerIds(tripInfo)
-                    : [currentUser.uid]
-                }
-                styleDropdownMenuSubsection={{
-                  paddingLeft: 16,
-                  borderRadius: 10,
-                  backgroundColor: colors.input.background,
-                }}
-                textColor={colors.input.text}
-                styleListContainer={{
-                  backgroundColor: colors.input.background,
-                }}
-                searchInputStyle={{
-                  backgroundColor: colors.input.background,
-                }}
-                uniqueKey={"key"}
-                onSelectedItemsChange={onChange}
-                onAddItem={onChange}
-                onToggleList={onBlur}
-                selectedItems={value}
-                selectText={getSelectText(value, "label")}
-                displayKey="label"
-                submitButtonText="Done"
-                selectedItemTextColor={colors.info.button}
-                selectedItemIconColor={colors.info.button}
-                itemTextColor={colors.input.text}
-                submitButtonColor={colors.info.button}
-                tagRemoveIconColor={colors.danger.button}
-                tagBorderColor={colors.info.button}
-                tagTextColor={colors.info.button}
-                styleMainWrapper={{
-                  marginTop: 8,
-                }}
-              />
-            )}
-          />
           {formState.errors.peopleInExpense && (
             <Text style={styles.errorText}>Select at least one user.</Text>
           )}
 
-          <View style={styles.inputLabelContainer}>
+          <View style={styles.inputContainer}>
             <Text style={styles.inputLabel} numberOfLines={1}>
               Equal Amounts?
             </Text>
+            <Controller
+              control={control}
+              name="equal"
+              rules={{
+                required: true,
+              }}
+              defaultValue={true}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Switch
+                  trackColor={{
+                    false: colors.disabled.button,
+                    true: colors.primary.text,
+                  }}
+                  thumbColor={
+                    value ? colors.info.button : colors.background.paper
+                  }
+                  ios_backgroundColor={colors.disabled.button}
+                  onValueChange={onChange}
+                  value={value}
+                  disabled={true}
+                  style={{
+                    marginTop: 8,
+                  }}
+                />
+              )}
+            />
           </View>
-          <Controller
-            control={control}
-            name="equal"
-            rules={{
-              required: true,
-            }}
-            defaultValue={true}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Switch
-                trackColor={{
-                  false: colors.disabled.button,
-                  true: colors.primary.text,
-                }}
-                thumbColor={
-                  value ? colors.info.button : colors.background.paper
-                }
-                ios_backgroundColor={colors.disabled.button}
-                onValueChange={onChange}
-                value={value}
-                disabled={true}
-                style={{
-                  marginTop: 8,
-                }}
-              />
-            )}
-          />
 
-          <View style={styles.inputLabelContainer}>
-            <Text style={styles.inputLabel} numberOfLines={1}>
-              Per Person
-            </Text>
-          </View>
           <Controller
             control={control}
             name="perPerson"
             defaultValue={0}
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                editable={false}
-                selectTextOnFocus={false}
-                value={
-                  typeof value === "number" ? `$${value.toString()}` : "$0"
-                }
-                style={[styles.input]}
-                placeholderTextColor={colors.disabled.text}
+              <DibbyInput
+                money
+                label="Per Person"
+                value={typeof value === "number" ? `${value.toString()}` : "0"}
+                placeholder="Per Person Average"
+                disabled
+                clearButtonMode="never"
+                onChangeText={onChange}
               />
             )}
           />
-
-          <TouchableOpacity
-            style={
-              !formState.isValid
-                ? [styles.submitButton, styles.disabledButton]
-                : styles.submitButton
-            }
-            disabled={!formState.isValid}
-            onPress={handleSubmit(onSubmit)}
-          >
-            <Text style={styles.buttonText}>Add Expense</Text>
-          </TouchableOpacity>
         </View>
+        <DibbyButton
+          disabled={!formState.isValid}
+          onPress={handleSubmit(onSubmit)}
+          title={"Add Expense"}
+        />
       </ScrollView>
-      {/* </TouchableWithoutFeedback> */}
     </SafeAreaView>
   );
 };
 
 export default CreateExpense;
 
-const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
+const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       backgroundColor: colors.background.default,
       flex: 1,
-    },
-    travelersContainer: {
-      flexDirection: "column",
-      justifyContent: "center",
-    },
-    travelerContainer: {
-      display: "flex",
-      flexDirection: "row",
-    },
-    deleteButton: {
-      justifyContent: "center",
-      margin: "auto",
-      padding: 12,
-    },
-    header: {
-      display: "flex",
-      margin: 16,
-      justifyContent: "space-between",
-      flexDirection: "row",
-    },
-    titleContainer: {
-      display: "flex",
-      alignItems: "center",
-      marginTop: 16,
-    },
-    title: {
-      color: colors.background.text,
-      fontSize: 20,
-      textAlign: "center",
-    },
-    inputLabelContainer: {
-      display: "flex",
-      alignItems: "flex-start",
-      marginTop: 20,
-    },
-    inputLabel: {
-      color: colors.input.text,
-      fontSize: 16,
-      textAlign: "left",
     },
     errorText: {
       color: colors.danger.button,
@@ -541,38 +460,13 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
       margin: 16,
       display: "flex",
     },
-    input: {
-      backgroundColor: colors.input.background,
+    inputContainer: {
+      marginVertical: 12,
+    },
+    inputLabel: {
       color: colors.input.text,
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 12,
-      marginTop: 8,
-      minWidth: "90%",
-    },
-    submitButton: {
-      backgroundColor: colors.primary.button,
-      width: "100%",
-      padding: 15,
-      borderRadius: 10,
-      alignItems: "center",
-      marginTop: 32,
-    },
-    disabledButton: {
-      opacity: 0.5,
-    },
-    addContainer: {
-      display: "flex",
-      alignItems: "center",
-      marginTop: 16,
-    },
-    addButton: {
-      backgroundColor: colors.primary.card,
-      borderRadius: 100,
-    },
-    buttonText: {
-      color: colors.primary.text,
-      fontWeight: "700",
       fontSize: 16,
+      textAlign: "left",
+      marginBottom: 12,
     },
   });

@@ -1,13 +1,4 @@
-import {
-  Dimensions,
-  FlatList,
-  Modal,
-  StyleSheet,
-  View,
-  useColorScheme,
-  Text,
-  Alert,
-} from "react-native";
+import { FlatList, Modal, StyleSheet, View, Text, Alert } from "react-native";
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
@@ -15,7 +6,7 @@ import { signOut } from "firebase/auth";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { useUser } from "../hooks/useUser";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Card } from "../components/Card";
+import { DibbyCard } from "../components/DibbyCard";
 import TopBar from "../components/TopBar";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import {
@@ -28,11 +19,17 @@ import {
 } from "firebase/firestore";
 import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
 import CreateTrip from "../components/CreateTrip";
-import { TextInput, TouchableOpacity } from "react-native-gesture-handler";
 import { Platform } from "react-native";
 import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 
 import { REACT_APP_VERSION } from "@env";
+import DibbyButton from "../components/DibbyButton";
+import { faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { Avatar } from "@rneui/themed";
+import { userColors } from "../helpers/GenerateColor";
+import { getInitials } from "../helpers/AppHelpers";
+import { LinearGradient } from "expo-linear-gradient";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -43,11 +40,9 @@ const HomeScreen = () => {
     useState(false);
 
   const navigation = useNavigation();
-  const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
-    useUser();
+  const { loggedInUser } = useUser();
 
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   useEffect(() => {
@@ -124,74 +119,119 @@ const HomeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.topContainer}>
-      <TopBar title="Trips" signOut={handleSignOut} user={loggedInUser} />
-      {loggedInUser && (
-        <View style={styles.grid}>
-          {currentTrips.length > 0 ? (
-            <FlatList
-              key={numColumns}
-              data={currentTrips}
-              renderItem={({ item }) => (
-                <Card
-                  wideScreen={wideScreen}
-                  cardWidth={cardWidth}
-                  trip={item}
-                  onDeleteItem={() => deleteAlert(item)}
-                  onPress={() =>
-                    navigation.navigate("ViewTrip", {
-                      tripName: item.name,
-                      tripId: item.id,
-                    })
-                  }
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[...colors.background.gradient]}
+    >
+      <SafeAreaView style={styles.topContainer}>
+        <TopBar
+          title="Trips"
+          leftButton={
+            <DibbyButton
+              type="clear"
+              onPress={handleSignOut}
+              title={
+                <FontAwesomeIcon
+                  icon={faSignOutAlt}
+                  size={24}
+                  color={colors.background.text}
                 />
-              )}
-              keyExtractor={(trip) => trip.id}
-              numColumns={numColumns}
+              }
             />
-          ) : (
-            <View>
-              <Text style={styles.emptyText}>
-                No trips yet. Add some below!
-              </Text>
-            </View>
-          )}
-          <Card add onPress={toggleCreateTripModal} wideScreen={wideScreen} />
-          <View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              width: "100%",
-              alignItems: "center",
-              zIndex: 1999,
-            }}
-          >
-            <Text
+          }
+          rightButton={
+            <DibbyButton
+              type="clear"
+              onPress={() => navigation.navigate("CreateProfile")}
+              title={
+                <Avatar
+                  size="small"
+                  rounded
+                  title={getInitials(loggedInUser?.displayName)}
+                  containerStyle={{
+                    borderWidth: 1,
+                    borderStyle: "solid",
+                    borderColor: colors.dark.background,
+                  }}
+                  overlayContainerStyle={{
+                    backgroundColor:
+                      userColors[0].background || colors.primary.background,
+                  }}
+                  titleStyle={{
+                    color: userColors[0].text || colors.primary.text,
+                  }}
+                />
+              }
+            />
+          }
+        />
+        {loggedInUser && (
+          <View style={styles.grid}>
+            {currentTrips.length > 0 ? (
+              <FlatList
+                key={numColumns}
+                data={currentTrips}
+                renderItem={({ item }) => (
+                  <DibbyCard
+                    wideScreen={wideScreen}
+                    cardWidth={cardWidth}
+                    trip={item}
+                    onDeleteItem={() => deleteAlert(item)}
+                    onPress={() =>
+                      navigation.navigate("ViewTrip", {
+                        tripName: item.name,
+                        tripId: item.id,
+                      })
+                    }
+                  />
+                )}
+                keyExtractor={(trip) => trip.id}
+                numColumns={numColumns}
+              />
+            ) : (
+              <View>
+                <Text style={styles.emptyText}>
+                  No trips yet. Add some below!
+                </Text>
+              </View>
+            )}
+            <DibbyButton add onPress={toggleCreateTripModal} />
+            <View
               style={{
-                fontSize: 10,
-                color: colors.background.text,
+                position: "absolute",
+                bottom: 0,
+                width: "100%",
+                alignItems: "center",
+                zIndex: 1999,
               }}
             >
-              {Platform.OS === "web"
-                ? process.env.REACT_APP_VERSION
-                : REACT_APP_VERSION}
-            </Text>
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: colors.background.text,
+                }}
+              >
+                {Platform.OS === "web"
+                  ? process.env.REACT_APP_VERSION
+                  : REACT_APP_VERSION}
+              </Text>
+            </View>
+            <Modal
+              animationType="slide"
+              visible={isCreateTripModalVisible}
+              onRequestClose={toggleCreateTripModal}
+            >
+              {loggedInUser && (
+                <CreateTrip
+                  currentUser={loggedInUser}
+                  onPressBack={toggleCreateTripModal}
+                />
+              )}
+            </Modal>
           </View>
-          <Modal
-            animationType="slide"
-            visible={isCreateTripModalVisible}
-            onRequestClose={toggleCreateTripModal}
-          >
-            {loggedInUser && (
-              <CreateTrip
-                currentUser={loggedInUser}
-                onPressBack={toggleCreateTripModal}
-              />
-            )}
-          </Modal>
-        </View>
-      )}
-    </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
@@ -201,7 +241,6 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      backgroundColor: colors.background.default,
     },
     grid: {
       flex: 1,
@@ -209,7 +248,7 @@ const makeStyles = (colors: ThemeColors) =>
       margin: 16,
     },
     emptyText: {
-      color: colors.primary.text,
+      color: colors.background.text,
       textAlign: "center",
     },
   });

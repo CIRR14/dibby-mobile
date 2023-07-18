@@ -1,12 +1,4 @@
-import {
-  KeyboardAvoidingView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  useColorScheme,
-} from "react-native";
+import { KeyboardAvoidingView, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
   appleProvider,
@@ -16,7 +8,6 @@ import {
 } from "../firebase";
 import {
   createUserWithEmailAndPassword,
-  GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -36,6 +27,9 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { Platform } from "react-native";
 import { wideScreen } from "../constants/DeviceWidth";
 import { REACT_APP_VERSION } from "@env";
+import DibbyButton from "../components/DibbyButton";
+import { LinearGradient } from "expo-linear-gradient";
+import DibbyInput from "../components/DibbyInput";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -52,7 +46,6 @@ const LoginScreen = () => {
   const navigation = useNavigation();
 
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   useEffect(() => {
@@ -113,20 +106,13 @@ const LoginScreen = () => {
   // };
 
   const handleSignUp = () => {
-    // add an extra field to verify password
     setPasswordVerificationRequired(true);
     setMethod("signUp");
     if (isPasswordValid() && isPasswordVerified()) {
       createUserWithEmailAndPassword(auth, email, password)
         .then(async (userCredentials: UserCredential) => {
-          const {
-            uid,
-            displayName,
-            phoneNumber,
-            photoURL,
-            email,
-            emailVerified,
-          } = userCredentials.user;
+          const { displayName, email } = userCredentials.user;
+          console.log("logged in as ", email, displayName);
         })
         .catch((err: FirebaseError) => {
           console.log({ err });
@@ -191,128 +177,127 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding">
-      {!user && (
-        <View style={styles.innerContainer}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>Dibby</Text>
-            <Text style={styles.descriptionText}>Money Splitting</Text>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <TextInput
-              placeholder="Email"
-              keyboardType="email-address"
-              value={email}
-              placeholderTextColor={colors.input.text}
-              onChangeText={(text: string) => setEmail(text)}
-              style={styles.input}
-              clearButtonMode="always"
-            />
-            <TextInput
-              placeholder="Password"
-              keyboardType="visible-password"
-              value={password}
-              placeholderTextColor={colors.input.text}
-              onChangeText={(text: string) => setPassword(text)}
-              style={styles.input}
-              secureTextEntry
-              clearButtonMode="always"
-            />
-            {passwordVerificationRequired && (
-              <TextInput
-                placeholder="Verify Password"
-                placeholderTextColor={colors.input.text}
-                value={passwordVerification}
-                onChangeText={(text: string) => setPasswordVerification(text)}
-                style={styles.input}
-                secureTextEntry
-                clearButtonMode="always"
-              />
-            )}
-
-            {error && <Text style={styles.errorText}>{error}</Text>}
-
-            {passwordVerificationRequired && (
-              <Text style={styles.loginText} onPress={() => resetToLogin()}>
-                Login
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.buttonContainer}>
-            {!passwordVerificationRequired && (
-              <TouchableOpacity
-                style={styles.button}
-                onPress={handleLogin}
-                disabled={passwordVerificationRequired}
-              >
-                <Text style={styles.buttonText}> Login </Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={[styles.button, styles.buttonOutline]}
-              onPress={handleSignUp}
-            >
-              <Text style={styles.buttonOutlineText}> Register </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.orContainer}>
-            <View style={styles.orLines} />
-            <View>
-              <Text style={styles.orText}>or</Text>
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[...colors.background.gradient]}
+    >
+      <KeyboardAvoidingView style={styles.topContainer} behavior="padding">
+        {!user && (
+          <View style={styles.innerContainer}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.titleText}>Dibby</Text>
+              <Text style={styles.descriptionText}>Money Splitting</Text>
             </View>
-            <View style={styles.orLines} />
-          </View>
 
-          <View style={styles.providerContainer}>
-            <TouchableOpacity onPress={handleFacebookLogin}>
-              <FontAwesomeIcon
-                icon={faFacebookSquare}
-                size={32}
-                color={colors.background.text}
+            <View style={styles.inputContainer}>
+              <DibbyInput
+                placeholder="Email"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
               />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleGoogleLogIn}>
-              <FontAwesomeIcon
-                icon={faGoogle}
-                size={32}
-                color={colors.background.text}
+              <DibbyInput
+                placeholder="Password"
+                keyboardType="visible-password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
               />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleAppleLogin}>
-              <FontAwesomeIcon
-                icon={faApple}
-                size={32}
-                color={colors.background.text}
+              {passwordVerificationRequired && (
+                <DibbyInput
+                  placeholder="Verify Password"
+                  keyboardType="visible-password"
+                  value={passwordVerification}
+                  onChangeText={setPasswordVerification}
+                  secureTextEntry
+                />
+              )}
+
+              {error && <Text style={styles.errorText}>{error}</Text>}
+            </View>
+
+            <DibbyButton
+              onPress={
+                passwordVerificationRequired ? resetToLogin : handleLogin
+              }
+              type={passwordVerificationRequired ? "clear" : "solid"}
+              title="Login"
+              fullWidth
+            />
+            <DibbyButton
+              fullWidth
+              type="outline"
+              onPress={handleSignUp}
+              title={"Register"}
+            />
+
+            <View style={styles.orContainer}>
+              <View style={styles.orLines} />
+              <View>
+                <Text style={styles.orText}>or</Text>
+              </View>
+              <View style={styles.orLines} />
+            </View>
+
+            <View style={styles.providerContainer}>
+              <DibbyButton
+                title={
+                  <FontAwesomeIcon
+                    icon={faFacebookSquare}
+                    size={32}
+                    color={colors.background.text}
+                  />
+                }
+                type="clear"
+                onPress={handleFacebookLogin}
               />
-            </TouchableOpacity>
+              <DibbyButton
+                title={
+                  <FontAwesomeIcon
+                    icon={faGoogle}
+                    size={32}
+                    color={colors.background.text}
+                  />
+                }
+                type="clear"
+                onPress={handleGoogleLogIn}
+              />
+              <DibbyButton
+                title={
+                  <FontAwesomeIcon
+                    icon={faApple}
+                    size={32}
+                    color={colors.background.text}
+                  />
+                }
+                type="clear"
+                onPress={handleAppleLogin}
+              />
+            </View>
           </View>
-        </View>
-      )}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 30,
-          width: "100%",
-          alignItems: "center",
-          zIndex: 1999,
-        }}
-      >
-        <Text
+        )}
+        <View
           style={{
-            fontSize: 12,
-            color: colors.background.text,
+            position: "absolute",
+            bottom: 30,
+            width: "100%",
+            alignItems: "center",
+            zIndex: 1999,
           }}
         >
-          {Platform.OS === "web"
-            ? process.env.REACT_APP_VERSION
-            : REACT_APP_VERSION}
-        </Text>
-      </View>
-    </KeyboardAvoidingView>
+          <Text
+            style={{
+              fontSize: 12,
+              color: colors.background.text,
+            }}
+          >
+            {Platform.OS === "web"
+              ? process.env.REACT_APP_VERSION
+              : REACT_APP_VERSION}
+          </Text>
+        </View>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
@@ -320,106 +305,57 @@ export default LoginScreen;
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      backgroundColor: colors.background.default,
+    topContainer: {
       flex: 1,
     },
     innerContainer: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      margin: wideScreen ? "25%" : 0,
+      margin: wideScreen ? "25%" : "10%",
     },
     inputContainer: {
-      width: wideScreen ? "90%" : "80%",
-      margin: 12,
-    },
-    input: {
-      backgroundColor: colors.input.background,
-      color: colors.background.text,
-      paddingHorizontal: 15,
-      paddingVertical: 10,
-      borderRadius: 10,
-      marginTop: 5,
-    },
-    buttonContainer: {
-      width: wideScreen ? "40%" : "60%",
-      margin: 12,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    button: {
-      backgroundColor: colors.primary.button,
       width: "100%",
-      padding: 16,
-      margin: 16,
-      borderRadius: 10,
-      alignItems: "center",
-    },
-    buttonOutline: {
-      backgroundColor: colors.transparent,
-      marginTop: 5,
-      borderColor: colors.primary.button,
-      borderWidth: 2,
-    },
-    buttonText: {
-      color: colors.primary.text,
-      fontWeight: "700",
-      fontSize: 16,
-    },
-    buttonOutlineText: {
-      color: colors.primary.text,
-      fontWeight: "700",
-      fontSize: 16,
     },
     errorText: {
       color: colors.danger.button,
       fontWeight: "500",
       fontSize: 12,
-      marginTop: 12,
       textTransform: "uppercase",
     },
     titleContainer: {
       alignSelf: "flex-start",
-      width: "60%",
       marginBottom: 50,
     },
     titleText: {
       color: colors.background.text,
       fontSize: 50,
       fontWeight: "bold",
-      marginLeft: 40,
     },
     descriptionText: {
       color: colors.background.text,
       fontSize: 20,
       fontWeight: "400",
-      marginLeft: 40,
-    },
-    loginText: {
-      textAlign: "center",
-      marginTop: 24,
-      color: colors.background.text,
-      fontSize: 16,
-      fontWeight: "500",
     },
     orContainer: {
       flexDirection: "row",
       alignItems: "center",
-      margin: 16,
-      width: "80%",
+      marginVertical: 16,
     },
     orLines: {
       flex: 1,
       height: 1,
       backgroundColor: colors.background.text,
-      width: 100,
     },
-    orText: { width: 50, textAlign: "center", color: colors.background.text },
+    orText: {
+      width: 50,
+      textAlign: "center",
+      color: colors.background.text,
+    },
     providerContainer: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-evenly",
-      width: "80%",
+      width: "40%",
     },
   });
