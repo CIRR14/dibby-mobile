@@ -120,10 +120,11 @@ const ViewExpense = ({ route }: any) => {
             <Text style={{ color: colors.background.default }}>
               $
               {numberWithCommas(
-                getTravelerFromId(
-                  currentTrip,
-                  currentExpense?.payer
-                )?.owed.toString()
+                currentExpense?.amount.toString()
+                // getTravelerFromId(
+                //   currentTrip,
+                //   currentExpense?.payer
+                // )?.owed.toString()
               )}
             </Text>
           </View>
@@ -135,7 +136,6 @@ const ViewExpense = ({ route }: any) => {
               )}
               key={numColumns}
               numColumns={numColumns}
-              listKey={numColumns.toString()}
               keyExtractor={(item) => item}
               style={{ marginVertical: 16 }}
               renderItem={({ item }) => {
@@ -169,9 +169,11 @@ const ViewExpense = ({ route }: any) => {
                     >
                       {traveler && Math.sign(traveler?.owed) === -1
                         ? `($${numberWithCommas(
-                            Math.abs(traveler.owed).toString()
+                            Math.abs(currentExpense.perPerson).toString()
                           )})`
-                        : `$${numberWithCommas(traveler?.owed.toString())}`}
+                        : `$${numberWithCommas(
+                            currentExpense?.perPerson.toString()
+                          )}`}
                     </Text>
                   </View>
                 );

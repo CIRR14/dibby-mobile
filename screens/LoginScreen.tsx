@@ -1,11 +1,4 @@
-import {
-  KeyboardAvoidingView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useColorScheme,
-} from "react-native";
+import { KeyboardAvoidingView, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
   appleProvider,
@@ -36,6 +29,7 @@ import { wideScreen } from "../constants/DeviceWidth";
 import { REACT_APP_VERSION } from "@env";
 import DibbyButton from "../components/DibbyButton";
 import { LinearGradient } from "expo-linear-gradient";
+import DibbyInput from "../components/DibbyInput";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -185,10 +179,7 @@ const LoginScreen = () => {
   return (
     <LinearGradient
       style={styles.topContainer}
-      colors={[
-        colors.background.gradient.start,
-        colors.background.gradient.end,
-      ]}
+      colors={[...colors.background.gradient]}
     >
       <KeyboardAvoidingView style={styles.topContainer} behavior="padding">
         {!user && (
@@ -199,34 +190,26 @@ const LoginScreen = () => {
             </View>
 
             <View style={styles.inputContainer}>
-              <TextInput
+              <DibbyInput
                 placeholder="Email"
                 keyboardType="email-address"
                 value={email}
-                placeholderTextColor={colors.input.text}
-                onChangeText={(text: string) => setEmail(text)}
-                style={styles.input}
-                clearButtonMode="always"
+                onChangeText={setEmail}
               />
-              <TextInput
+              <DibbyInput
                 placeholder="Password"
                 keyboardType="visible-password"
                 value={password}
-                placeholderTextColor={colors.input.text}
-                onChangeText={(text: string) => setPassword(text)}
-                style={styles.input}
+                onChangeText={setPassword}
                 secureTextEntry
-                clearButtonMode="always"
               />
               {passwordVerificationRequired && (
-                <TextInput
+                <DibbyInput
                   placeholder="Verify Password"
-                  placeholderTextColor={colors.input.text}
+                  keyboardType="visible-password"
                   value={passwordVerification}
-                  onChangeText={(text: string) => setPasswordVerification(text)}
-                  style={styles.input}
+                  onChangeText={setPasswordVerification}
                   secureTextEntry
-                  clearButtonMode="always"
                 />
               )}
 
@@ -323,7 +306,6 @@ export default LoginScreen;
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
-      // backgroundColor: colors.background.default,
       flex: 1,
     },
     innerContainer: {
@@ -334,15 +316,6 @@ const makeStyles = (colors: ThemeColors) =>
     },
     inputContainer: {
       width: "100%",
-      marginVertical: 12,
-    },
-    input: {
-      backgroundColor: colors.input.background,
-      color: colors.background.text,
-      paddingHorizontal: 15,
-      paddingVertical: 12,
-      borderRadius: 10,
-      marginTop: 12,
     },
     errorText: {
       color: colors.danger.button,

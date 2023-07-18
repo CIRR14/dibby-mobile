@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  useColorScheme,
   StyleSheet,
   Alert,
   TouchableOpacity,
@@ -16,19 +15,12 @@ import { useNavigation } from "@react-navigation/core";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
-import { Avatar } from "@rneui/themed";
 import { Timestamp, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { db } from "../firebase";
-import { Card } from "../components/Card";
+import { DibbyCard } from "../components/DibbyCard";
 import CreateExpense from "../components/CreateExpense";
-import {
-  getInitials,
-  inRange,
-  numberWithCommas,
-  sumOfValues,
-} from "../helpers/AppHelpers";
-import { userColors } from "../helpers/GenerateColor";
+import { inRange, numberWithCommas, sumOfValues } from "../helpers/AppHelpers";
 import {
   ITransactionResponse,
   calculateTrip,
@@ -50,6 +42,7 @@ import { useTheme } from "@react-navigation/native";
 import DibbyButton from "../components/DibbyButton";
 import { faFilePdf } from "@fortawesome/free-regular-svg-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import DibbyAvatars from "../components/DibbyAvatars";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -198,10 +191,7 @@ const ViewTrip = ({ route }: any) => {
   return (
     <LinearGradient
       style={styles.topContainer}
-      colors={[
-        colors.background.gradient.start,
-        colors.background.gradient.end,
-      ]}
+      colors={[...colors.background.gradient]}
     >
       <SafeAreaView style={styles.topContainer}>
         <TopBar
@@ -267,7 +257,6 @@ const ViewTrip = ({ route }: any) => {
               alignItems: "center",
               backgroundColor: colors.background.paper,
               margin: 16,
-              // padding: 8,
               borderRadius: 10,
             }}
           >
@@ -430,54 +419,17 @@ const ViewTrip = ({ route }: any) => {
           <Text style={styles.title}>
             Expenses - ${numberWithCommas(currentTrip?.amount.toString())}
           </Text>
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-            }}
-            onPress={() =>
-              navigation.navigate("ViewTravelers", {
-                tripName: currentTrip!!.name,
-                tripId: currentTrip!!.id,
-              })
-            }
-          >
-            {currentTrip?.travelers?.map((item, index) => {
-              if (index < 4) {
-                return (
-                  <Avatar
-                    key={item.id}
-                    size="small"
-                    rounded
-                    title={
-                      index !== 3
-                        ? getInitials(item.name)
-                        : `+${currentTrip?.travelers.length!! - 3}`
-                    }
-                    titleStyle={{
-                      color:
-                        index !== 3
-                          ? colors.background.paper
-                          : colors.light.text,
-                    }}
-                    containerStyle={{
-                      marginLeft: -10,
-                      borderWidth: 1,
-                      borderStyle: "solid",
-                      borderColor: item.me ? userColors[0].border : item.color,
-                    }}
-                    overlayContainerStyle={{
-                      backgroundColor: item.me
-                        ? userColors[0].background
-                        : index !== 3
-                        ? item.color
-                        : colors.light.background,
-                      opacity: 0.95,
-                    }}
-                  />
-                );
+          {currentTrip?.travelers && (
+            <DibbyAvatars
+              onPress={() =>
+                navigation.navigate("ViewTravelers", {
+                  tripName: currentTrip!!.name,
+                  tripId: currentTrip!!.id,
+                })
               }
-            })}
-          </TouchableOpacity>
+              travelers={currentTrip?.travelers}
+            />
+          )}
         </View>
 
         <View style={styles.container}>
@@ -489,7 +441,7 @@ const ViewTrip = ({ route }: any) => {
                 numColumns={numColumns}
                 keyExtractor={(expense) => expense.id}
                 renderItem={({ item }) => (
-                  <Card
+                  <DibbyCard
                     expense={item}
                     trip={currentTrip}
                     onDeleteItem={() => deleteAlert(item)}
@@ -502,7 +454,6 @@ const ViewTrip = ({ route }: any) => {
                         expenseId: item.id,
                       })
                     }
-                    expandable={true}
                   />
                 )}
               />

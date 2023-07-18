@@ -1,13 +1,4 @@
-import {
-  Dimensions,
-  FlatList,
-  Modal,
-  StyleSheet,
-  View,
-  useColorScheme,
-  Text,
-  Alert,
-} from "react-native";
+import { FlatList, Modal, StyleSheet, View, Text, Alert } from "react-native";
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
@@ -15,7 +6,7 @@ import { signOut } from "firebase/auth";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { useUser } from "../hooks/useUser";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Card } from "../components/Card";
+import { DibbyCard } from "../components/DibbyCard";
 import TopBar from "../components/TopBar";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import {
@@ -130,10 +121,7 @@ const HomeScreen = () => {
   return (
     <LinearGradient
       style={styles.topContainer}
-      colors={[
-        colors.background.gradient.start,
-        colors.background.gradient.end,
-      ]}
+      colors={[...colors.background.gradient]}
     >
       <SafeAreaView style={styles.topContainer}>
         <TopBar
@@ -163,8 +151,7 @@ const HomeScreen = () => {
                   containerStyle={{
                     borderWidth: 1,
                     borderStyle: "solid",
-                    borderColor:
-                      userColors[0].border || colors.primary.background,
+                    borderColor: colors.dark.background,
                   }}
                   overlayContainerStyle={{
                     backgroundColor:
@@ -185,7 +172,7 @@ const HomeScreen = () => {
                 key={numColumns}
                 data={currentTrips}
                 renderItem={({ item }) => (
-                  <Card
+                  <DibbyCard
                     wideScreen={wideScreen}
                     cardWidth={cardWidth}
                     trip={item}
@@ -261,7 +248,7 @@ const makeStyles = (colors: ThemeColors) =>
       margin: 16,
     },
     emptyText: {
-      color: colors.primary.text,
+      color: colors.background.text,
       textAlign: "center",
     },
   });

@@ -63,7 +63,7 @@ const DibbyButton: React.FC<IButtonProps> = ({
       linearGradientProps={
         type === "solid"
           ? {
-              colors: [colors.gradient.start, colors.gradient.end],
+              colors: [...colors.gradient],
               start: { x: 0, y: 0.5 },
               end: { x: 1, y: 0.5 },
             }
@@ -87,6 +87,17 @@ const makeStyles = (
       width: fullWidth ? "100%" : "auto",
       margin: 8,
     },
+    addButtonContainer: {
+      position: "absolute",
+      bottom: 16,
+      width: "100%",
+      zIndex: 2000,
+      // borderWidth: 1,
+      // borderColor: colors.background.text,
+    },
+    addButton: {
+      backgroundColor: colors.info.button,
+    },
     button: {
       backgroundColor: colors.primary.button,
     },
@@ -98,15 +109,6 @@ const makeStyles = (
         type === "solid" ? colors.light.background : colors.outlinedButtonText,
       fontWeight: "700",
       fontSize: 16,
-    },
-    addButton: {
-      backgroundColor: colors.info.button,
-    },
-    addButtonContainer: {
-      position: "absolute",
-      bottom: 16,
-      width: "100%",
-      zIndex: 2000,
     },
     buttonDisabled: {
       backgroundColor: colors.disabled.button,

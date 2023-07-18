@@ -1,10 +1,4 @@
-import {
-  Text,
-  StyleSheet,
-  View,
-  TextInput,
-  useColorScheme,
-} from "react-native";
+import { Text, StyleSheet, View } from "react-native";
 import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateProfile } from "firebase/auth";
@@ -16,15 +10,14 @@ import { getInitials } from "../helpers/AppHelpers";
 import { userColors } from "../helpers/GenerateColor";
 import DibbyButton from "../components/DibbyButton";
 import { LinearGradient } from "expo-linear-gradient";
+import DibbyInput from "../components/DibbyInput";
 
 const CreateProfile = () => {
-  const { username, loggedInUser, photoURL, setUsername, setPhotoURL } =
-    useUser();
+  const { username, loggedInUser, photoURL, setUsername } = useUser();
 
   const navigation = useNavigation();
 
   const { colors } = useTheme() as unknown as ColorTheme;
-  const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   useEffect(() => {
@@ -53,15 +46,11 @@ const CreateProfile = () => {
   return (
     <LinearGradient
       style={styles.topContainer}
-      colors={[
-        colors.background.gradient.start,
-        colors.background.gradient.end,
-      ]}
+      colors={[...colors.background.gradient]}
     >
-      <SafeAreaView style={styles.topContainer}>
+      <SafeAreaView>
         <Text style={styles.title}>Complete Profile</Text>
         <View style={styles.sectionContainer}>
-          {/* <TouchableOpacity> */}
           <View style={styles.profilePictureContainer}>
             <Avatar
               rounded
@@ -82,7 +71,6 @@ const CreateProfile = () => {
               }}
             />
           </View>
-          {/* </TouchableOpacity> */}
           <View style={styles.userNameEmailContainer}>
             <Text style={{ fontWeight: "bold", color: colors.background.text }}>
               {username || "Display Name"}
@@ -92,18 +80,11 @@ const CreateProfile = () => {
             </Text>
           </View>
         </View>
-        <View style={styles.sectionContainer}>
-          <TextInput
-            textContentType="name"
-            autoCapitalize="words"
-            placeholder="Display Name"
-            value={username}
-            placeholderTextColor={colors.input.text}
-            onChangeText={(text: string) => setUsername(text)}
-            style={styles.displayNameInput}
-            clearButtonMode="always"
-          />
-        </View>
+        <DibbyInput
+          placeholder="Display Name"
+          value={username}
+          onChangeText={setUsername}
+        />
         <DibbyButton
           fullWidth
           disabled={!!!username}
@@ -120,7 +101,6 @@ export default CreateProfile;
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
-      // backgroundColor: colors.background.default,
       flex: 1,
       padding: 32,
       alignItems: "center",
@@ -152,10 +132,5 @@ const makeStyles = (colors: ThemeColors) =>
     userNameEmailContainer: {
       alignItems: "flex-start",
       paddingLeft: 20,
-    },
-    displayNameInput: {
-      color: colors.input.text,
-      fontWeight: "bold",
-      width: "100%",
     },
   });

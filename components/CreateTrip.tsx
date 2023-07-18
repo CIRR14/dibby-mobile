@@ -5,7 +5,6 @@ import {
   View,
   useColorScheme,
   Text,
-  TextInput,
   ColorSchemeName,
   ScrollView,
   KeyboardAvoidingView,
@@ -23,6 +22,7 @@ import { generateColor, userColors } from "../helpers/GenerateColor";
 import { capitalizeName } from "../helpers/AppHelpers";
 import DibbyButton from "./DibbyButton";
 import TopBar from "./TopBar";
+import DibbyInput from "./DibbyInput";
 
 interface ICreateTripProps {
   currentUser: User;
@@ -162,14 +162,12 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
               required: true,
             }}
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
+              <DibbyInput
                 placeholder="Name of Trip"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
                 clearButtonMode="always"
-                style={styles.input}
-                placeholderTextColor={colors.disabled?.text}
               />
             )}
           />
@@ -194,18 +192,16 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
                       rules={{ required: true }}
                       name={`travelers.${index}.name`}
                       render={({ field: { onChange, onBlur, value } }) => (
-                        <TextInput
+                        <DibbyInput
                           placeholder={
                             index === 0
                               ? currentUser.displayName!!
                               : `Name of Traveler ${index + 1}`
                           }
-                          placeholderTextColor={colors.disabled?.text}
                           onBlur={onBlur}
                           onChangeText={onChange}
                           value={value}
-                          editable={index !== 0}
-                          style={styles.input}
+                          disabled={index !== 0}
                           clearButtonMode="always"
                           returnKeyType="next"
                           onSubmitEditing={addTraveler}
@@ -283,6 +279,7 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
     titleContainer: {
       alignItems: "center",
       marginTop: 20,
+      marginBottom: 16,
     },
     title: {
       color: colors.background.text,
@@ -294,14 +291,5 @@ const makeStyles = (colors: ThemeColors, theme?: ColorSchemeName) =>
     },
     content: {
       margin: 16,
-    },
-    input: {
-      backgroundColor: colors.disabled?.button,
-      color: colors.disabled?.text,
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 12,
-      marginTop: 8,
-      minWidth: "80%",
     },
   });

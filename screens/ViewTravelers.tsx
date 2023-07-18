@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  useColorScheme,
-  StyleSheet,
-  Dimensions,
-  TextInput,
-} from "react-native";
+import { View, Text, StyleSheet, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
 import { useNavigation, useTheme } from "@react-navigation/native";
@@ -23,6 +16,7 @@ import { generateColor } from "../helpers/GenerateColor";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import DibbyInput from "../components/DibbyInput";
 
 const ViewTravelers = ({ route }: any) => {
   const { colors } = useTheme() as unknown as ColorTheme;
@@ -88,10 +82,7 @@ const ViewTravelers = ({ route }: any) => {
   return (
     <LinearGradient
       style={styles.topContainer}
-      colors={[
-        colors.background.gradient.start,
-        colors.background.gradient.end,
-      ]}
+      colors={[...colors.background.gradient]}
     >
       <SafeAreaView style={styles.topContainer}>
         <TopBar
@@ -159,14 +150,12 @@ const ViewTravelers = ({ route }: any) => {
               required: true,
             }}
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
+              <DibbyInput
+                label="Add Traveler"
                 placeholder="Name of Traveler"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
-                clearButtonMode="always"
-                style={styles.input}
-                placeholderTextColor={colors.disabled?.text}
               />
             )}
           />

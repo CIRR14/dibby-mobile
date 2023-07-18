@@ -8,11 +8,6 @@ interface ColorProps {
   card?: string
 }
 
-interface Gradient {
-    start: string,
-    middle: string,
-    end: string
-}
 export interface ThemeColors {
   primary: ColorProps,
   secondary: ColorProps,
@@ -26,13 +21,14 @@ export interface ThemeColors {
     default: string,
     text: string,
     paper: string,
-    gradient:Gradient
+    gradient: string[]
   },
   disabled: ColorProps,
   input: ColorProps,
-  gradient: Gradient,
+  gradient: string[],
   transparent: string,
-  outlinedButtonText: string
+  outlinedButtonText: string,
+  card: string[]
 }
 export interface ColorTheme {
   dark: boolean,
@@ -66,7 +62,7 @@ export const lightTheme: ThemeColors = {
     text: '#ffffff',
     button: '#e0a800',
   },
-  info: {
+  info: { 
     background: '#17a2b8',
     text: '#ffffff',
     button: '#0f8a93',
@@ -86,11 +82,10 @@ export const lightTheme: ThemeColors = {
     default: '#e6e9ec',
     text: '#212529',
     paper: '#ffffff',
-    gradient: {
-      start: '#ffff',
-      middle: '',
-      end: '#e6e9ec'
-    }
+    gradient: [
+      '#f1f1f1',
+       '#e6e2e2'
+    ]
   },
   disabled: {
     background: '#b9bec0',
@@ -102,18 +97,23 @@ export const lightTheme: ThemeColors = {
     text: '#5f6060',
     button: '#f7f7f7',
   },
-  gradient: {
-    start: '#6abf69',
-    middle: '',
-    end: '#17a2b8',
-  },
+  gradient: [
+   '#6abf69',
+     '#17a2b8',
+  ],
   transparent: 'transparent',
-  outlinedButtonText: '#6abf69'
+  outlinedButtonText: '#6abf69',
+  card: [
+    '#9cd39cff',
+    '#82b182ff',
+
+    // '#788eb188',
+  ]
 };
 
 export const darkTheme: ThemeColors = {
   primary: {
-    background: '#1a936f',
+  background: '#1a936f',
     text: '#ffffff',
     button: '#136e4f',
   },
@@ -157,11 +157,10 @@ export const darkTheme: ThemeColors = {
     default: '#212529',
     text: '#f8f9fa', 
     paper: '#343a40',
-    gradient: {
-      start: '#343a40',
-      middle: '',
-      end: '#212529'
-    }
+    gradient: [
+     '#343a40',
+     '#212529'
+    ]
   },
   disabled: {
     background: '#b4b5b5',
@@ -173,14 +172,44 @@ export const darkTheme: ThemeColors = {
     text: '#eaeaea',
     button: '#6a6a6a'
   },
-  gradient: {
-    start: '#1a936f',
-    middle: '',
-    end: '#0dcaf0',
-  },
+  gradient: [
+    '#1a936f',
+     '#0dcaf0',
+  ],
   transparent: 'transparent',
-  outlinedButtonText: '#eaeaea'
+  outlinedButtonText: '#eaeaea',
+  card: [
+    '#12869d',
+    '#106c7f',
+
+    // '#a4cbb4',
+  ]
 };
+
+// mytheme: {
+          
+//   "primary": "#ef9995",
+           
+//   "secondary": "#a4cbb4",
+           
+//   "accent": "#dc8850",
+           
+//   "neutral": "#2e282a",
+           
+//   "base-100": "#e4d8b4",
+           
+//   "info": "#2463eb",
+           
+//   "success": "#16a249",
+           
+//   "warning": "#db7706",
+           
+//   "error": "#dc2828",
+//            },
+//          },
+
+// linear-gradient(to right, #64748b, #fef9c3)
+
 
 // export const greenLightTheme: ThemeColors = {
 //     primary: {
