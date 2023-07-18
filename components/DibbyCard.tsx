@@ -1,20 +1,11 @@
-import {
-  faAdd,
-  faCirclePlus,
-  faDollar,
-  faMoneyBill,
-  faMoneyBillAlt,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import React, { useRef } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
   Text,
-  useColorScheme,
   View,
-  FlatList,
   Animated,
 } from "react-native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
@@ -22,13 +13,7 @@ import { useTheme } from "@react-navigation/native";
 import { Trip, Expense, Traveler } from "../constants/DibbyTypes";
 import { timestampToString } from "../helpers/TypeHelpers";
 import { RectButton, Swipeable } from "react-native-gesture-handler";
-import { Avatar } from "@rneui/themed";
-import { userColors } from "../helpers/GenerateColor";
-import {
-  getInitials,
-  getTravelerFromId,
-  numberWithCommas,
-} from "../helpers/AppHelpers";
+import { getTravelerFromId, numberWithCommas } from "../helpers/AppHelpers";
 import { LinearGradient } from "expo-linear-gradient";
 import DibbyAvatars from "./DibbyAvatars";
 
@@ -116,9 +101,9 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
   return (
     <LinearGradient
       colors={[...colors.card]}
-      style={styles.card}
       start={{ x: 0, y: 0.5 }}
       end={{ x: 1, y: 0.5 }}
+      style={{ borderRadius: 16, margin: 8 }}
     >
       <Swipeable
         renderRightActions={renderRightActions}
@@ -127,7 +112,7 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
         friction={1}
         ref={swipeableRef}
       >
-        <TouchableOpacity onPress={onPress}>
+        <TouchableOpacity style={styles.card} onPress={onPress}>
           <View style={styles.cardContent}>
             <View style={styles.cardTextContainer}>
               <Text style={[styles.text, styles.caption]}>
@@ -191,7 +176,7 @@ const makeStyles = (
   StyleSheet.create({
     card: {
       minWidth: wideScreen ? cardWidth : 0,
-      margin: 8,
+      // margin: 8,
       backgroundColor: colors.primary.background,
       padding: 16,
       borderRadius: 16,
