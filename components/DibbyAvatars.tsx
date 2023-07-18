@@ -6,6 +6,8 @@ import { userColors } from "../helpers/GenerateColor";
 import { Expense, Traveler } from "../constants/DibbyTypes";
 import { useTheme } from "@react-navigation/native";
 import { ColorTheme } from "../constants/Colors";
+import { faDollar } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 
 interface IDibbyAvatarsProps {
   onPress?: () => void;
@@ -70,21 +72,21 @@ const DibbyAvatars: React.FC<IDibbyAvatarsProps> = ({
                     backgroundColor: colors.info.background,
                   }}
                   iconProps={{
-                    name: "attach-money",
-                    // children: (
-                    //   <FontAwesomeIcon
-                    //     icon={faDollar}
-                    //     size={8}
-                    //     color={colors.background.paper}
-                    //   />
-                    // ),
+                    name: "",
+                    children: (
+                      <FontAwesomeIcon
+                        icon={faDollar}
+                        size={8}
+                        color={colors.background.paper}
+                      />
+                    ),
                   }}
-                  //   iconStyle={{
-                  //     display: "flex",
-                  //     justifyContent: "center",
-                  //     alignItems: "center",
-                  //     alignContent: "center",
-                  //   }}
+                  iconStyle={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    alignContent: "center",
+                  }}
                 />
               )}
             </Avatar>
