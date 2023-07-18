@@ -210,7 +210,6 @@ const makeStyles = (
       fontWeight: "bold",
       textTransform: "capitalize",
       overflow: "hidden",
-      textOverflow: "ellipsis",
     },
     subtitle: {
       fontSize: 16,

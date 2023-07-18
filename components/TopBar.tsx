@@ -46,7 +46,6 @@ const makeStyles = (colors: ThemeColors) =>
       fontWeight: "bold",
       textAlign: "center",
       overflow: "hidden",
-      textOverflow: "ellipsis",
     },
     innerContainer: {
       width: "25%",

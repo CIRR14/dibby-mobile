@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   Platform,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
@@ -43,6 +44,7 @@ import DibbyButton from "../components/DibbyButton";
 import { faFilePdf } from "@fortawesome/free-regular-svg-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import DibbyAvatars from "../components/DibbyAvatars";
+import DibbyLoading from "../components/DibbyLoading";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -62,6 +64,18 @@ const ViewTrip = ({ route }: any) => {
 
   const [html, setHtml] = useState<string>("");
   const [loadingIndicator, setLoadingIndicator] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const onRefresh = useCallback(() => {
+    if (loggedInUser && loggedInUser.uid) {
+      setRefreshing(true);
+      const unsub = onSnapshot(doc(db, loggedInUser.uid, tripId), (doc) => {
+        const newData: Trip = { ...(doc.data() as TripDoc), id: doc.id };
+        setCurrentTrip(newData);
+        setRefreshing(false);
+      });
+    }
+  }, [loggedInUser]);
 
   useEffect(() => {
     if (calculatedTrip && currentTrip) {
@@ -79,9 +93,11 @@ const ViewTrip = ({ route }: any) => {
 
   useEffect(() => {
     if (loggedInUser && loggedInUser.uid) {
+      setLoadingIndicator(true);
       const unsub = onSnapshot(doc(db, loggedInUser.uid, tripId), (doc) => {
         const newData: Trip = { ...(doc.data() as TripDoc), id: doc.id };
         setCurrentTrip(newData);
+        setLoadingIndicator(false);
       });
 
       return () => {
@@ -227,12 +243,6 @@ const ViewTrip = ({ route }: any) => {
             />
           }
         />
-        {loadingIndicator && (
-          <View style={[styles.loadingContainer]}>
-            <ActivityIndicator size="large" color={colors.primary.background} />
-          </View>
-        )}
-
         <TouchableOpacity
           style={{
             flexDirection: "row",
@@ -434,12 +444,26 @@ const ViewTrip = ({ route }: any) => {
 
         <View style={styles.container}>
           <View style={styles.grid}>
-            {expenses.length > 0 ? (
+            {loadingIndicator ? (
+              <DibbyLoading />
+            ) : expenses.length === 0 ? (
+              <View>
+                <Text style={styles.emptyText}>
+                  No expenses yet. Add some below!
+                </Text>
+              </View>
+            ) : (
               <FlatList
                 data={expenses}
                 key={numColumns}
                 numColumns={numColumns}
                 keyExtractor={(expense) => expense.id}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                  />
+                }
                 renderItem={({ item }) => (
                   <DibbyCard
                     expense={item}
@@ -457,12 +481,6 @@ const ViewTrip = ({ route }: any) => {
                   />
                 )}
               />
-            ) : (
-              <View>
-                <Text style={styles.emptyText}>
-                  No expenses yet. Add some below!
-                </Text>
-              </View>
             )}
 
             <DibbyButton add onPress={toggleCreateExpenseModal} />
@@ -492,19 +510,9 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      // backgroundColor: colors.background.default,
     },
     container: {
       flex: 1,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      position: "absolute",
-      height: "100%",
-      width: "100%",
-      zIndex: 3000,
-      backgroundColor: "#00000099",
     },
     grid: {
       flex: 1,
