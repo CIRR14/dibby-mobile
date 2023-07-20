@@ -86,14 +86,18 @@ const makeStyles = (
     buttonContainer: {
       width: fullWidth ? "100%" : "auto",
       margin: 8,
+      borderColor: colors.dark.background,
+      borderWidth: type !== "clear" ? 1 : 0,
+      borderBottomWidth: type !== "clear" ? 4 : 0,
+      borderLeftWidth: type !== "clear" ? 4 : 0,
     },
     addButtonContainer: {
       position: "absolute",
       bottom: 16,
       width: "100%",
       zIndex: 2000,
-      // borderWidth: 1,
-      // borderColor: colors.background.text,
+      borderWidth: 1,
+      borderColor: colors.dark.background,
     },
     addButton: {
       backgroundColor: colors.info.button,

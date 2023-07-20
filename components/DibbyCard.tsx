@@ -43,11 +43,6 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
     cardWidth
   );
   const swipeableRef = useRef(null);
-  const numberOfPeople = expense
-    ? expense?.peopleInExpense?.length
-    : trip
-    ? trip?.travelers?.length
-    : 0;
 
   const renderRightActions = (
     progress: Animated.AnimatedInterpolation<any>,
@@ -103,12 +98,16 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
       colors={[...colors.card]}
       start={{ x: 0, y: 0.5 }}
       end={{ x: 1, y: 0.5 }}
-      style={{ borderRadius: 16, margin: 8 }}
+      style={{
+        borderRadius: 16,
+        margin: 8,
+      }}
     >
       <Swipeable
         renderRightActions={renderRightActions}
         onSwipeableOpen={swipeFromRightOpen}
         enableTrackpadTwoFingerGesture
+        containerStyle={{ borderRadius: 16 }}
         friction={1}
         ref={swipeableRef}
       >
@@ -176,14 +175,15 @@ const makeStyles = (
   StyleSheet.create({
     card: {
       minWidth: wideScreen ? cardWidth : 0,
-      // margin: 8,
-      backgroundColor: colors.primary.background,
+      // backgroundColor: "transparent",
       padding: 16,
       borderRadius: 16,
       display: "flex",
       justifyContent: "center",
-      borderColor: colors.info.background,
+      borderColor: colors.dark.background,
       borderWidth: 1,
+      borderBottomWidth: 4,
+      borderLeftWidth: 4,
     },
     cardContent: {
       display: "flex",
