@@ -24,6 +24,7 @@ import {
   doc,
   orderBy,
   query,
+  updateDoc,
 } from "firebase/firestore";
 import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
 import CreateTrip from "../components/CreateTrip";
@@ -59,7 +60,11 @@ const HomeScreen = () => {
     if (loggedInUser) {
       setRefreshing(true);
       onSnapshot(
-        query(collection(db, loggedInUser.uid), orderBy("created", "desc")),
+        query(
+          collection(db, loggedInUser.uid),
+          orderBy("completed", "asc"),
+          orderBy("created", "desc")
+        ),
         (doc) => {
           const newData: Trip[] = doc.docs.flatMap((doc) => ({
             ...(doc.data() as TripDoc),
@@ -76,7 +81,11 @@ const HomeScreen = () => {
     if (loggedInUser && loggedInUser.uid) {
       setLoading(true);
       const unsub = onSnapshot(
-        query(collection(db, loggedInUser.uid), orderBy("created", "desc")),
+        query(
+          collection(db, loggedInUser.uid),
+          orderBy("completed", "asc"),
+          orderBy("created", "desc")
+        ),
         (doc) => {
           const newData: Trip[] = doc.docs.flatMap((doc) => ({
             ...(doc.data() as TripDoc),
@@ -95,6 +104,12 @@ const HomeScreen = () => {
 
   const deleteTrip = async (trip: Trip) => {
     await deleteDoc(doc(db, loggedInUser!!.uid, trip.id));
+  };
+
+  const completeTrip = async (trip: Trip, complete: boolean) => {
+    const tripRef = doc(db, loggedInUser!!.uid, trip.id);
+    const res = await updateDoc(tripRef, { completed: complete });
+    console.log(res);
   };
 
   const handleSignOut = () => {
@@ -219,7 +234,9 @@ const HomeScreen = () => {
                     wideScreen={wideScreen}
                     cardWidth={cardWidth}
                     trip={item}
+                    completed={item.completed}
                     onDeleteItem={() => deleteAlert(item)}
+                    onCompleteItem={(complete) => completeTrip(item, complete)}
                     onPress={() =>
                       navigation.navigate("ViewTrip", {
                         tripName: item.name,

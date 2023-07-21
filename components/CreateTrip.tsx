@@ -101,6 +101,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
       created: Timestamp.now(),
       updated: Timestamp.now(),
     };
+
     try {
       const docRef = await addDoc(
         collection(db, currentUser.uid),
@@ -201,7 +202,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
                           onBlur={onBlur}
                           onChangeText={onChange}
                           value={value}
-                          disabled={index !== 0}
+                          disabled={index === 0}
                           clearButtonMode="always"
                           returnKeyType="next"
                           onSubmitEditing={addTraveler}
@@ -252,7 +253,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
               }
             />
             <DibbyButton
-              onPress={() => handleSubmit(onSubmit)}
+              onPress={handleSubmit(onSubmit)}
               disabled={!formState.isValid}
               title="Add Trip"
             />

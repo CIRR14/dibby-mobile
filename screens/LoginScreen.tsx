@@ -30,6 +30,7 @@ import { REACT_APP_VERSION } from "@env";
 import DibbyButton from "../components/DibbyButton";
 import { LinearGradient } from "expo-linear-gradient";
 import DibbyInput from "../components/DibbyInput";
+import DibbyVersion from "../components/DibbyVersion";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -216,20 +217,22 @@ const LoginScreen = () => {
               {error && <Text style={styles.errorText}>{error}</Text>}
             </View>
 
-            <DibbyButton
-              onPress={
-                passwordVerificationRequired ? resetToLogin : handleLogin
-              }
-              type={passwordVerificationRequired ? "clear" : "solid"}
-              title="Login"
-              fullWidth
-            />
-            <DibbyButton
-              fullWidth
-              type="outline"
-              onPress={handleSignUp}
-              title={"Register"}
-            />
+            <View style={styles.buttonContainer}>
+              <DibbyButton
+                onPress={
+                  passwordVerificationRequired ? resetToLogin : handleLogin
+                }
+                type={passwordVerificationRequired ? "outline" : "solid"}
+                title="Login"
+                fullWidth
+              />
+              <DibbyButton
+                fullWidth
+                type={passwordVerificationRequired ? "solid" : "outline"}
+                onPress={handleSignUp}
+                title={"Register"}
+              />
+            </View>
 
             <View style={styles.orContainer}>
               <View style={styles.orLines} />
@@ -276,26 +279,7 @@ const LoginScreen = () => {
             </View>
           </View>
         )}
-        <View
-          style={{
-            position: "absolute",
-            bottom: 30,
-            width: "100%",
-            alignItems: "center",
-            zIndex: 1999,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.background.text,
-            }}
-          >
-            {Platform.OS === "web"
-              ? process.env.REACT_APP_VERSION
-              : REACT_APP_VERSION}
-          </Text>
-        </View>
+        <DibbyVersion bottom={30} />
       </KeyboardAvoidingView>
     </LinearGradient>
   );
@@ -337,15 +321,20 @@ const makeStyles = (colors: ThemeColors) =>
       fontSize: 20,
       fontWeight: "400",
     },
+    buttonContainer: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+    },
     orContainer: {
       flexDirection: "row",
       alignItems: "center",
-      marginVertical: 16,
     },
     orLines: {
       flex: 1,
       height: 1,
       backgroundColor: colors.background.text,
+      width: 100,
     },
     orText: {
       width: 50,

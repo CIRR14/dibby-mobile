@@ -1,4 +1,9 @@
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCheck,
+  faCheckCircle,
+  faTrash,
+  faUnlock,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import React, { useRef } from "react";
 import {
@@ -24,6 +29,8 @@ interface IDibbyCardProps {
   onDeleteItem?: () => void;
   cardWidth?: number;
   wideScreen: boolean;
+  onCompleteItem?: (setAs: boolean) => void;
+  completed?: boolean;
 }
 
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -35,6 +42,8 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
   onDeleteItem,
   cardWidth,
   wideScreen,
+  onCompleteItem,
+  completed,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(
@@ -42,6 +51,7 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
     wideScreen,
     cardWidth
   );
+
   const swipeableRef = useRef(null);
 
   const renderRightActions = (
@@ -55,7 +65,7 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
     });
 
     return (
-      <RectButton style={styles.rectButton}>
+      <RectButton style={styles.rectDeleteButton}>
         <AnimatedView
           style={[
             {
@@ -76,11 +86,42 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
     );
   };
 
-  const swipeFromRightOpen = async (direction: "left" | "right") => {
-    if (direction === "right" && onDeleteItem) {
+  const renderLeftActions = (
+    progress: Animated.AnimatedInterpolation<any>,
+    dragX: Animated.AnimatedInterpolation<any>
+  ) => {
+    const scale = dragX.interpolate({
+      inputRange: [0, 50],
+      outputRange: [1, 0],
+      extrapolate: "clamp",
+    });
+
+    return (
+      <RectButton style={styles.rectCompleteButton}>
+        <AnimatedView
+          style={{
+            width: 30,
+            marginHorizontal: 10,
+            height: 20,
+          }}
+        >
+          <FontAwesomeIcon
+            icon={completed ? faUnlock : faCheck}
+            size={36}
+            color={colors.success.text}
+          />
+        </AnimatedView>
+      </RectButton>
+    );
+  };
+
+  const swipeOpen = async (direction: "left" | "right") => {
+    if (direction === "right" && onDeleteItem && !completed) {
       onDeleteItem();
-      (swipeableRef.current as any)?.close();
+    } else if (direction === "left" && onCompleteItem) {
+      onCompleteItem(!!!completed);
     }
+    (swipeableRef.current as any)?.close();
   };
 
   const getAvatarArray = (pplInExpense: string[], payer: string): string[] => {
@@ -104,13 +145,27 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
       }}
     >
       <Swipeable
-        renderRightActions={renderRightActions}
-        onSwipeableOpen={swipeFromRightOpen}
+        renderRightActions={!completed ? renderRightActions : undefined}
+        renderLeftActions={trip && !expense ? renderLeftActions : undefined}
+        onSwipeableOpen={swipeOpen}
         enableTrackpadTwoFingerGesture
         containerStyle={{ borderRadius: 16 }}
         friction={1}
         ref={swipeableRef}
       >
+        {completed && (
+          <FontAwesomeIcon
+            icon={faCheckCircle}
+            size={48}
+            color={colors.primary.text}
+            style={{
+              position: "absolute",
+              right: 32,
+              top: 64,
+              opacity: 0.8,
+            }}
+          />
+        )}
         <TouchableOpacity style={styles.card} onPress={onPress}>
           <View style={styles.cardContent}>
             <View style={styles.cardTextContainer}>
@@ -224,11 +279,18 @@ const makeStyles = (
       justifyContent: "space-between",
       margin: 4,
     },
-    rectButton: {
-      alignItems: "center",
-      flexDirection: "row",
+    rectDeleteButton: {
       backgroundColor: colors.danger.button,
       flex: 1,
+      alignItems: "center",
+      flexDirection: "row",
       justifyContent: "flex-end",
+    },
+    rectCompleteButton: {
+      backgroundColor: colors.success.button,
+      flex: 1,
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "flex-start",
     },
   });
