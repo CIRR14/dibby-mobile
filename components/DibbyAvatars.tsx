@@ -28,6 +28,14 @@ const DibbyAvatars: React.FC<IDibbyAvatarsProps> = ({
     <TouchableOpacity
       style={{
         flexDirection: "row",
+        maxHeight: 24,
+        shadowColor: colors.background.text,
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 2.5,
       }}
       onPress={onPress}
     >
@@ -51,7 +59,7 @@ const DibbyAvatars: React.FC<IDibbyAvatarsProps> = ({
                 marginLeft: -10,
                 borderWidth: 1,
                 borderStyle: "solid",
-                borderColor: item.me ? userColors[0].border : item.color,
+                borderColor: colors.dark.background,
               }}
               overlayContainerStyle={{
                 backgroundColor: item.me

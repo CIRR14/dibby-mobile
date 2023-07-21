@@ -57,7 +57,7 @@ const DibbyButton: React.FC<IButtonProps> = ({
           : {}
       }
       uppercase
-      radius={10}
+      radius={7}
       size={"lg"}
       ViewComponent={LinearGradient}
       linearGradientProps={
@@ -86,14 +86,19 @@ const makeStyles = (
     buttonContainer: {
       width: fullWidth ? "100%" : "auto",
       margin: 8,
+      borderColor: colors.dark.background,
+      borderWidth: type === "solid" ? 1 : 0,
+      borderBottomWidth: type !== "clear" ? 4 : 0,
+      borderLeftWidth: type !== "clear" ? 4 : 0,
+      borderRadius: type !== "clear" ? 13 : 0,
     },
     addButtonContainer: {
       position: "absolute",
       bottom: 16,
       width: "100%",
       zIndex: 2000,
-      // borderWidth: 1,
-      // borderColor: colors.background.text,
+      borderWidth: 1,
+      borderColor: colors.dark.background,
     },
     addButton: {
       backgroundColor: colors.info.button,
@@ -103,6 +108,10 @@ const makeStyles = (
     },
     buttonOutline: {
       borderColor: colors.primary.button,
+      borderTopWidth: 1,
+      borderRightWidth: 1,
+      borderLeftWidth: 0,
+      borderBottomWidth: 0,
     },
     buttonText: {
       color:

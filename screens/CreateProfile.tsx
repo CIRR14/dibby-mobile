@@ -63,6 +63,8 @@ const CreateProfile = () => {
               titleStyle={{ color: colors.background.paper }}
               containerStyle={{
                 backgroundColor: userColors[0].background,
+                borderWidth: 1,
+                borderColor: colors.background.text,
               }}
               icon={{
                 name: "user",

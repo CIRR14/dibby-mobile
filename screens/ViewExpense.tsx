@@ -118,14 +118,7 @@ const ViewExpense = ({ route }: any) => {
               {getTravelerFromId(currentTrip, currentExpense?.payer)?.name}
             </Text>
             <Text style={{ color: colors.background.default }}>
-              $
-              {numberWithCommas(
-                currentExpense?.amount.toString()
-                // getTravelerFromId(
-                //   currentTrip,
-                //   currentExpense?.payer
-                // )?.owed.toString()
-              )}
+              ${numberWithCommas(currentExpense?.amount.toString())}
             </Text>
           </View>
 
