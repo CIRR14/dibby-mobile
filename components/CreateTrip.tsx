@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   SafeAreaView,
@@ -23,6 +23,7 @@ import { capitalizeName } from "../helpers/AppHelpers";
 import DibbyButton from "./DibbyButton";
 import TopBar from "./TopBar";
 import DibbyInput from "./DibbyInput";
+import DibbyLoading from "./DibbyLoading";
 
 interface ICreateTripProps {
   currentUser: User;
@@ -36,6 +37,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
   const { colors } = useTheme() as unknown as ColorTheme;
   const theme = useColorScheme();
   const styles = makeStyles(colors as unknown as ThemeColors, theme);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const initialValues: TripDoc = {
     created: Timestamp.now(),
@@ -89,6 +91,7 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
   };
 
   const onSubmit = async (data: TripDoc) => {
+    setIsLoading(true);
     const updateTimestampedData: TripDoc = {
       ...data,
       travelers: data.travelers.map((t) => {
@@ -108,9 +111,11 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
         updateTimestampedData
       );
       console.log("Document written with ID: ", docRef.id);
+      setIsLoading(false);
       reset();
       onPressBack();
     } catch (e) {
+      setIsLoading(false);
       reset();
       console.error("Error adding document: ", e);
     }
@@ -154,112 +159,116 @@ const CreateTrip: React.FC<ICreateTripProps> = ({
           />
         }
       />
-      <ScrollView>
-        <View style={styles.content}>
-          <Controller
-            control={control}
-            name="name"
-            rules={{
-              required: true,
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <DibbyInput
-                placeholder="Name of Trip"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                clearButtonMode="always"
-              />
-            )}
-          />
-          {formState.errors.name && (
-            <Text style={styles.errorText}>Trip must have a name.</Text>
-          )}
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Travelers</Text>
-          </View>
-
-          <KeyboardAvoidingView
-            behavior="padding"
-            enabled
-            keyboardVerticalOffset={150}
-          >
-            <ScrollView>
-              {fields.map(({ name, id }: any, index: number) => {
-                return (
-                  <View style={styles.travelerContainer} key={id}>
-                    <Controller
-                      control={control}
-                      rules={{ required: true }}
-                      name={`travelers.${index}.name`}
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <DibbyInput
-                          placeholder={
-                            index === 0
-                              ? currentUser.displayName!!
-                              : `Name of Traveler ${index + 1}`
-                          }
-                          onBlur={onBlur}
-                          onChangeText={onChange}
-                          value={value}
-                          disabled={index === 0}
-                          clearButtonMode="always"
-                          returnKeyType="next"
-                          onSubmitEditing={addTraveler}
-                        />
-                      )}
-                    />
-                    {index !== 0 && (
-                      <View>
-                        <DibbyButton
-                          type="clear"
-                          onPress={() => removeTraveler(index)}
-                          title={
-                            <FontAwesomeIcon
-                              icon={faTrash}
-                              size={16}
-                              color={colors.danger.background}
-                            />
-                          }
-                        />
-                      </View>
-                    )}
-                  </View>
-                );
-              })}
-              {formState.errors.travelers && (
-                <Text style={styles.errorText}>
-                  All travelers must have a name.
-                </Text>
+      {isLoading ? (
+        <DibbyLoading />
+      ) : (
+        <ScrollView>
+          <View style={styles.content}>
+            <Controller
+              control={control}
+              name="name"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <DibbyInput
+                  placeholder="Name of Trip"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  clearButtonMode="always"
+                />
               )}
-            </ScrollView>
-            <DibbyButton
-              type="clear"
-              onPress={addTraveler}
-              title={
-                <View
-                  style={{
-                    borderRadius: 100,
-                    backgroundColor: colors.primary.background,
-                    padding: 8,
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={faAdd}
-                    size={24}
-                    color={colors.primary.text}
-                  />
-                </View>
-              }
             />
-            <DibbyButton
-              onPress={handleSubmit(onSubmit)}
-              disabled={!formState.isValid}
-              title="Add Trip"
-            />
-          </KeyboardAvoidingView>
-        </View>
-      </ScrollView>
+            {formState.errors.name && (
+              <Text style={styles.errorText}>Trip must have a name.</Text>
+            )}
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>Travelers</Text>
+            </View>
+
+            <KeyboardAvoidingView
+              behavior="padding"
+              enabled
+              keyboardVerticalOffset={150}
+            >
+              <ScrollView>
+                {fields.map(({ name, id }: any, index: number) => {
+                  return (
+                    <View style={styles.travelerContainer} key={id}>
+                      <Controller
+                        control={control}
+                        rules={{ required: true }}
+                        name={`travelers.${index}.name`}
+                        render={({ field: { onChange, onBlur, value } }) => (
+                          <DibbyInput
+                            placeholder={
+                              index === 0
+                                ? currentUser.displayName!!
+                                : `Name of Traveler ${index + 1}`
+                            }
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            value={value}
+                            disabled={index === 0}
+                            clearButtonMode="always"
+                            returnKeyType="next"
+                            onSubmitEditing={addTraveler}
+                          />
+                        )}
+                      />
+                      {index !== 0 && (
+                        <View>
+                          <DibbyButton
+                            type="clear"
+                            onPress={() => removeTraveler(index)}
+                            title={
+                              <FontAwesomeIcon
+                                icon={faTrash}
+                                size={16}
+                                color={colors.danger.background}
+                              />
+                            }
+                          />
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+                {formState.errors.travelers && (
+                  <Text style={styles.errorText}>
+                    All travelers must have a name.
+                  </Text>
+                )}
+              </ScrollView>
+              <DibbyButton
+                type="clear"
+                onPress={addTraveler}
+                title={
+                  <View
+                    style={{
+                      borderRadius: 100,
+                      backgroundColor: colors.primary.background,
+                      padding: 8,
+                    }}
+                  >
+                    <FontAwesomeIcon
+                      icon={faAdd}
+                      size={24}
+                      color={colors.primary.text}
+                    />
+                  </View>
+                }
+              />
+              <DibbyButton
+                onPress={handleSubmit(onSubmit)}
+                disabled={!formState.isValid}
+                title="Add Trip"
+              />
+            </KeyboardAvoidingView>
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };

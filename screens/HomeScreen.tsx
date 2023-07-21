@@ -142,7 +142,11 @@ const HomeScreen = () => {
         onPress: () => console.log("Cancel Pressed"),
         style: "cancel",
       },
-      { text: "OK", onPress: () => deleteTrip(item as Trip) },
+      {
+        text: "Delete",
+        onPress: () => deleteTrip(item as Trip),
+        style: "destructive",
+      },
     ];
 
     if (Platform.OS === "web") {
