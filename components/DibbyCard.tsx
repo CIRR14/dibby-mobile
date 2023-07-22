@@ -162,7 +162,7 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
               position: "absolute",
               right: 32,
               top: 64,
-              opacity: 0.8,
+              opacity: 0.6,
             }}
           />
         )}

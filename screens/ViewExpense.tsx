@@ -57,10 +57,7 @@ const ViewExpense = ({ route }: any) => {
   return (
     <LinearGradient
       style={styles.topContainer}
-      colors={[
-        colors.background.gradient.start,
-        colors.background.gradient.end,
-      ]}
+      colors={[...colors.background.gradient]}
     >
       <SafeAreaView style={styles.topContainer}>
         <TopBar
@@ -112,13 +109,17 @@ const ViewExpense = ({ route }: any) => {
               )?.color,
               padding: 10,
               borderRadius: 10,
+              borderWidth: 1,
+              borderBottomWidth: 4,
+              borderLeftWidth: 4,
+              borderColor: colors.dark.background,
             }}
           >
             <Text style={{ color: colors.background.default }}>
               {getTravelerFromId(currentTrip, currentExpense?.payer)?.name}
             </Text>
             <Text style={{ color: colors.background.default }}>
-              ${numberWithCommas(currentExpense?.amount.toString())}
+              {/* ${numberWithCommas(currentExpense?.amount.toString())} */}
             </Text>
           </View>
 
@@ -146,6 +147,10 @@ const ViewExpense = ({ route }: any) => {
                       backgroundColor: traveler?.color,
                       padding: 10,
                       borderRadius: 10,
+                      borderWidth: 1,
+                      borderBottomWidth: 4,
+                      borderLeftWidth: 4,
+                      borderColor: colors.dark.background,
                     }}
                   >
                     <Text
@@ -160,13 +165,13 @@ const ViewExpense = ({ route }: any) => {
                         color: colors.background.default,
                       }}
                     >
-                      {traveler && Math.sign(traveler?.owed) === -1
+                      {/* {traveler && Math.sign(traveler?.owed) === -1
                         ? `($${numberWithCommas(
                             Math.abs(currentExpense.perPerson).toString()
                           )})`
                         : `$${numberWithCommas(
                             currentExpense?.perPerson.toString()
-                          )}`}
+                          )}`} */}
                     </Text>
                   </View>
                 );
@@ -189,7 +194,7 @@ const ViewExpense = ({ route }: any) => {
               borderRadius: 10,
             }}
           >
-            <Text></Text>
+            {/* <Text></Text>
             <Text
               style={{
                 color: inRange(
@@ -217,23 +222,16 @@ const ViewExpense = ({ route }: any) => {
                 -0.01,
                 0.01
               )
-                ? Math.sign(
+                ? 0
+                : numberWithCommas(
                     sumOfValues(
                       currentExpense?.peopleInExpense.map((p: string) => {
                         const traveler = getTravelerFromId(currentTrip, p);
                         return traveler!!.owed;
                       })
-                    )
-                  ) === -1
-                  ? -0.01
-                  : 0.01
-                : sumOfValues(
-                    currentExpense?.peopleInExpense.map((p: string) => {
-                      const traveler = getTravelerFromId(currentTrip, p);
-                      return traveler!!.owed;
-                    })
+                    ).toString()
                   )}
-            </Text>
+            </Text> */}
           </View>
         </View>
       </SafeAreaView>

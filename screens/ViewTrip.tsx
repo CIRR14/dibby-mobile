@@ -304,18 +304,20 @@ const ViewTrip = ({ route }: any) => {
           <View style={styles.grid}>
             {loadingIndicator ? (
               <DibbyLoading />
-            ) : expenses.length === 0 ? (
-              <View>
-                <Text style={styles.emptyText}>
-                  No expenses yet. Add some below!
-                </Text>
-              </View>
             ) : (
               <FlatList
                 data={expenses}
                 key={numColumns}
                 numColumns={numColumns}
                 keyExtractor={(expense) => expense.id}
+                style={{ paddingBottom: 30 }}
+                ListEmptyComponent={
+                  <View>
+                    <Text style={styles.emptyText}>
+                      No expenses yet. Add some below!
+                    </Text>
+                  </View>
+                }
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}

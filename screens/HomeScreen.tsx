@@ -83,7 +83,7 @@ const HomeScreen = () => {
       const unsub = onSnapshot(
         query(
           collection(db, loggedInUser.uid),
-          orderBy("completed", "asc"),
+          // orderBy("completed", "asc")
           orderBy("created", "desc")
         ),
         (doc) => {
@@ -217,12 +217,6 @@ const HomeScreen = () => {
           <View style={styles.grid}>
             {loading ? (
               <DibbyLoading />
-            ) : currentTrips.length === 0 ? (
-              <View>
-                <Text style={styles.emptyText}>
-                  No trips yet. Add some below!
-                </Text>
-              </View>
             ) : (
               <FlatList
                 refreshControl={
@@ -231,8 +225,18 @@ const HomeScreen = () => {
                     onRefresh={onRefresh}
                   />
                 }
+                style={{ paddingBottom: 30 }}
                 key={numColumns}
                 data={currentTrips}
+                keyExtractor={(trip) => trip.id}
+                numColumns={numColumns}
+                ListEmptyComponent={
+                  <View>
+                    <Text style={styles.emptyText}>
+                      No trips yet. Add some below!
+                    </Text>
+                  </View>
+                }
                 renderItem={({ item }) => (
                   <DibbyCard
                     wideScreen={wideScreen}
@@ -249,8 +253,6 @@ const HomeScreen = () => {
                     }
                   />
                 )}
-                keyExtractor={(trip) => trip.id}
-                numColumns={numColumns}
               />
             )}
             <DibbyButton add onPress={toggleCreateTripModal} />
