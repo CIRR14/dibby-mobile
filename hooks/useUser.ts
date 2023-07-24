@@ -8,6 +8,8 @@ export const useUser = () => {
     const [username, setUsername] = useState<string>('');
     const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
     const [photoURL, setPhotoURL] = useState<string>('')
+    const [emailVerified, setEmailVerified] = useState<boolean>(false)
+
     
     
     useEffect(() => {
@@ -15,6 +17,7 @@ export const useUser = () => {
             if (userObj) {
                 setUsername(userObj.displayName || '');
                 setPhotoURL(userObj.photoURL || '');
+                setEmailVerified(userObj.emailVerified)
                 setLoggedInUser(userObj);
             } else {
                 navigation.navigate('Login')
@@ -23,5 +26,5 @@ export const useUser = () => {
         return unsubscribe;
     }, []);
     
-    return { username, loggedInUser, photoURL, setUsername, setPhotoURL }
+    return { username, loggedInUser, photoURL, emailVerified, setUsername, setPhotoURL }
 }

@@ -10,7 +10,7 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useTheme } from "@react-navigation/native";
 import { Input } from "@rneui/themed";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faDollarSign } from "@fortawesome/free-solid-svg-icons";
+import { faAt, faDollarSign } from "@fortawesome/free-solid-svg-icons";
 
 interface IDibbyInputProps {
   placeholder: string;
@@ -18,6 +18,7 @@ interface IDibbyInputProps {
   onChangeText: (value: any) => void;
 
   money?: boolean;
+  username?: boolean;
   label?: string;
   onBlur?: () => void;
   onSubmitEditing?: () => void;
@@ -34,6 +35,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
   onChangeText,
   label,
   money,
+  username,
   onBlur = () => {},
   onSubmitEditing = () => {},
   keyboardType = "default",
@@ -63,10 +65,11 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
         onSubmitEditing={onSubmitEditing}
         inputContainerStyle={{ borderBottomWidth: 0 }}
         underlineColorAndroid={"transparent"}
+        leftIconContainerStyle={{ marginRight: 8 }}
         leftIcon={
-          money && (
+          (money || username) && (
             <FontAwesomeIcon
-              icon={faDollarSign}
+              icon={money ? faDollarSign : faAt}
               size={16}
               color={colors.background.text}
             />

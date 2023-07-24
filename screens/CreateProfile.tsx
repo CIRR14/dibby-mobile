@@ -23,6 +23,8 @@ const CreateProfile = () => {
   useEffect(() => {
     if (loggedInUser && loggedInUser.displayName) {
       navigation.navigate("Home");
+    } else if (loggedInUser && !loggedInUser.emailVerified) {
+      navigation.navigate("VerifyEmail");
     }
   }, [loggedInUser]);
 
@@ -82,17 +84,20 @@ const CreateProfile = () => {
             </Text>
           </View>
         </View>
-        <DibbyInput
-          placeholder="Display Name"
-          value={username}
-          onChangeText={setUsername}
-        />
-        <DibbyButton
-          fullWidth
-          disabled={!!!username}
-          onPress={handleNext}
-          title="Next"
-        />
+        <View>
+          <DibbyInput
+            username
+            placeholder="Display Name"
+            value={username}
+            onChangeText={setUsername}
+          />
+          <DibbyButton
+            fullWidth
+            disabled={!!!username}
+            onPress={handleNext}
+            title="Next"
+          />
+        </View>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -116,7 +121,6 @@ const makeStyles = (colors: ThemeColors) =>
     },
     sectionContainer: {
       backgroundColor: colors.background.paper,
-      width: "100%",
       borderRadius: 10,
       padding: 20,
       marginBottom: 20,

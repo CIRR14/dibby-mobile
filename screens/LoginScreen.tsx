@@ -9,6 +9,7 @@ import {
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendEmailVerification,
   signInWithEmailAndPassword,
   signInWithPopup,
   User,
@@ -68,7 +69,10 @@ const LoginScreen = () => {
     const unsubscribe = onAuthStateChanged(auth, (userObj) => {
       if (userObj) {
         setUser(user);
-        method === "logIn"
+        console.log({ userObj });
+        !userObj.emailVerified
+          ? navigation.navigate("VerifyEmail")
+          : method === "logIn"
           ? navigation.navigate("Home")
           : navigation.navigate("CreateProfile");
       }
@@ -112,6 +116,7 @@ const LoginScreen = () => {
     if (isPasswordValid() && isPasswordVerified()) {
       createUserWithEmailAndPassword(auth, email, password)
         .then(async (userCredentials: UserCredential) => {
+          await sendEmailVerification(userCredentials.user);
           const { displayName, email } = userCredentials.user;
           console.log("logged in as ", email, displayName);
         })
@@ -323,6 +328,8 @@ const makeStyles = (colors: ThemeColors) =>
     },
     buttonContainer: {
       width: "100%",
+      gap: 16,
+      margin: 16,
       display: "flex",
       alignItems: "center",
     },

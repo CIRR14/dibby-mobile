@@ -8,5 +8,5 @@
   "typeRoots": ["./types"],
   "include": [
     "**.ts"
-  ]
+  ],
 }

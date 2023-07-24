@@ -85,7 +85,6 @@ const makeStyles = (
   StyleSheet.create({
     buttonContainer: {
       width: fullWidth ? "100%" : "auto",
-      margin: 8,
       borderColor: colors.dark.background,
       borderWidth: type === "solid" ? 1 : 0,
       borderBottomWidth: type !== "clear" ? 4 : 0,
