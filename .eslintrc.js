@@ -7,7 +7,8 @@ module.exports = {
         "standard-with-typescript",
         "plugin:react/recommended",
         "airbnb",
-        "airbnb-typescript"
+        "airbnb-typescript",
+        "plugin:react-hooks/recommended"
     ],
     "overrides": [
         {

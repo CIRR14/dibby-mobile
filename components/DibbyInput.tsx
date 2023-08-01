@@ -17,6 +17,7 @@ interface IDibbyInputProps {
   value: string;
   onChangeText: (value: any) => void;
 
+  errorText?: string;
   money?: boolean;
   username?: boolean;
   label?: string;
@@ -27,6 +28,8 @@ interface IDibbyInputProps {
   disabled?: boolean;
   secureTextEntry?: boolean;
   returnKeyType?: ReturnKeyTypeOptions;
+  valid?: boolean;
+  clearTextOnFocus?: boolean;
 }
 
 const DibbyInput: React.FC<IDibbyInputProps> = ({
@@ -43,6 +46,9 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
   secureTextEntry,
   disabled,
   returnKeyType = "next",
+  errorText,
+  valid,
+  clearTextOnFocus = false,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(colors as unknown as ThemeColors);
@@ -61,17 +67,26 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
         secureTextEntry={secureTextEntry}
         placeholderTextColor={colors.disabled.text}
         disabled={disabled}
+        clearTextOnFocus={clearTextOnFocus}
         returnKeyType={returnKeyType}
         onSubmitEditing={onSubmitEditing}
         inputContainerStyle={{ borderBottomWidth: 0 }}
         underlineColorAndroid={"transparent"}
         leftIconContainerStyle={{ marginRight: 8 }}
+        errorMessage={errorText}
+        errorStyle={styles.errorText}
         leftIcon={
           (money || username) && (
             <FontAwesomeIcon
               icon={money ? faDollarSign : faAt}
               size={16}
-              color={colors.background.text}
+              color={
+                errorText
+                  ? colors.danger.button
+                  : valid
+                  ? colors.success.background
+                  : colors.background.text
+              }
             />
           )
         }
@@ -99,5 +114,10 @@ const makeStyles = (colors: ThemeColors) =>
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 12,
+    },
+    errorText: {
+      color: colors.danger.background,
+      marginBottom: 8,
+      alignSelf: "flex-end",
     },
   });

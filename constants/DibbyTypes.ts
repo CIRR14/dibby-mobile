@@ -1,45 +1,64 @@
-import { FieldValue, Timestamp } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 
-
-export interface TripDoc {
-    created: Timestamp;
-    updated: Timestamp;
-    name: string;
-    perPerson: number;
+interface DibbyDoc {
+    title: string;
+    description: string;
     amount: number;
+    createdBy: string;
+    dateCreated: Timestamp;
+    dateUpdated: Timestamp;
+    perPersonAverage: number;
+}
+
+interface DibbyDocWithID extends DibbyDoc {
+    id: string;
+}
+
+
+export interface DibbyUser {
+    uid: string,
+    username: string | null,
+    displayName: string | null,
+    photoURL: string | null,
+    email: string | null,
+    friends: string[];
+    trips: string[];
+    color: string;
+    // emailVerified: boolean,
+    // phoneNumber: string | null,
+}
+
+export interface DibbyTrip extends DibbyDocWithID {
+    expenses: DibbyExpense[];
+    participants: DibbyParticipant[];
     completed: boolean;
-    expenses: Expense[];
-    travelers: Traveler[];
-
-
-    // TODO: 
-    updateTravelers?: (Traveler: Traveler) => void;
-    updateExpenses?: (expense: Expense) => void;
-    updateAmount?: (amount: number) => void;
 }
 
-export interface Trip extends TripDoc {
-    id: string;
+
+export interface DibbyExpense extends DibbyDocWithID {
+    paidBy: string;
+    splitMethod: DibbySplitMethod;
+    peopleInExpense: DibbySplits[];
 }
 
-export interface Expense {
-    id: string;
-    created: Timestamp;
-    updated: Timestamp;
-    name: string;
-    payer: string;
-    amount: number | string;
-    peopleInExpense: string[];
-    equal: boolean;
-    perPerson: number;
-}
-
-export interface Traveler {
-    id: string;
+export interface DibbyParticipant {
+    name: string | null;
+    uid: string;
+    username: string | null;
+    owed: number;
     amountPaid: number;
     color: string;
+  createdUser?: boolean | null;
+}
+
+export enum DibbySplitMethod {
+    EQUAL_PARTS = "EQUAL_PARTS",
+    PERCENTAGE = "PERCENTAGE",
+    AMOUNT = "AMOUNT"
+}
+
+export interface DibbySplits {
+    amount: number;
+    uid: string;
     name: string;
-    owed: number;
-    paid: boolean;
-    me?: boolean;
 }

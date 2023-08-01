@@ -21,6 +21,7 @@ import ViewExpense from "../screens/ViewExpense";
 import ViewTravelers from "../screens/ViewTravelers";
 import PdfScreen from "../screens/PdfScreen";
 import { VerifyEmail } from "../screens/VerifyEmail";
+import CreateTrip from "../components/CreateTrip";
 
 export default function Navigation({
   colorScheme,
@@ -101,9 +102,13 @@ function RootNavigator() {
         component={NotFoundScreen}
         options={{ headerShown: false, title: "Oops!" }}
       />
-      {/* <Stack.Group screenOptions={{ presentation: "modal" }}>
-        <Stack.Screen name="Modal" component={ModalScreen} />
-      </Stack.Group> */}
+      {/* <Stack.Group screenOptions={{ presentation: "modal" }}> */}
+      <Stack.Screen
+        name="CreateTrip"
+        component={CreateTrip}
+        options={{ headerShown: false, title: "Create Trip" }}
+      />
+      {/* </Stack.Group> */}
     </Stack.Navigator>
   );
 }

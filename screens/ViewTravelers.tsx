@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TextInput } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useUser } from "../hooks/useUser";
-import { Timestamp, doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import DibbyButton from "../components/DibbyButton";
-import { useForm, Controller } from "react-hook-form";
-import { v4 } from "uuid";
-import { capitalizeName } from "../helpers/AppHelpers";
-import { generateColor } from "../helpers/GenerateColor";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import DibbyInput from "../components/DibbyInput";
+import { DibbyTrip } from "../constants/DibbyTypes";
+import { addDibbyParticipant } from "../helpers/FirebaseHelpers";
+import { DibbySearchUsername } from "../components/DibbySearchUsername";
+import { DibbyTravelerFormData } from "../components/CreateTrip";
+import { changeOpacity } from "../helpers/GenerateColor";
+import {
+  linearGradientEnd,
+  linearGradientStart,
+} from "../constants/DeviceWidth";
 
 const ViewTravelers = ({ route }: any) => {
   const { colors } = useTheme() as unknown as ColorTheme;
@@ -24,12 +27,15 @@ const ViewTravelers = ({ route }: any) => {
   const navigation = useNavigation();
   const { tripName, tripId } = route.params;
   const { loggedInUser } = useUser();
-  const [currentTrip, setCurrentTrip] = useState<Trip>();
+  const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
+  const [selectedResults, setSelectedResults] = useState<
+    DibbyTravelerFormData[]
+  >([]);
 
   useEffect(() => {
     if (loggedInUser && loggedInUser.uid) {
-      const unsub = onSnapshot(doc(db, loggedInUser.uid, tripId), (doc) => {
-        const newData: Trip = { ...(doc.data() as TripDoc), id: doc.id };
+      const unsub = onSnapshot(doc(db, "trips", tripId), (doc) => {
+        const newData: DibbyTrip = doc.data() as DibbyTrip;
         setCurrentTrip(newData);
       });
 
@@ -39,41 +45,12 @@ const ViewTravelers = ({ route }: any) => {
     }
   }, [loggedInUser, tripId]);
 
-  const initialValues: Traveler = {
-    id: v4(),
-    amountPaid: 0,
-    color: generateColor(),
-    name: "",
-    owed: 0,
-    paid: false,
-  };
-
-  const { handleSubmit, formState, control, reset } = useForm({
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: initialValues,
-  });
-
-  const onSubmit = async (data: Traveler) => {
-    if (currentTrip && loggedInUser) {
-      const updateTimestampedData = {
-        ...currentTrip,
-        updated: Timestamp.now(),
-        travelers: [
-          ...currentTrip.travelers,
-          { ...data, name: capitalizeName(data.name) },
-        ],
-        perPerson: currentTrip.amount / (currentTrip.travelers.length + 1),
-      };
+  const onSubmit = async () => {
+    if (currentTrip) {
       try {
-        await updateDoc(
-          doc(db, loggedInUser.uid, currentTrip.id),
-          updateTimestampedData
-        );
-        reset();
+        addDibbyParticipant(selectedResults, currentTrip);
         navigation.navigate("ViewTrip", { tripName, tripId });
       } catch (e) {
-        reset();
         console.error("Error adding document: ", e);
       }
     }
@@ -86,7 +63,7 @@ const ViewTravelers = ({ route }: any) => {
     >
       <SafeAreaView style={styles.topContainer}>
         <TopBar
-          title={`${currentTrip?.name}`}
+          title={`${currentTrip?.title}`}
           leftButton={
             <DibbyButton
               type="clear"
@@ -106,67 +83,55 @@ const ViewTravelers = ({ route }: any) => {
 
         <View
           style={{
-            flexDirection: "column",
-            justifyContent: "space-between",
-            margin: 16,
+            marginTop: 16,
+            flexDirection: "row",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            padding: 10,
+            borderRadius: 10,
+            flexWrap: "wrap",
           }}
         >
-          <View
-            style={{
-              marginTop: 16,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: 10,
-              borderRadius: 10,
-            }}
-          >
-            {currentTrip?.travelers.map((t) => {
-              return (
-                <View
-                  key={t.id}
+          {currentTrip?.participants.map((t) => {
+            return (
+              <LinearGradient
+                key={t.uid}
+                style={{
+                  margin: 8,
+                  borderRadius: 20,
+                  backgroundColor: colors.background.default,
+                  padding: 10,
+                  alignItems: "flex-start",
+                  flexDirection: "column",
+                  minWidth: 120,
+                }}
+                colors={[changeOpacity(t.color, 0.7), t.color]}
+                start={linearGradientStart}
+                end={linearGradientEnd}
+              >
+                <Text
                   style={{
-                    margin: 8,
-                    borderRadius: 20,
-                    backgroundColor: t.color,
-                    padding: 8,
-                    alignItems: "flex-start",
-                    flexDirection: "column",
+                    color: colors.background.text,
+                    fontSize: 16,
                   }}
                 >
-                  <Text style={{ color: colors.background.text, fontSize: 16 }}>
-                    {t.name}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+                  {t.name}
+                </Text>
+              </LinearGradient>
+            );
+          })}
         </View>
+
         <View style={styles.formContainer}>
-          <Controller
-            control={control}
-            name="name"
-            rules={{
-              required: true,
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <DibbyInput
-                label="Add Traveler"
-                placeholder="Name of Traveler"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-              />
-            )}
+          <DibbySearchUsername
+            results={(res) => setSelectedResults(res)}
+            currentTrip={currentTrip}
           />
-          {formState.errors.name && (
-            <Text style={styles.errorText}>Traveler must have a name.</Text>
-          )}
 
           <DibbyButton
-            disabled={!formState.isValid}
-            title={`Add traveler to ${currentTrip?.name}`}
-            onPress={handleSubmit(onSubmit)}
+            disabled={selectedResults.length < 1}
+            title={`Add traveler to ${currentTrip?.title}`}
+            onPress={onSubmit}
           />
         </View>
       </SafeAreaView>
@@ -180,7 +145,6 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      // backgroundColor: colors.background.default,
     },
     title: {
       fontSize: 20,

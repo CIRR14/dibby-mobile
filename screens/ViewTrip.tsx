@@ -16,8 +16,26 @@ import { useNavigation } from "@react-navigation/core";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
-import { Timestamp, doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
+import {
+  Timestamp,
+  collection,
+  doc,
+  documentId,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import {
+  DibbyExpense,
+  DibbyParticipant,
+  DibbyTrip,
+  Traveler,
+  Trip,
+  TripDoc,
+} from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import { DibbyCard } from "../components/DibbyCard";
 import CreateExpense from "../components/CreateExpense";
@@ -46,6 +64,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import DibbyAvatars from "../components/DibbyAvatars";
 import DibbyLoading from "../components/DibbyLoading";
 import DibbySummary from "../components/DibbySummary";
+import { deleteDibbyExpense } from "../helpers/FirebaseHelpers";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -55,9 +74,9 @@ const ViewTrip = ({ route }: any) => {
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId } = route.params;
-  const { loggedInUser } = useUser();
-  const [currentTrip, setCurrentTrip] = useState<Trip>();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const { dibbyUser, loggedInUser } = useUser();
+  const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
+  const [expenses, setExpenses] = useState<DibbyExpense[]>([]);
   const [calculatedTrip, setCalculatedTrip] = useState<ITransactionResponse>();
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
   const [isCreateExpenseModalVisible, setIsCreateExpenseModalVisible] =
@@ -67,16 +86,36 @@ const ViewTrip = ({ route }: any) => {
   const [loadingIndicator, setLoadingIndicator] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
-  const onRefresh = useCallback(() => {
+  const fetchTrip = useCallback(async () => {
+    const docRef = doc(db, "trips", tripId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      setCurrentTrip(docSnap.data() as DibbyTrip);
+    } else {
+      console.log("No such document!");
+    }
+  }, [tripId]);
+
+  const onRefresh = useCallback(async () => {
     if (loggedInUser && loggedInUser.uid) {
       setRefreshing(true);
-      const unsub = onSnapshot(doc(db, loggedInUser.uid, tripId), (doc) => {
-        const newData: Trip = { ...(doc.data() as TripDoc), id: doc.id };
-        setCurrentTrip(newData);
-        setRefreshing(false);
-      });
+      await fetchTrip();
+      setRefreshing(false);
     }
   }, [loggedInUser]);
+
+  useEffect(() => {
+    setLoadingIndicator(true);
+    const unsub = onSnapshot(doc(db, "trips", tripId), (trip) => {
+      setCurrentTrip(trip.data() as DibbyTrip);
+      setLoadingIndicator(false);
+    });
+
+    return () => {
+      unsub();
+    };
+  }, [tripId]);
 
   useEffect(() => {
     if (calculatedTrip && currentTrip) {
@@ -93,84 +132,25 @@ const ViewTrip = ({ route }: any) => {
   }, [loggedInUser, currentTrip]);
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid) {
-      setLoadingIndicator(true);
-      const unsub = onSnapshot(doc(db, loggedInUser.uid, tripId), (doc) => {
-        const newData: Trip = { ...(doc.data() as TripDoc), id: doc.id };
-        setCurrentTrip(newData);
-        setLoadingIndicator(false);
-      });
-
-      return () => {
-        unsub();
-      };
-    }
-  }, [loggedInUser, tripId]);
-
-  useEffect(() => {
     if (currentTrip) {
       setExpenses(
         currentTrip.expenses.sort(
-          (a, b) => b.created.toDate().getTime() - a.created.toDate().getTime()
+          (a, b) =>
+            b.dateCreated.toDate().getTime() - a.dateCreated.toDate().getTime()
         )
       );
     }
   }, [currentTrip]);
 
-  const deleteExpense = async (expense: Expense) => {
-    // TODO: update rest of the trip?
-    // use TRIP updates (expenseUpdate())
-    if (loggedInUser && currentTrip) {
-      const newExpArr: Expense[] = currentTrip.expenses.filter(
-        (e) => e.id !== expense.id
-      );
-
-      const newTravelerArr: Traveler[] = currentTrip.travelers.map((t) => {
-        if (expense.peopleInExpense.find((p) => p === t.id)) {
-          if (expense.payer === t.id) {
-            // payer
-            const newAmountPaid = t.amountPaid - +expense.amount;
-            const newOwed =
-              t.owed -
-              +expense.perPerson * (expense.peopleInExpense.length - 1);
-            return {
-              ...t,
-              amountPaid: newAmountPaid,
-              owed: newOwed,
-            };
-          } else {
-            // involved but not payer
-            const newOwed = t.owed + +expense.perPerson;
-            return {
-              ...t,
-              owed: newOwed,
-            };
-          }
-        } else {
-          return {
-            ...t,
-          };
-        }
-      });
-
-      const newTrip = {
-        ...currentTrip,
-        expenses: newExpArr,
-        amount: currentTrip.amount - +expense.amount, //increment(+expense.amount)
-        updated: Timestamp.now(),
-        perPerson:
-          (currentTrip.amount - +expense.amount) / currentTrip.travelers.length,
-        travelers: newTravelerArr,
-      };
-
-      const tripRef = doc(db, loggedInUser.uid, tripId);
-      await updateDoc(tripRef, newTrip);
+  const deleteExpense = async (expense: DibbyExpense) => {
+    if (currentTrip) {
+      await deleteDibbyExpense(expense, currentTrip);
     }
   };
 
-  const deleteAlert = (item: Expense) =>
+  const deleteAlert = (item: DibbyExpense) =>
     Alert.alert(
-      `Are you sure you want to delete ${item.name}?`,
+      `Are you sure you want to delete ${item.title}?`,
       "This will be permanently deleted.",
       [
         {
@@ -178,7 +158,7 @@ const ViewTrip = ({ route }: any) => {
           onPress: () => console.log("Cancel Pressed"),
           style: "cancel",
         },
-        { text: "OK", onPress: () => deleteExpense(item as Expense) },
+        { text: "OK", onPress: () => deleteExpense(item) },
       ]
     );
 
@@ -262,7 +242,7 @@ const ViewTrip = ({ route }: any) => {
           />
         </TouchableOpacity>
 
-        {calculatedTrip && summaryOpen && (
+        {calculatedTrip && summaryOpen && currentTrip && (
           <DibbySummary
             currentTrip={currentTrip}
             calculatedTrip={calculatedTrip}
@@ -287,15 +267,15 @@ const ViewTrip = ({ route }: any) => {
           <Text style={styles.title}>
             Expenses - ${numberWithCommas(currentTrip?.amount.toString())}
           </Text>
-          {currentTrip?.travelers && (
+          {currentTrip?.participants && (
             <DibbyAvatars
               onPress={() =>
                 navigation.navigate("ViewTravelers", {
-                  tripName: currentTrip!!.name,
-                  tripId: currentTrip!!.id,
+                  tripName: currentTrip.title,
+                  tripId: currentTrip.id,
                 })
               }
-              travelers={currentTrip?.travelers}
+              travelers={currentTrip?.participants}
             />
           )}
         </View>
@@ -349,9 +329,9 @@ const ViewTrip = ({ route }: any) => {
               visible={isCreateExpenseModalVisible}
               onRequestClose={toggleCreateExpenseModal}
             >
-              {loggedInUser && (
+              {dibbyUser && (
                 <CreateExpense
-                  currentUser={loggedInUser}
+                  currentUser={dibbyUser}
                   onPressBack={toggleCreateExpenseModal}
                   tripInfo={currentTrip}
                 />

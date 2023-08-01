@@ -1,19 +1,25 @@
 import React from "react";
 import { Avatar } from "@rneui/base";
-import { TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { getInitials } from "../helpers/AppHelpers";
-import { userColors } from "../helpers/GenerateColor";
-import { Expense, Traveler } from "../constants/DibbyTypes";
+import { DibbyExpense, DibbyParticipant } from "../constants/DibbyTypes";
 import { useTheme } from "@react-navigation/native";
 import { ColorTheme } from "../constants/Colors";
-import { faDollar } from "@fortawesome/free-solid-svg-icons";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { changeOpacity } from "../helpers/GenerateColor";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  linearGradientEnd,
+  linearGradientStart,
+} from "../constants/DeviceWidth";
 
 interface IDibbyAvatarsProps {
   onPress?: () => void;
-  travelers?: Traveler[] | undefined[];
-  expense?: Expense;
+  travelers?: DibbyParticipant[] | undefined[];
+  expense?: DibbyExpense;
   maxNumberOfAvatars?: number;
+  height?: number;
 }
 
 const DibbyAvatars: React.FC<IDibbyAvatarsProps> = ({
@@ -21,6 +27,7 @@ const DibbyAvatars: React.FC<IDibbyAvatarsProps> = ({
   travelers,
   expense,
   maxNumberOfAvatars = 4,
+  height = 36,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
 
@@ -28,76 +35,67 @@ const DibbyAvatars: React.FC<IDibbyAvatarsProps> = ({
     <TouchableOpacity
       style={{
         flexDirection: "row",
-        maxHeight: 24,
-        shadowColor: colors.background.text,
-        shadowOffset: {
-          width: 0,
-          height: 2,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 2.5,
+        maxHeight: height,
       }}
       onPress={onPress}
     >
-      {travelers?.map((item, index) => {
-        if (index < maxNumberOfAvatars) {
+      {travelers?.map((item: DibbyParticipant | undefined, index: number) => {
+        if (index < maxNumberOfAvatars && item) {
           return (
-            <Avatar
-              key={item.id}
-              size="small"
-              rounded
-              title={
-                index !== maxNumberOfAvatars - 1
-                  ? getInitials(item.name)
-                  : `+${travelers.length - (maxNumberOfAvatars - 1)}`
-              }
-              titleStyle={{
-                color:
-                  index !== 3 ? colors.background.paper : colors.light.text,
-              }}
-              containerStyle={{
-                marginLeft: -10,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderColor: colors.dark.background,
-              }}
-              overlayContainerStyle={{
-                backgroundColor: item.me
-                  ? userColors[0].background
-                  : index !== 3
-                  ? item.color
-                  : colors.light.background,
-                opacity: 0.95,
+            <View
+              key={item.uid}
+              style={{
+                zIndex: travelers.length - index,
               }}
             >
-              {expense && expense.payer === item.id && (
-                <Avatar.Accessory
-                  size={12}
+              <LinearGradient
+                style={{
+                  borderRadius: 20,
+                  borderColor: colors.dark.background,
+                  borderWidth: 1,
+                  backgroundColor: colors.background.default,
+                  width: height,
+                  height: height,
+                  marginLeft: -10,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                colors={[changeOpacity(item.color, 0.7), item.color]}
+                start={linearGradientStart}
+                end={linearGradientEnd}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color:
+                      index !== maxNumberOfAvatars &&
+                      travelers.length - (maxNumberOfAvatars - 1) <= 1
+                        ? colors.background.text
+                        : colors.light.text,
+                  }}
+                >
+                  {index !== maxNumberOfAvatars &&
+                  travelers.length - (maxNumberOfAvatars - 1) <= 1
+                    ? getInitials(item.name)
+                    : `+${travelers.length - (maxNumberOfAvatars - 1)}`}
+                </Text>
+              </LinearGradient>
+              {expense?.paidBy === item.uid && (
+                <FontAwesomeIcon
                   style={{
                     position: "absolute",
-                    left: 0,
-                    bottom: 0,
-                    backgroundColor: colors.info.background,
+                    left: -10,
+                    bottom: -4,
+                    width: 16,
+                    height: 16,
+                    zIndex: 2000,
                   }}
-                  iconProps={{
-                    name: "",
-                    children: (
-                      <FontAwesomeIcon
-                        icon={faDollar}
-                        size={8}
-                        color={colors.background.paper}
-                      />
-                    ),
-                  }}
-                  iconStyle={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    alignContent: "center",
-                  }}
+                  icon={faStar}
+                  size={16}
+                  color={colors.warning.background}
                 />
               )}
-            </Avatar>
+            </View>
           );
         }
       })}

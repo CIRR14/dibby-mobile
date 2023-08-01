@@ -6,6 +6,10 @@ import { Button } from "@rneui/themed";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { LinearGradient } from "expo-linear-gradient";
+import {
+  linearGradientEnd,
+  linearGradientStart,
+} from "../constants/DeviceWidth";
 
 interface IButtonProps {
   onPress: () => void;
@@ -64,8 +68,8 @@ const DibbyButton: React.FC<IButtonProps> = ({
         type === "solid"
           ? {
               colors: [...colors.gradient],
-              start: { x: 0, y: 0.5 },
-              end: { x: 1, y: 0.5 },
+              start: linearGradientStart,
+              end: linearGradientEnd,
             }
           : {
               colors: ["transparent"],

@@ -5,20 +5,20 @@ import {
   View,
   Text,
   ScrollView,
-  Switch,
   Dimensions,
 } from "react-native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useTheme } from "@react-navigation/native";
-import { User } from "firebase/auth";
-import { db } from "../firebase";
 import { faClose } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { Expense, Traveler, Trip } from "../constants/DibbyTypes";
-import { Timestamp, doc, updateDoc } from "firebase/firestore";
+import {
+  DibbySplitMethod,
+  DibbySplits,
+  DibbyTrip,
+  DibbyUser,
+} from "../constants/DibbyTypes";
 import { Controller, useForm } from "react-hook-form";
 import "react-native-get-random-values";
-import { v4 as uuid } from "uuid";
 import {
   getInfoFromTravelerId,
   getItemFormatFromTravelerIds,
@@ -31,11 +31,25 @@ import { CheckBox } from "@rneui/themed";
 import DibbyButton from "./DibbyButton";
 import TopBar from "./TopBar";
 import DibbyInput from "./DibbyInput";
+import { createDibbyExpense } from "../helpers/FirebaseHelpers";
 
 interface ICreateExpenseProps {
-  currentUser: User;
-  tripInfo?: Trip;
+  currentUser: DibbyUser;
+  tripInfo?: DibbyTrip;
   onPressBack: () => void;
+}
+
+export interface CreateExpenseForm {
+  title: string;
+  description: string;
+  amount: string;
+  peopleInExpense: string[];
+  paidBy: string;
+  createdBy: string;
+  splitMethod: DibbySplitMethod;
+  perPersonAverage: number;
+
+  peopleSplits?: DibbySplits[];
 }
 
 const windowWidth = Dimensions.get("window").width;
@@ -50,19 +64,19 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(colors as unknown as ThemeColors);
 
-  const initialValues: Expense = {
-    id: "",
-    name: "",
-    created: Timestamp.now(),
-    updated: Timestamp.now(),
+  const initialValues: CreateExpenseForm = {
+    title: "",
+    description: "",
     amount: "",
     peopleInExpense: tripInfo
-      ? tripInfo?.travelers.map((t) => t.id)
+      ? tripInfo?.participants.map((t) => t.uid)
       : [currentUser.uid],
-    payer: currentUser.uid,
-    equal: true,
-    perPerson: 0,
+    paidBy: currentUser.uid,
+    createdBy: currentUser.uid,
+    splitMethod: DibbySplitMethod.EQUAL_PARTS,
+    perPersonAverage: 0,
   };
+
   const { handleSubmit, formState, control, setValue, watch, reset } = useForm({
     mode: "all",
     reValidateMode: "onChange",
@@ -73,98 +87,20 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const peopleInExpense = watch("peopleInExpense");
 
   useEffect(() => {
-    const perPersonValue =
-      parseFloat(amount as string) / peopleInExpense.length;
-    setValue("perPerson", perPersonValue || 0);
+    const perPersonValue = parseFloat(amount) / peopleInExpense.length;
+    setValue("perPersonAverage", perPersonValue || 0);
   }, [amount, peopleInExpense]);
 
-  const onSubmit = async (data: Expense) => {
-    const amount = parseFloat(data.amount as string);
-
+  const onSubmit = async (formVal: CreateExpenseForm) => {
     if (tripInfo) {
-      const payerInPeopleInvolved = data.peopleInExpense.find(
-        (id: string) => id === data.payer
-      );
-      if (!payerInPeopleInvolved) {
-        data.peopleInExpense = [...data.peopleInExpense, data.payer];
-      }
-      data.id = uuid();
-      data.amount = +amount;
-
-      const tripPerPerson =
-        (tripInfo.amount + amount) / tripInfo.travelers.length;
-
-      const updatedTravelers = tripInfo.travelers.map((t: Traveler) => {
-        const involvedInExpense = data.peopleInExpense.includes(t.id);
-
-        // if traveler is in expense
-        if (involvedInExpense) {
-          // if traveler is in expense and is the payer
-          if (data.payer === t.id) {
-            const newAmountPaid = t.amountPaid + amount;
-            return {
-              ...t,
-              amountPaid: newAmountPaid,
-              // owed should be whatever total you have paid + this expenses cost - your cost for this expense (and other expenses)
-              owed: t.owed + (amount - data.perPerson),
-            };
-            // if traveler is in expense but not the payer
-          } else {
-            return {
-              ...t,
-              // what the traveler has paid total - this expense's cost
-              owed: t.owed - data.perPerson,
-            };
-          }
-          // if traveler is not in expense, keep the same
-        } else {
-          return {
-            ...t,
-          };
-        }
-      });
-
-      data.created = Timestamp.now();
-      data.updated = Timestamp.now();
-
-      const tripUpdate = {
-        ...tripInfo,
-        updated: Timestamp.now(),
-        amount: tripInfo.amount + amount, // increment(amount)s
-        travelers: updatedTravelers,
-        expenses: [...tripInfo.expenses, data], // arrayUnion(data)
-        perPerson: tripPerPerson,
-      };
-
       try {
-        await updateDoc(doc(db, currentUser.uid, tripInfo.id), tripUpdate);
-        console.log("Document updated with ID: ", tripInfo.id);
+        await createDibbyExpense(formVal, tripInfo);
         reset();
         onPressBack();
       } catch (e) {
         console.error("Error updating trip: ", e);
       }
     }
-  };
-
-  const showError = (_fieldName: string, index?: any, secondName?: any) => {
-    const travelerError = (formState.errors as any)[_fieldName]?.[index]?.[
-      secondName
-    ];
-    return (
-      travelerError && (
-        <div
-          className="ion-color-danger"
-          style={{
-            padding: 5,
-            paddingLeft: 12,
-            fontSize: "smaller",
-          }}
-        >
-          This field is required
-        </div>
-      )
-    );
   };
 
   const getSelectText = (
@@ -184,7 +120,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   return (
     <SafeAreaView style={styles.topContainer}>
       <TopBar
-        title={`Add Expense to ${tripInfo?.name}`}
+        title={`Add Expense to ${tripInfo?.title}`}
         leftButton={
           <DibbyButton
             type="clear"
@@ -204,13 +140,14 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
         <View style={styles.content}>
           <Controller
             control={control}
-            name="name"
+            name="title"
             rules={{
               required: true,
               validate: (value) =>
                 tripInfo?.expenses.every(
                   (exp) =>
-                    exp.name.toUpperCase().trim() !== value.toUpperCase().trim()
+                    exp.title.toUpperCase().trim() !==
+                    value.toUpperCase().trim()
                 ),
             }}
             render={({ field: { onChange, onBlur, value } }) => (
@@ -223,7 +160,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
               />
             )}
           />
-          {formState.errors.name && (
+          {formState.errors.title && (
             <Text style={styles.errorText}>Expense must have a name.</Text>
           )}
 
@@ -232,9 +169,9 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             name="amount"
             rules={{
               required: true,
-              validate: (value) => parseFloat(value as string) > 0,
+              validate: (value) => parseFloat(value) > 0,
             }}
-            defaultValue={0}
+            defaultValue={"0"}
             render={({ field: { onChange, onBlur, value } }) => (
               <DibbyInput
                 label={"Expense Amount"}
@@ -243,6 +180,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                 value={value.toString()}
                 placeholder="How much did this cost?"
                 onBlur={onBlur}
+                clearTextOnFocus
                 returnKeyType="done"
                 onChangeText={onChange}
               />
@@ -259,7 +197,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
           </View>
           <Controller
             control={control}
-            name="payer"
+            name="paidBy"
             rules={{
               required: true,
             }}
@@ -269,14 +207,12 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                 <View>
                   <FlatList
                     key={numColumns}
-                    data={
-                      tripInfo ? getItemFormatFromTravelerIds(tripInfo) : []
-                    }
+                    data={tripInfo ? [...tripInfo.participants] : []}
                     renderItem={({ item }) => (
                       <CheckBox
-                        checked={value === item.key}
-                        onPress={() => setValue("payer", item.key)}
-                        title={item.label}
+                        checked={value === item.uid}
+                        onPress={() => setValue("paidBy", item.uid)}
+                        title={item.name || undefined}
                         containerStyle={{
                           backgroundColor: colors.input.background,
                           borderRadius: 10,
@@ -338,14 +274,9 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                 required: true,
                 validate: (value) => value.length > 0,
               }}
-              defaultValue={[]}
               render={({ field: { onChange, onBlur, value } }) => (
                 <MultiSelect
-                  items={
-                    tripInfo
-                      ? getItemFormatFromTravelerIds(tripInfo)
-                      : [currentUser.uid]
-                  }
+                  items={tripInfo ? tripInfo.participants : []}
                   styleDropdownMenuSubsection={{
                     paddingLeft: 16,
                     borderRadius: 10,
@@ -358,13 +289,13 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                   searchInputStyle={{
                     backgroundColor: colors.input.background,
                   }}
-                  uniqueKey={"key"}
+                  uniqueKey={"uid"}
                   onSelectedItemsChange={onChange}
                   onAddItem={onChange}
                   onToggleList={onBlur}
                   selectedItems={value}
                   selectText={getSelectText(value, "label")}
-                  displayKey="label"
+                  displayKey="name"
                   submitButtonText="Done"
                   selectedItemTextColor={colors.info.button}
                   selectedItemIconColor={colors.info.button}
@@ -390,35 +321,36 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             </Text>
             <Controller
               control={control}
-              name="equal"
+              name="splitMethod"
               rules={{
                 required: true,
               }}
-              defaultValue={true}
+              defaultValue={DibbySplitMethod.EQUAL_PARTS}
               render={({ field: { onChange, onBlur, value } }) => (
-                <Switch
-                  trackColor={{
-                    false: colors.disabled.button,
-                    true: colors.primary.text,
-                  }}
-                  thumbColor={
-                    value ? colors.info.button : colors.background.paper
-                  }
-                  ios_backgroundColor={colors.disabled.button}
-                  onValueChange={onChange}
-                  value={value}
-                  disabled={true}
-                  style={{
-                    marginTop: 8,
-                  }}
-                />
+                <></>
+                // <Switch
+                //   trackColor={{
+                //     false: colors.disabled.button,
+                //     true: colors.primary.text,
+                //   }}
+                //   thumbColor={
+                //     value ? colors.info.button : colors.background.paper
+                //   }
+                //   ios_backgroundColor={colors.disabled.button}
+                //   onValueChange={onChange}
+                //   value={value}
+                //   disabled={true}
+                //   style={{
+                //     marginTop: 8,
+                //   }}
+                // />
               )}
             />
           </View>
 
           <Controller
             control={control}
-            name="perPerson"
+            name="perPersonAverage"
             defaultValue={0}
             render={({ field: { onChange, onBlur, value } }) => (
               <DibbyInput
@@ -432,12 +364,12 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
               />
             )}
           />
+          <DibbyButton
+            disabled={!formState.isValid}
+            onPress={handleSubmit(onSubmit)}
+            title={"Add Expense"}
+          />
         </View>
-        <DibbyButton
-          disabled={!formState.isValid}
-          onPress={handleSubmit(onSubmit)}
-          title={"Add Expense"}
-        />
       </ScrollView>
     </SafeAreaView>
   );

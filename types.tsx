@@ -27,6 +27,7 @@ export type RootStackParamList = {
   PrintPDF: { tripId: string };
   ViewTrip: { tripName: string; tripId: string };
   ViewTravelers: { tripName: string; tripId: string };
+  CreateTrip: undefined;
   ViewExpense: {
     tripName: string;
     tripId: string;

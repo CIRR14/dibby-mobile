@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { SafeAreaView, StyleSheet, View } from "react-native";
+import { SafeAreaView, StyleSheet } from "react-native";
 import { useUser } from "../hooks/useUser";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { Button, Card } from "@rneui/base";
@@ -12,51 +12,34 @@ import {
   faSignOutAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import {
-  onAuthStateChanged,
-  reload,
-  sendEmailVerification,
-  signOut,
-} from "firebase/auth";
+import { User, reload, sendEmailVerification, signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
 
 export const VerifyEmail = () => {
-  const {
-    username,
-    loggedInUser,
-    photoURL,
-    emailVerified,
-    setUsername,
-    setPhotoURL,
-  } = useUser();
+  const { loggedInUser, dibbyUser } = useUser();
   const navigation = useNavigation();
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(colors as unknown as ThemeColors);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (userObj) => {
-      if (userObj?.displayName && userObj.emailVerified) {
-        navigation.navigate("Home");
-      } else {
-        navigation.navigate("CreateProfile");
-      }
-    });
-    return unsubscribe;
-  }, []);
+  const navigateTo = (userObj: User) => {
+    if (userObj.displayName && userObj.emailVerified && dibbyUser) {
+      navigation.navigate("Home");
+    } else {
+      navigation.navigate("CreateProfile");
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (loggedInUser?.emailVerified) {
-        clearInterval(interval);
-        if (loggedInUser?.displayName && loggedInUser.emailVerified) {
-          navigation.navigate("Home");
-        } else {
-          navigation.navigate("CreateProfile");
+      if (loggedInUser) {
+        reload(loggedInUser);
+        if (loggedInUser.emailVerified) {
+          clearInterval(interval);
+          navigateTo(loggedInUser);
         }
       }
-      await reload(loggedInUser!!);
     }, 2000);
   }, [loggedInUser]);
 

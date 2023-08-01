@@ -5,15 +5,22 @@ export const generateColor = (getRGB = true): string => {
     const l = 45 + 10 * Math.random();
     const rgb = HSLToRGB(h, s, l);
     const hsl = `hsl(${h}, ${s}%, ${l}%, ${opacity})`;
-    return getRGB ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]
+    return getRGB ? `rgb(${rgb[0].toFixed(2)}, ${rgb[1].toFixed(2)}, ${rgb[2].toFixed(2)
         })` : hsl;
 };
-
-export const changeOpacity = (color: string, opacity = 1): string => {
-    const lastCommaIndex = color.lastIndexOf(",") + 1;
-    const newColor = color.substring(0, lastCommaIndex) + ` ${opacity})`;
-    return newColor;
+export const changeOpacity = (rgbString: string, opacity = 0.5): string => {
+    const regex = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/;
+        const match = rgbString.match(regex);
+      
+        if (!match) {
+          return rgbString; // Return the original string if it's not in the expected format
+        }
+      
+        const [_, r, g, b, a = 1] = match; // Destructure the matched values
+        const rgbaString = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        return rgbaString;
 };
+
 
 const HSLToRGB = (h: number, s: number, l: number) => {
     s /= 100;
