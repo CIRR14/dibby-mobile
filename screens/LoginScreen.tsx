@@ -3,12 +3,14 @@ import React, { useEffect, useState } from "react";
 import {
   appleProvider,
   auth,
+  db,
   facebookProvider,
   googleProvider,
 } from "../firebase";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendEmailVerification,
   signInWithEmailAndPassword,
   signInWithPopup,
   User,
@@ -26,15 +28,14 @@ import {
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { Platform } from "react-native";
 import { wideScreen } from "../constants/DeviceWidth";
-import { REACT_APP_VERSION } from "@env";
 import DibbyButton from "../components/DibbyButton";
 import { LinearGradient } from "expo-linear-gradient";
 import DibbyInput from "../components/DibbyInput";
 import DibbyVersion from "../components/DibbyVersion";
+import DibbyLoading from "../components/DibbyLoading";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
-  const [user, setUser] = useState<User | undefined>(undefined);
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [method, setMethod] = useState<"signUp" | "logIn" | undefined>(
@@ -43,6 +44,7 @@ const LoginScreen = () => {
   const [passwordVerification, setPasswordVerification] = useState<string>("");
   const [passwordVerificationRequired, setPasswordVerificationRequired] =
     useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const navigation = useNavigation();
 
@@ -67,8 +69,9 @@ const LoginScreen = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (userObj) => {
       if (userObj) {
-        setUser(user);
-        method === "logIn"
+        !userObj.emailVerified
+          ? navigation.navigate("VerifyEmail")
+          : userObj.emailVerified && method === "logIn"
           ? navigation.navigate("Home")
           : navigation.navigate("CreateProfile");
       }
@@ -94,32 +97,23 @@ const LoginScreen = () => {
     setError("");
   };
 
-  // const createProfile = async (user: User): Promise<DocumentReference> => {
-  //   const { uid, displayName, phoneNumber, photoURL, email, emailVerified } =
-  //     user;
-  //   return addDoc(collection(db, "users"), {
-  //     uid,
-  //     displayName,
-  //     phoneNumber,
-  //     photoURL,
-  //     email,
-  //   });
-  // };
-
   const handleSignUp = () => {
+    setLoading(true);
     setPasswordVerificationRequired(true);
     setMethod("signUp");
     if (isPasswordValid() && isPasswordVerified()) {
       createUserWithEmailAndPassword(auth, email, password)
         .then(async (userCredentials: UserCredential) => {
-          const { displayName, email } = userCredentials.user;
-          console.log("logged in as ", email, displayName);
+          setLoading(false);
+          await sendEmailVerification(userCredentials.user);
         })
         .catch((err: FirebaseError) => {
+          setLoading(false);
           console.log({ err });
           setError(errorMessage(err?.code));
         });
     } else if (password || email) {
+      setLoading(false);
       isPasswordVerified()
         ? setError("Password doesn't meet criteria")
         : setError("Passwords must match");
@@ -127,12 +121,15 @@ const LoginScreen = () => {
   };
 
   const handleLogin = () => {
+    setLoading(true);
     setMethod("logIn");
     signInWithEmailAndPassword(auth, email, password)
       .then((user: UserCredential) => {
+        setLoading(false);
         console.log("logging in", { user });
       })
       .catch((err: FirebaseError) => {
+        setLoading(false);
         console.log({ err });
         if (err.code === "auth/user-not-found") {
           handleSignUp();
@@ -183,104 +180,103 @@ const LoginScreen = () => {
       colors={[...colors.background.gradient]}
     >
       <KeyboardAvoidingView style={styles.topContainer} behavior="padding">
-        {!user && (
-          <View style={styles.innerContainer}>
-            <View style={styles.titleContainer}>
-              <Text style={styles.titleText}>Dibby</Text>
-              <Text style={styles.descriptionText}>Money Splitting</Text>
-            </View>
+        <View style={styles.innerContainer}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleText}>Dibby</Text>
+            <Text style={styles.descriptionText}>Money Splitting</Text>
+          </View>
 
-            <View style={styles.inputContainer}>
+          <View style={styles.inputContainer}>
+            <DibbyInput
+              placeholder="Email"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <DibbyInput
+              placeholder="Password"
+              keyboardType="visible-password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            {passwordVerificationRequired && (
               <DibbyInput
-                placeholder="Email"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-              />
-              <DibbyInput
-                placeholder="Password"
+                placeholder="Verify Password"
                 keyboardType="visible-password"
-                value={password}
-                onChangeText={setPassword}
+                value={passwordVerification}
+                onChangeText={setPasswordVerification}
                 secureTextEntry
               />
-              {passwordVerificationRequired && (
-                <DibbyInput
-                  placeholder="Verify Password"
-                  keyboardType="visible-password"
-                  value={passwordVerification}
-                  onChangeText={setPasswordVerification}
-                  secureTextEntry
-                />
-              )}
+            )}
 
-              {error && <Text style={styles.errorText}>{error}</Text>}
-            </View>
-
-            <View style={styles.buttonContainer}>
-              <DibbyButton
-                onPress={
-                  passwordVerificationRequired ? resetToLogin : handleLogin
-                }
-                type={passwordVerificationRequired ? "outline" : "solid"}
-                title="Login"
-                fullWidth
-              />
-              <DibbyButton
-                fullWidth
-                type={passwordVerificationRequired ? "solid" : "outline"}
-                onPress={handleSignUp}
-                title={"Register"}
-              />
-            </View>
-
-            <View style={styles.orContainer}>
-              <View style={styles.orLines} />
-              <View>
-                <Text style={styles.orText}>or</Text>
-              </View>
-              <View style={styles.orLines} />
-            </View>
-
-            <View style={styles.providerContainer}>
-              <DibbyButton
-                title={
-                  <FontAwesomeIcon
-                    icon={faFacebookSquare}
-                    size={32}
-                    color={colors.background.text}
-                  />
-                }
-                type="clear"
-                onPress={handleFacebookLogin}
-              />
-              <DibbyButton
-                title={
-                  <FontAwesomeIcon
-                    icon={faGoogle}
-                    size={32}
-                    color={colors.background.text}
-                  />
-                }
-                type="clear"
-                onPress={handleGoogleLogIn}
-              />
-              <DibbyButton
-                title={
-                  <FontAwesomeIcon
-                    icon={faApple}
-                    size={32}
-                    color={colors.background.text}
-                  />
-                }
-                type="clear"
-                onPress={handleAppleLogin}
-              />
-            </View>
+            {error && <Text style={styles.errorText}>{error}</Text>}
           </View>
-        )}
+
+          <View style={styles.buttonContainer}>
+            <DibbyButton
+              onPress={
+                passwordVerificationRequired ? resetToLogin : handleLogin
+              }
+              type={passwordVerificationRequired ? "outline" : "solid"}
+              title="Login"
+              fullWidth
+            />
+            <DibbyButton
+              fullWidth
+              type={passwordVerificationRequired ? "solid" : "outline"}
+              onPress={handleSignUp}
+              title={"Register"}
+            />
+          </View>
+
+          <View style={styles.orContainer}>
+            <View style={styles.orLines} />
+            <View>
+              <Text style={styles.orText}>or</Text>
+            </View>
+            <View style={styles.orLines} />
+          </View>
+
+          <View style={styles.providerContainer}>
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faFacebookSquare}
+                  size={32}
+                  color={colors.background.text}
+                />
+              }
+              type="clear"
+              onPress={handleFacebookLogin}
+            />
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faGoogle}
+                  size={32}
+                  color={colors.background.text}
+                />
+              }
+              type="clear"
+              onPress={handleGoogleLogIn}
+            />
+            <DibbyButton
+              title={
+                <FontAwesomeIcon
+                  icon={faApple}
+                  size={32}
+                  color={colors.background.text}
+                />
+              }
+              type="clear"
+              onPress={handleAppleLogin}
+            />
+          </View>
+        </View>
         <DibbyVersion bottom={30} />
       </KeyboardAvoidingView>
+      {loading && <DibbyLoading />}
     </LinearGradient>
   );
 };
@@ -323,6 +319,8 @@ const makeStyles = (colors: ThemeColors) =>
     },
     buttonContainer: {
       width: "100%",
+      gap: 16,
+      margin: 16,
       display: "flex",
       alignItems: "center",
     },

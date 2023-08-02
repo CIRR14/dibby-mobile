@@ -15,16 +15,29 @@ import {
 } from "react-native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useTheme } from "@react-navigation/native";
-import { Trip, Expense, Traveler } from "../constants/DibbyTypes";
-import { timestampToString } from "../helpers/TypeHelpers";
+import {
+  DibbyTrip,
+  DibbyExpense,
+  DibbyParticipant,
+  DibbySplits,
+} from "../constants/DibbyTypes";
+import {
+  getDibbySplitMethodIcon,
+  getDibbySplitMethodString,
+  timestampToString,
+} from "../helpers/TypeHelpers";
 import { RectButton, Swipeable } from "react-native-gesture-handler";
 import { getTravelerFromId, numberWithCommas } from "../helpers/AppHelpers";
 import { LinearGradient } from "expo-linear-gradient";
 import DibbyAvatars from "./DibbyAvatars";
+import {
+  linearGradientEnd,
+  linearGradientStart,
+} from "../constants/DeviceWidth";
 
 interface IDibbyCardProps {
-  trip?: Trip;
-  expense?: Expense;
+  trip?: DibbyTrip;
+  expense?: DibbyExpense;
   onPress?: () => void;
   onDeleteItem?: () => void;
   cardWidth?: number;
@@ -124,21 +137,37 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
     (swipeableRef.current as any)?.close();
   };
 
-  const getAvatarArray = (pplInExpense: string[], payer: string): string[] => {
-    const arr = [...pplInExpense];
+  const getAvatarArray = (
+    pplInExpense: DibbySplits[],
+    payer: string
+  ): DibbyParticipant[] => {
+    const arr: DibbyParticipant[] = [
+      ...pplInExpense.map((p) => {
+        const travelerColor = getTravelerFromId(trip, p.uid)?.color;
+        return {
+          name: p.name,
+          uid: p.uid,
+          username: null,
+          owed: p.amount,
+          amountPaid: 0,
+          color: travelerColor || "",
+        };
+      }),
+    ];
     const itemToFind = payer;
 
-    const foundIdx = arr.findIndex((el) => el == itemToFind);
+    const foundIdx = arr.findIndex((el) => el.uid == itemToFind);
+    const payingParticipant = arr[foundIdx];
     arr.splice(foundIdx, 1);
-    arr.unshift(itemToFind);
+    arr.unshift(payingParticipant);
     return arr;
   };
 
   return (
     <LinearGradient
       colors={[...colors.card]}
-      start={{ x: 0, y: 0.5 }}
-      end={{ x: 1, y: 0.5 }}
+      start={linearGradientStart}
+      end={linearGradientEnd}
       style={{
         borderRadius: 16,
         margin: 8,
@@ -170,11 +199,11 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
           <View style={styles.cardContent}>
             <View style={styles.cardTextContainer}>
               <Text style={[styles.text, styles.caption]}>
-                {timestampToString((expense || trip)?.created)}
+                {timestampToString((expense || trip)?.dateCreated)}
               </Text>
 
               <Text style={[styles.text, styles.title]}>
-                {(expense || trip)?.name}
+                {(expense || trip)?.title}
               </Text>
               <Text
                 style={[
@@ -203,17 +232,43 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
 
             {trip &&
               (expense ? (
-                <DibbyAvatars
-                  expense={expense}
-                  onPress={onPress}
-                  travelers={
-                    getAvatarArray(expense.peopleInExpense, expense.payer)
-                      .map((id) => getTravelerFromId(trip, id))
-                      .filter((t) => t) as Traveler[]
-                  }
-                />
+                <View
+                  style={{
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    marginBottom: 12,
+                  }}
+                >
+                  <DibbyAvatars
+                    expense={expense}
+                    onPress={onPress}
+                    travelers={getAvatarArray(
+                      expense.peopleInExpense,
+                      expense.paidBy
+                    )}
+                  />
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text
+                      style={{
+                        color: colors.primary.text,
+                        position: "absolute",
+                        zIndex: 1,
+                        fontWeight: "300",
+                        right: 16,
+                        top: 20,
+                        textAlign: "right",
+                      }}
+                    >
+                      {getDibbySplitMethodString(expense.splitMethod)}
+                    </Text>
+                    {getDibbySplitMethodIcon(
+                      expense.splitMethod,
+                      colors.disabled.text
+                    )}
+                  </View>
+                </View>
               ) : (
-                <DibbyAvatars onPress={onPress} travelers={trip.travelers} />
+                <DibbyAvatars onPress={onPress} travelers={trip.participants} />
               ))}
           </View>
         </TouchableOpacity>

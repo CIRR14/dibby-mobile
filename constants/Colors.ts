@@ -58,7 +58,7 @@ export const lightTheme: ThemeColors = {
     card: '#8a1e29'
   },
   warning: {
-    background: '#ffc107',
+    background: '#f8c323',
     text: '#ffffff',
     button: '#e0a800',
   },
@@ -133,7 +133,7 @@ export const darkTheme: ThemeColors = {
     button: '#b32720',
   },
   warning: {
-    background: '#ffc107',
+    background: '#fbe08f',
     text: '#ffffff',
     button: '#d39e00',
   },
