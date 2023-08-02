@@ -10,7 +10,11 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useTheme } from "@react-navigation/native";
 import { Input } from "@rneui/themed";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faAt, faDollarSign } from "@fortawesome/free-solid-svg-icons";
+import {
+  faAt,
+  faDollarSign,
+  faPercentage,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface IDibbyInputProps {
   placeholder: string;
@@ -19,6 +23,7 @@ interface IDibbyInputProps {
 
   errorText?: string;
   money?: boolean;
+  percentage?: boolean;
   username?: boolean;
   label?: string;
   onBlur?: () => void;
@@ -30,6 +35,7 @@ interface IDibbyInputProps {
   returnKeyType?: ReturnKeyTypeOptions;
   valid?: boolean;
   clearTextOnFocus?: boolean;
+  maxLength?: number;
 }
 
 const DibbyInput: React.FC<IDibbyInputProps> = ({
@@ -38,6 +44,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
   onChangeText,
   label,
   money,
+  percentage,
   username,
   onBlur = () => {},
   onSubmitEditing = () => {},
@@ -49,6 +56,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
   errorText,
   valid,
   clearTextOnFocus = false,
+  maxLength,
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(colors as unknown as ThemeColors);
@@ -61,6 +69,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
         placeholder={placeholder}
         keyboardType={keyboardType}
         value={value}
+        maxLength={maxLength}
         onChangeText={onChangeText}
         onBlur={onBlur}
         clearButtonMode={clearButtonMode}
@@ -76,9 +85,9 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
         errorMessage={errorText}
         errorStyle={styles.errorText}
         leftIcon={
-          (money || username) && (
+          (money || username || percentage) && (
             <FontAwesomeIcon
-              icon={money ? faDollarSign : faAt}
+              icon={money ? faDollarSign : percentage ? faPercentage : faAt}
               size={16}
               color={
                 errorText
@@ -100,7 +109,7 @@ export default DibbyInput;
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     inputContainer: {
-      minWidth: "80%",
+      // minWidth: "80%",
     },
     inputLabel: {
       color: colors.input.text,

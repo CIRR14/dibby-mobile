@@ -11,10 +11,9 @@ import DibbyButton from "../components/DibbyButton";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { DibbyTrip } from "../constants/DibbyTypes";
+import { DibbyParticipant, DibbyTrip } from "../constants/DibbyTypes";
 import { addDibbyParticipant } from "../helpers/FirebaseHelpers";
 import { DibbySearchUsername } from "../components/DibbySearchUsername";
-import { DibbyTravelerFormData } from "../components/CreateTrip";
 import { changeOpacity } from "../helpers/GenerateColor";
 import {
   linearGradientEnd,
@@ -28,9 +27,9 @@ const ViewTravelers = ({ route }: any) => {
   const { tripName, tripId } = route.params;
   const { loggedInUser } = useUser();
   const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
-  const [selectedResults, setSelectedResults] = useState<
-    DibbyTravelerFormData[]
-  >([]);
+  const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
+    []
+  );
 
   useEffect(() => {
     if (loggedInUser && loggedInUser.uid) {
@@ -46,6 +45,7 @@ const ViewTravelers = ({ route }: any) => {
   }, [loggedInUser, tripId]);
 
   const onSubmit = async () => {
+    console.log({ selectedResults });
     if (currentTrip) {
       try {
         addDibbyParticipant(selectedResults, currentTrip);

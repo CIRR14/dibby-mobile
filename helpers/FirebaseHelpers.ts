@@ -4,6 +4,7 @@ import { db } from "../firebase";
 import { DibbyExpense, DibbyParticipant, DibbySplits, DibbyTrip, DibbyUser } from "../constants/DibbyTypes";
 import { getTravelerFromId } from "./AppHelpers";
 import { CreateExpenseForm } from "../components/CreateExpense";
+import { v4 } from "uuid";
 
   export const createDibbyUser = async (user: User, username: string, displayName: string, photoURL: string | null, userColor: string): Promise<void> => {
     const { uid, email } = user;
@@ -45,23 +46,22 @@ import { CreateExpenseForm } from "../components/CreateExpense";
         trips: arrayRemove(tripData.id)
       })
     })
-    await deleteDoc(doc(db, "trips", tripData.id));
+   return await deleteDoc(doc(db, "trips", tripData.id));
   }
 
 
   export const createDibbyExpense = async (formData: CreateExpenseForm, trip: DibbyTrip): Promise<void> => {
     const tripRef = doc(db, 'trips', trip.id);
-    const expenseId = `${trip.id}-${trip.expenses.length + 1}`
+    const expenseId = `${trip.id}-${v4()}`
     const expensePerPersonAverage = formData.perPersonAverage;
     const expenseAmount: number = parseFloat(formData.amount)
 
     
     const getNewParticipants = (): DibbyParticipant[] => {
       const participantsNotIncluded = trip.participants.filter((p) => !formData.peopleInExpense.includes(p.uid));
-
       const participantsIncluded = trip.participants.filter((p) => formData.peopleInExpense.includes(p.uid));
+
       const participants  = participantsIncluded.map(p => {
-  
         const isPayer = p.uid === formData.paidBy;
         const splitTravelerInfo = formData.peopleSplits?.find(s => s.uid === p.uid);
   
@@ -122,13 +122,24 @@ import { CreateExpenseForm } from "../components/CreateExpense";
 
   export const deleteDibbyExpense = async (expense: DibbyExpense, trip: DibbyTrip): Promise<void> => {
     const tripRef = doc(db, 'trips', trip.id);
+
+    // update amount
+    // update participants
+      // if not in expense
+        // nothing
+      // if payer
+        //  owed = owed - Math.abs(expenseAmount - sum of people in expense except payer)
+      // if not payer but in expens
+        // p.owed + inExpenseAmount
+    // delete expense
+
     const newParticipants: DibbyParticipant[] = trip.participants.map((p) => {
       const inExpenseAmount = expense.peopleInExpense.find(e => e.uid === p.uid)?.amount;
-
-      const newOwed = expense.paidBy === p.uid && inExpenseAmount ?  p.owed - inExpenseAmount : 
-      expense.paidBy !== p.uid && inExpenseAmount ? p.owed + inExpenseAmount : 
+      const newOwed = expense.paidBy === p.uid && inExpenseAmount ? 
+      p.owed - Math.abs(expense.amount - inExpenseAmount) : 
+      expense.paidBy !== p.uid && inExpenseAmount ? 
+      p.owed + inExpenseAmount :
       p.owed;
-
 
       return {
         ...p,
@@ -155,7 +166,7 @@ import { CreateExpenseForm } from "../components/CreateExpense";
     const updatedTrip = {
       ...trip,
       dateUpdated: Timestamp.now(),
-      participants: arrayUnion(travelers),
+      participants: arrayUnion(...travelers),
       perPersonAverage: newPerPersonAvg
     }
 

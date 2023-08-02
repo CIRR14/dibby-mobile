@@ -21,7 +21,11 @@ import {
   DibbyParticipant,
   DibbySplits,
 } from "../constants/DibbyTypes";
-import { timestampToString } from "../helpers/TypeHelpers";
+import {
+  getDibbySplitMethodIcon,
+  getDibbySplitMethodString,
+  timestampToString,
+} from "../helpers/TypeHelpers";
 import { RectButton, Swipeable } from "react-native-gesture-handler";
 import { getTravelerFromId, numberWithCommas } from "../helpers/AppHelpers";
 import { LinearGradient } from "expo-linear-gradient";
@@ -228,14 +232,41 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
 
             {trip &&
               (expense ? (
-                <DibbyAvatars
-                  expense={expense}
-                  onPress={onPress}
-                  travelers={getAvatarArray(
-                    expense.peopleInExpense,
-                    expense.paidBy
-                  )}
-                />
+                <View
+                  style={{
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    marginBottom: 12,
+                  }}
+                >
+                  <DibbyAvatars
+                    expense={expense}
+                    onPress={onPress}
+                    travelers={getAvatarArray(
+                      expense.peopleInExpense,
+                      expense.paidBy
+                    )}
+                  />
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text
+                      style={{
+                        color: colors.primary.text,
+                        position: "absolute",
+                        zIndex: 1,
+                        fontWeight: "300",
+                        right: 16,
+                        top: 20,
+                        textAlign: "right",
+                      }}
+                    >
+                      {getDibbySplitMethodString(expense.splitMethod)}
+                    </Text>
+                    {getDibbySplitMethodIcon(
+                      expense.splitMethod,
+                      colors.disabled.text
+                    )}
+                  </View>
+                </View>
               ) : (
                 <DibbyAvatars onPress={onPress} travelers={trip.participants} />
               ))}
