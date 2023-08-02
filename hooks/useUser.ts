@@ -27,9 +27,6 @@ export const useUser = () => {
         return unsubscribe;
     }, []);
 
-
-
-
     useEffect(() => {
         if (loggedInUser) {
                 const unsubscribe = onSnapshot(doc(db, 'users', loggedInUser.uid), (doc) => {
@@ -40,7 +37,7 @@ export const useUser = () => {
                             navigation.navigate('CreateProfile')
                         } 
                     } else {
-                        signOut(auth);
+                        navigation.navigate('CreateProfile')
                     }
                 })
                 return unsubscribe;

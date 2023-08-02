@@ -106,8 +106,6 @@ import { v4 } from "uuid";
       splitMethod: formData.splitMethod,
       peopleInExpense,
     }
-
-    // TODO: participants are duplicating
     const newTripData = {
       ...trip,
       participants: [...getNewParticipants()],
@@ -122,16 +120,6 @@ import { v4 } from "uuid";
 
   export const deleteDibbyExpense = async (expense: DibbyExpense, trip: DibbyTrip): Promise<void> => {
     const tripRef = doc(db, 'trips', trip.id);
-
-    // update amount
-    // update participants
-      // if not in expense
-        // nothing
-      // if payer
-        //  owed = owed - Math.abs(expenseAmount - sum of people in expense except payer)
-      // if not payer but in expens
-        // p.owed + inExpenseAmount
-    // delete expense
 
     const newParticipants: DibbyParticipant[] = trip.participants.map((p) => {
       const inExpenseAmount = expense.peopleInExpense.find(e => e.uid === p.uid)?.amount;
@@ -162,6 +150,7 @@ import { v4 } from "uuid";
 
   export const addDibbyParticipant = async (travelers: DibbyParticipant[], trip: DibbyTrip): Promise<void> => {
     const newPerPersonAvg = trip.amount / trip.participants.length + travelers.length;
+    const usersToAddTripTo: string[] = travelers.filter(t => !t.createdUser).map(p => p.uid);
 
     const updatedTrip = {
       ...trip,
@@ -171,4 +160,12 @@ import { v4 } from "uuid";
     }
 
     await updateDoc(doc(db, 'trips', trip.id), updatedTrip)
+
+    usersToAddTripTo.forEach(async (uid) => {
+        const docRef = doc(db, "users", uid);
+        const updatedUser = {
+          trips: arrayUnion(trip.id),
+        };
+        await updateDoc(docRef, updatedUser)
+    })
   }

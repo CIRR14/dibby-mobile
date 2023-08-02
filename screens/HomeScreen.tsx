@@ -19,7 +19,6 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import {
   onSnapshot,
   collection,
-  deleteDoc,
   doc,
   query,
   updateDoc,
@@ -27,7 +26,7 @@ import {
   where,
   documentId,
 } from "firebase/firestore";
-import { DibbyExpense, DibbyTrip } from "../constants/DibbyTypes";
+import { DibbyTrip } from "../constants/DibbyTypes";
 import { Platform } from "react-native";
 import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 import DibbyButton from "../components/DibbyButton";
@@ -189,7 +188,7 @@ const HomeScreen = () => {
           rightButton={
             <DibbyButton
               type="clear"
-              onPress={() => navigation.navigate("CreateProfile")}
+              onPress={() => {}}
               title={
                 <Avatar
                   size="small"

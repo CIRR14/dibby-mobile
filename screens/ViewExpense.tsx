@@ -39,7 +39,6 @@ const ViewExpense = ({ route }: any) => {
     const unsub = onSnapshot(doc(db, "trips", tripId), (doc) => {
       const newData: DibbyTrip = { ...(doc.data() as DibbyTrip), id: doc.id };
       setCurrentTrip(newData);
-      console.log({ newData, expenseId });
       const expense = newData.expenses.find((e) => e.id === expenseId);
       setCurrentExpense(expense);
     });

@@ -45,7 +45,6 @@ const ViewTravelers = ({ route }: any) => {
   }, [loggedInUser, tripId]);
 
   const onSubmit = async () => {
-    console.log({ selectedResults });
     if (currentTrip) {
       try {
         addDibbyParticipant(selectedResults, currentTrip);

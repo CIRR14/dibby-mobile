@@ -20,7 +20,7 @@ const inRange = (x: number, min: number, max: number): boolean => {
 };
 
 const roundToDecimal = (number: number, decimals = 2): number => {
-  return +number.toFixed(decimals);
+  return parseFloat(numberWithCommas(number.toString()) || number.toString()) || number
 };
 
 export const calculateTrip = (

@@ -98,10 +98,10 @@ const LoginScreen = () => {
   };
 
   const handleSignUp = () => {
-    setLoading(true);
     setPasswordVerificationRequired(true);
     setMethod("signUp");
     if (isPasswordValid() && isPasswordVerified()) {
+      setLoading(true);
       createUserWithEmailAndPassword(auth, email, password)
         .then(async (userCredentials: UserCredential) => {
           setLoading(false);
@@ -126,7 +126,6 @@ const LoginScreen = () => {
     signInWithEmailAndPassword(auth, email, password)
       .then((user: UserCredential) => {
         setLoading(false);
-        console.log("logging in", { user });
       })
       .catch((err: FirebaseError) => {
         setLoading(false);
@@ -140,38 +139,38 @@ const LoginScreen = () => {
 
   const handleFacebookLogin = () => {
     setError("");
-    signInWithPopup(auth, facebookProvider)
-      .then((user: UserCredential) => {
-        console.log("logging in", { user });
-      })
-      .catch((err) => {
-        console.log({ err });
-        setError(errorMessage(err?.code));
-      });
+    if (signInWithPopup) {
+      signInWithPopup(auth, facebookProvider)
+        .then((user: UserCredential) => {})
+        .catch((err) => {
+          console.log({ err });
+          setError(errorMessage(err?.code));
+        });
+    }
   };
 
   const handleGoogleLogIn = () => {
     setError("");
-    signInWithPopup(auth, googleProvider)
-      .then((user: UserCredential) => {
-        console.log("logging in", { user });
-      })
-      .catch((err) => {
-        console.log({ err });
-        setError(errorMessage(err?.code));
-      });
+    if (signInWithPopup) {
+      signInWithPopup(auth, googleProvider)
+        .then((user: UserCredential) => {})
+        .catch((err) => {
+          console.log({ err });
+          setError(errorMessage(err?.code));
+        });
+    }
   };
 
   const handleAppleLogin = () => {
     setError("");
-    signInWithPopup(auth, appleProvider)
-      .then((user: UserCredential) => {
-        console.log("logging in", { user });
-      })
-      .catch((err) => {
-        console.log({ err });
-        setError(errorMessage(err?.code));
-      });
+    if (signInWithPopup) {
+      signInWithPopup(auth, appleProvider)
+        .then((user: UserCredential) => {})
+        .catch((err) => {
+          console.log({ err });
+          setError(errorMessage(err?.code));
+        });
+    }
   };
 
   return (

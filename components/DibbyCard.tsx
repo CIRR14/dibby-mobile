@@ -263,7 +263,7 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
                     </Text>
                     {getDibbySplitMethodIcon(
                       expense.splitMethod,
-                      colors.disabled.text
+                      colors.disabled.background
                     )}
                   </View>
                 </View>

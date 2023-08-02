@@ -24,17 +24,46 @@ export const timestampToString = (date?: Timestamp): string => {
 export const getDibbySplitMethodIcon = (
   splitMethod: DibbySplitMethod,
   color: string,
-  size = 36
+  size = 36,
+  opacity = 0.6
 ): JSX.Element => {
   switch (splitMethod) {
     case DibbySplitMethod.AMOUNT:
-      return <FontAwesomeIcon icon={faCalculator} size={size} color={color} />;
+      return (
+        <FontAwesomeIcon
+          icon={faCalculator}
+          size={size}
+          color={color}
+          style={{ opacity: 0.7 }}
+        />
+      );
     case DibbySplitMethod.EQUAL_PARTS:
-      return <FontAwesomeIcon icon={faEquals} size={size} color={color} />;
+      return (
+        <FontAwesomeIcon
+          icon={faEquals}
+          size={size}
+          color={color}
+          style={{ opacity }}
+        />
+      );
     case DibbySplitMethod.PERCENTAGE:
-      return <FontAwesomeIcon icon={faPercentage} size={size} color={color} />;
+      return (
+        <FontAwesomeIcon
+          icon={faPercentage}
+          size={size}
+          color={color}
+          style={{ opacity }}
+        />
+      );
     default:
-      return <FontAwesomeIcon icon={faEquals} size={size} color={color} />;
+      return (
+        <FontAwesomeIcon
+          icon={faEquals}
+          size={size}
+          color={color}
+          style={{ opacity }}
+        />
+      );
   }
 };
 
