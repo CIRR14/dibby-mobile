@@ -144,7 +144,7 @@ const HomeScreen = () => {
     tripOwner &&
       options.push({
         text: "Delete",
-        onPress: () => deleteDibbyTrip(item),
+        onPress: async () => await deleteDibbyTrip(item),
         style: "destructive",
       });
 

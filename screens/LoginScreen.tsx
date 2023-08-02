@@ -32,14 +32,7 @@ import DibbyButton from "../components/DibbyButton";
 import { LinearGradient } from "expo-linear-gradient";
 import DibbyInput from "../components/DibbyInput";
 import DibbyVersion from "../components/DibbyVersion";
-import {
-  DocumentReference,
-  addDoc,
-  collection,
-  doc,
-  setDoc,
-} from "firebase/firestore";
-import { DibbyUser } from "../constants/DibbyTypes";
+import DibbyLoading from "../components/DibbyLoading";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -51,6 +44,7 @@ const LoginScreen = () => {
   const [passwordVerification, setPasswordVerification] = useState<string>("");
   const [passwordVerificationRequired, setPasswordVerificationRequired] =
     useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const navigation = useNavigation();
 
@@ -104,18 +98,22 @@ const LoginScreen = () => {
   };
 
   const handleSignUp = () => {
+    setLoading(true);
     setPasswordVerificationRequired(true);
     setMethod("signUp");
     if (isPasswordValid() && isPasswordVerified()) {
       createUserWithEmailAndPassword(auth, email, password)
         .then(async (userCredentials: UserCredential) => {
+          setLoading(false);
           await sendEmailVerification(userCredentials.user);
         })
         .catch((err: FirebaseError) => {
+          setLoading(false);
           console.log({ err });
           setError(errorMessage(err?.code));
         });
     } else if (password || email) {
+      setLoading(false);
       isPasswordVerified()
         ? setError("Password doesn't meet criteria")
         : setError("Passwords must match");
@@ -123,12 +121,15 @@ const LoginScreen = () => {
   };
 
   const handleLogin = () => {
+    setLoading(true);
     setMethod("logIn");
     signInWithEmailAndPassword(auth, email, password)
       .then((user: UserCredential) => {
+        setLoading(false);
         console.log("logging in", { user });
       })
       .catch((err: FirebaseError) => {
+        setLoading(false);
         console.log({ err });
         if (err.code === "auth/user-not-found") {
           handleSignUp();
@@ -275,6 +276,7 @@ const LoginScreen = () => {
         </View>
         <DibbyVersion bottom={30} />
       </KeyboardAvoidingView>
+      {loading && <DibbyLoading />}
     </LinearGradient>
   );
 };
