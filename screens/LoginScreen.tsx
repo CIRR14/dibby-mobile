@@ -1,89 +1,350 @@
-import { KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import { KeyboardAvoidingView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  appleProvider,
+  auth,
+  facebookProvider,
+  googleProvider,
+} from "../firebase";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  User,
+  UserCredential,
+} from "firebase/auth";
+import { FirebaseError } from "firebase/app";
+import { useNavigation, useTheme } from "@react-navigation/native";
+import errorMessage from "../constants/Errors";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import {
+  faFacebookSquare,
+  faGoogle,
+  faApple,
+} from "@fortawesome/free-brands-svg-icons";
+import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { Platform } from "react-native";
+import { wideScreen } from "../constants/DeviceWidth";
+import { REACT_APP_VERSION } from "@env";
+import DibbyButton from "../components/DibbyButton";
+import { LinearGradient } from "expo-linear-gradient";
+import DibbyInput from "../components/DibbyInput";
+import DibbyVersion from "../components/DibbyVersion";
 
 const LoginScreen = () => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+  const [email, setEmail] = useState<string>("");
+  const [user, setUser] = useState<User | undefined>(undefined);
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [method, setMethod] = useState<"signUp" | "logIn" | undefined>(
+    undefined
+  );
+  const [passwordVerification, setPasswordVerification] = useState<string>("");
+  const [passwordVerificationRequired, setPasswordVerificationRequired] =
+    useState<boolean>(false);
 
-    return (
-        <KeyboardAvoidingView style={styles.container}
-            behavior="padding">
+  const navigation = useNavigation();
+
+  const { colors } = useTheme() as unknown as ColorTheme;
+  const styles = makeStyles(colors as unknown as ThemeColors);
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      const listener = (event) => {
+        if (event.code === "Enter") {
+          event.preventDefault();
+          handleLogin();
+        }
+      };
+      document.addEventListener("keydown", listener);
+      return () => {
+        document.removeEventListener("keydown", listener);
+      };
+    }
+  }, [Platform.OS]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (userObj) => {
+      if (userObj) {
+        setUser(user);
+        method === "logIn"
+          ? navigation.navigate("Home")
+          : navigation.navigate("CreateProfile");
+      }
+    });
+    return unsubscribe;
+  }, [method]);
+
+  const isPasswordValid = (): boolean => {
+    return password.length >= 8 ? true : false;
+  };
+
+  const isPasswordVerified = (): boolean => {
+    return passwordVerification === password && passwordVerificationRequired
+      ? true
+      : false;
+  };
+
+  const resetToLogin = (): void => {
+    setMethod(undefined);
+    setPassword("");
+    setPasswordVerification("");
+    setPasswordVerificationRequired(false);
+    setError("");
+  };
+
+  // const createProfile = async (user: User): Promise<DocumentReference> => {
+  //   const { uid, displayName, phoneNumber, photoURL, email, emailVerified } =
+  //     user;
+  //   return addDoc(collection(db, "users"), {
+  //     uid,
+  //     displayName,
+  //     phoneNumber,
+  //     photoURL,
+  //     email,
+  //   });
+  // };
+
+  const handleSignUp = () => {
+    setPasswordVerificationRequired(true);
+    setMethod("signUp");
+    if (isPasswordValid() && isPasswordVerified()) {
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(async (userCredentials: UserCredential) => {
+          const { displayName, email } = userCredentials.user;
+          console.log("logged in as ", email, displayName);
+        })
+        .catch((err: FirebaseError) => {
+          console.log({ err });
+          setError(errorMessage(err?.code));
+        });
+    } else if (password || email) {
+      isPasswordVerified()
+        ? setError("Password doesn't meet criteria")
+        : setError("Passwords must match");
+    }
+  };
+
+  const handleLogin = () => {
+    setMethod("logIn");
+    signInWithEmailAndPassword(auth, email, password)
+      .then((user: UserCredential) => {
+        console.log("logging in", { user });
+      })
+      .catch((err: FirebaseError) => {
+        console.log({ err });
+        if (err.code === "auth/user-not-found") {
+          handleSignUp();
+        }
+        setError(errorMessage(err?.code));
+      });
+  };
+
+  const handleFacebookLogin = () => {
+    setError("");
+    signInWithPopup(auth, facebookProvider)
+      .then((user: UserCredential) => {
+        console.log("logging in", { user });
+      })
+      .catch((err) => {
+        console.log({ err });
+        setError(errorMessage(err?.code));
+      });
+  };
+
+  const handleGoogleLogIn = () => {
+    setError("");
+    signInWithPopup(auth, googleProvider)
+      .then((user: UserCredential) => {
+        console.log("logging in", { user });
+      })
+      .catch((err) => {
+        console.log({ err });
+        setError(errorMessage(err?.code));
+      });
+  };
+
+  const handleAppleLogin = () => {
+    setError("");
+    signInWithPopup(auth, appleProvider)
+      .then((user: UserCredential) => {
+        console.log("logging in", { user });
+      })
+      .catch((err) => {
+        console.log({ err });
+        setError(errorMessage(err?.code));
+      });
+  };
+
+  return (
+    <LinearGradient
+      style={styles.topContainer}
+      colors={[...colors.background.gradient]}
+    >
+      <KeyboardAvoidingView style={styles.topContainer} behavior="padding">
+        {!user && (
+          <View style={styles.innerContainer}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.titleText}>Dibby</Text>
+              <Text style={styles.descriptionText}>Money Splitting</Text>
+            </View>
+
             <View style={styles.inputContainer}>
-                <TextInput
-                    placeholder="Email"
-                    value={email}
-                    onChangeText={text => setEmail(text)}
-                    style={styles.input}
+              <DibbyInput
+                placeholder="Email"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+              />
+              <DibbyInput
+                placeholder="Password"
+                keyboardType="visible-password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+              {passwordVerificationRequired && (
+                <DibbyInput
+                  placeholder="Verify Password"
+                  keyboardType="visible-password"
+                  value={passwordVerification}
+                  onChangeText={setPasswordVerification}
+                  secureTextEntry
                 />
+              )}
 
-                <TextInput
-                    placeholder="Password"
-                    value={password}
-                    onChangeText={text => setPassword(text)}
-                    style={styles.input}
-                    secureTextEntry
-                />
+              {error && <Text style={styles.errorText}>{error}</Text>}
             </View>
 
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={() => { }}>
-                    <Text style={styles.buttonText} > Login </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.button, styles.buttonOutline]} onPress={() => { }}>
-                    <Text style={styles.buttonOutlineText} > Register </Text>
-                </TouchableOpacity>
-
+              <DibbyButton
+                onPress={
+                  passwordVerificationRequired ? resetToLogin : handleLogin
+                }
+                type={passwordVerificationRequired ? "outline" : "solid"}
+                title="Login"
+                fullWidth
+              />
+              <DibbyButton
+                fullWidth
+                type={passwordVerificationRequired ? "solid" : "outline"}
+                onPress={handleSignUp}
+                title={"Register"}
+              />
             </View>
-        </KeyboardAvoidingView>
-    )
-}
 
-export default LoginScreen
+            <View style={styles.orContainer}>
+              <View style={styles.orLines} />
+              <View>
+                <Text style={styles.orText}>or</Text>
+              </View>
+              <View style={styles.orLines} />
+            </View>
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center'
+            <View style={styles.providerContainer}>
+              <DibbyButton
+                title={
+                  <FontAwesomeIcon
+                    icon={faFacebookSquare}
+                    size={32}
+                    color={colors.background.text}
+                  />
+                }
+                type="clear"
+                onPress={handleFacebookLogin}
+              />
+              <DibbyButton
+                title={
+                  <FontAwesomeIcon
+                    icon={faGoogle}
+                    size={32}
+                    color={colors.background.text}
+                  />
+                }
+                type="clear"
+                onPress={handleGoogleLogIn}
+              />
+              <DibbyButton
+                title={
+                  <FontAwesomeIcon
+                    icon={faApple}
+                    size={32}
+                    color={colors.background.text}
+                  />
+                }
+                type="clear"
+                onPress={handleAppleLogin}
+              />
+            </View>
+          </View>
+        )}
+        <DibbyVersion bottom={30} />
+      </KeyboardAvoidingView>
+    </LinearGradient>
+  );
+};
+
+export default LoginScreen;
+
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    topContainer: {
+      flex: 1,
+    },
+    innerContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      margin: wideScreen ? "25%" : "10%",
     },
     inputContainer: {
-        width: '80%'
+      width: "100%",
     },
-    input: {
-        backgroundColor: 'white',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderRadius: 10,
-        marginTop: 5,
+    errorText: {
+      color: colors.danger.button,
+      fontWeight: "500",
+      fontSize: 12,
+      textTransform: "uppercase",
+    },
+    titleContainer: {
+      alignSelf: "flex-start",
+      marginBottom: 50,
+    },
+    titleText: {
+      color: colors.background.text,
+      fontSize: 50,
+      fontWeight: "bold",
+    },
+    descriptionText: {
+      color: colors.background.text,
+      fontSize: 20,
+      fontWeight: "400",
     },
     buttonContainer: {
-        width: '60%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 40,
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
     },
-    button: {
-        backgroundColor: '#2f95dc',
-        width: '100%',
-        padding: 15,
-        borderRadius: 10,
-        alignItems: 'center',
+    orContainer: {
+      flexDirection: "row",
+      alignItems: "center",
     },
-    buttonOutline: {
-        backgroundColor: 'white',
-        marginTop: 5,
-        borderColor: '#2f95dc',
-        borderWidth: 2,
+    orLines: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.background.text,
+      width: 100,
     },
-    buttonText: {
-        color: "white",
-        fontWeight: '700',
-        fontSize: 16,
+    orText: {
+      width: 50,
+      textAlign: "center",
+      color: colors.background.text,
     },
-    buttonOutlineText: {
-        color: '#2f95dc',
-        fontWeight: '700',
-        fontSize: 16,
+    providerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-evenly",
+      width: "40%",
     },
-})
+  });
