@@ -12,7 +12,7 @@ import { v4 } from "uuid";
       uid,
       username,
       displayName,
-      photoURL,
+      photoURL: user.photoURL || photoURL,
       email,
       friends: [],
       trips: [],

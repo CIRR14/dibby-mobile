@@ -22,6 +22,7 @@ import ViewTravelers from "../screens/ViewTravelers";
 import PdfScreen from "../screens/PdfScreen";
 import { VerifyEmail } from "../screens/VerifyEmail";
 import CreateTrip from "../components/CreateTrip";
+import { Profile } from "../screens/Profile";
 
 export default function Navigation({
   colorScheme,
@@ -101,6 +102,11 @@ function RootNavigator() {
         name="NotFound"
         component={NotFoundScreen}
         options={{ headerShown: false, title: "Oops!" }}
+      />
+      <Stack.Screen
+        name="Profile"
+        component={Profile}
+        options={{ headerShown: false, title: "Profile" }}
       />
       {/* <Stack.Group screenOptions={{ presentation: "modal" }}> */}
       <Stack.Screen

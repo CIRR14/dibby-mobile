@@ -14,6 +14,14 @@ interface DibbyDocWithID extends DibbyDoc {
     id: string;
 }
 
+export interface DibbyFriend {
+    uid: string;
+    displayName: string;
+    friendAdded: Timestamp;
+    requestPending: boolean;
+    requestedBy: string;
+}
+
 
 export interface DibbyUser {
     uid: string,
@@ -21,7 +29,7 @@ export interface DibbyUser {
     displayName: string | null,
     photoURL: string | null,
     email: string | null,
-    friends: string[];
+    friends: DibbyFriend[];
     trips: string[];
     color: string;
     // emailVerified: boolean,
@@ -48,7 +56,8 @@ export interface DibbyParticipant {
     owed: number;
     amountPaid: number;
     color: string;
-  createdUser?: boolean | null;
+    photoURL: string | null;
+    createdUser?: boolean | null;
 }
 
 export enum DibbySplitMethod {

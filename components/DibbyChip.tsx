@@ -5,11 +5,11 @@ import { Chip } from "@rneui/themed";
 import React from "react";
 import { TAutocompleteDropdownItem } from "react-native-autocomplete-dropdown";
 import { ColorTheme } from "../constants/Colors";
-import { DibbyTravelerFormData } from "./CreateTrip";
+import { DibbyParticipant } from "../constants/DibbyTypes";
 
 interface IDibbyChipProps {
-  item: DibbyTravelerFormData;
-  onRemove: (item: DibbyTravelerFormData) => void;
+  item: DibbyParticipant;
+  onRemove: (item: DibbyParticipant) => void;
   disabled: boolean;
 }
 

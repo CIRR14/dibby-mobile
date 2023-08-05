@@ -25,14 +25,14 @@ const ViewTravelers = ({ route }: any) => {
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId } = route.params;
-  const { loggedInUser } = useUser();
+  const { dibbyUser } = useUser();
   const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
     []
   );
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid) {
+    if (dibbyUser?.uid) {
       const unsub = onSnapshot(doc(db, "trips", tripId), (doc) => {
         const newData: DibbyTrip = doc.data() as DibbyTrip;
         setCurrentTrip(newData);
@@ -42,7 +42,7 @@ const ViewTravelers = ({ route }: any) => {
         unsub();
       };
     }
-  }, [loggedInUser, tripId]);
+  }, [dibbyUser, tripId]);
 
   const onSubmit = async () => {
     if (currentTrip) {

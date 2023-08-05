@@ -143,14 +143,15 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
   ): DibbyParticipant[] => {
     const arr: DibbyParticipant[] = [
       ...pplInExpense.map((p) => {
-        const travelerColor = getTravelerFromId(trip, p.uid)?.color;
+        const traveler = getTravelerFromId(trip, p.uid);
         return {
           name: p.name,
           uid: p.uid,
           username: null,
           owed: p.amount,
           amountPaid: 0,
-          color: travelerColor || "",
+          photoURL: traveler?.photoURL || null,
+          color: traveler?.color || "",
         };
       }),
     ];

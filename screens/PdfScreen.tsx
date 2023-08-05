@@ -20,14 +20,14 @@ const PdfScreen = ({ route }: any) => {
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripId } = route.params;
-  const { loggedInUser } = useUser();
+  const { dibbyUser } = useUser();
 
   const [calculatedTrip, setCalculatedTrip] = useState<ITransactionResponse>();
   const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid) {
-      const unsub = onSnapshot(doc(db, loggedInUser.uid, tripId), (doc) => {
+    if (dibbyUser?.uid) {
+      const unsub = onSnapshot(doc(db, dibbyUser.uid, tripId), (doc) => {
         const newData: DibbyTrip = { ...(doc.data() as DibbyTrip), id: doc.id };
         setCurrentTrip(newData);
       });
@@ -36,15 +36,15 @@ const PdfScreen = ({ route }: any) => {
         unsub();
       };
     }
-  }, [loggedInUser, tripId]);
+  }, [dibbyUser, tripId]);
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid && currentTrip) {
+    if (dibbyUser?.uid && currentTrip) {
       const copyOfTrip = JSON.parse(JSON.stringify(currentTrip));
       const newCalculatedTrip = calculateTrip(copyOfTrip);
       setCalculatedTrip(newCalculatedTrip);
     }
-  }, [loggedInUser, currentTrip]);
+  }, [dibbyUser, currentTrip]);
 
   return (
     <LinearGradient

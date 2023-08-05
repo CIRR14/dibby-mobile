@@ -28,7 +28,7 @@ import TopBar from "./TopBar";
 import DibbyInput from "./DibbyInput";
 import DibbyLoading from "./DibbyLoading";
 import { useUser } from "../hooks/useUser";
-import { collectionRef, createDibbyTrip } from "../helpers/FirebaseHelpers";
+import { createDibbyTrip } from "../helpers/FirebaseHelpers";
 import { DibbySearchUsername } from "./DibbySearchUsername";
 
 export interface DibbyTripFormValues {
@@ -40,7 +40,7 @@ export interface DibbyTripFormValues {
 const CreateTrip = () => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const navigation = useNavigation();
-  const { loggedInUser, dibbyUser } = useUser();
+  const { dibbyUser } = useUser();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
@@ -60,7 +60,7 @@ const CreateTrip = () => {
   });
 
   const onSubmit = async (data: DibbyTripFormValues) => {
-    if (loggedInUser) {
+    if (dibbyUser) {
       const newTripRef = doc(collection(db, "trips"));
 
       const newTripData: DibbyTrip = {
@@ -74,7 +74,7 @@ const CreateTrip = () => {
         dateCreated: Timestamp.now(),
         dateUpdated: Timestamp.now(),
         participants: selectedResults,
-        createdBy: loggedInUser.uid,
+        createdBy: dibbyUser.uid,
       };
 
       const usersToAddTripTo = selectedResults.filter(

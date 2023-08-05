@@ -28,6 +28,7 @@ export type RootStackParamList = {
   ViewTrip: { tripName: string; tripId: string };
   ViewTravelers: { tripName: string; tripId: string };
   CreateTrip: undefined;
+  Profile: undefined;
   ViewExpense: {
     tripName: string;
     tripId: string;

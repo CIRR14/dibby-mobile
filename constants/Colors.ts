@@ -106,8 +106,8 @@ export const lightTheme: ThemeColors = {
   card: [
     '#9cd39cff',
     '#82b182ff',
+    '#648e64ff',
 
-    // '#788eb188',
   ]
 };
 
@@ -158,8 +158,9 @@ export const darkTheme: ThemeColors = {
     text: '#f8f9fa', 
     paper: '#343a40',
     gradient: [
-     '#343a40',
-     '#212529'
+     '#485661',
+     '#383d42',
+     '#2a2d2f',
     ]
   },
   disabled: {

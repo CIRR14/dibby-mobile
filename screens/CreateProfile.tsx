@@ -1,7 +1,7 @@
 import { Text, StyleSheet, View } from "react-native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { User, updateProfile } from "firebase/auth";
+import { updateProfile } from "firebase/auth";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { useUser } from "../hooks/useUser";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
@@ -12,17 +12,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import DibbyInput from "../components/DibbyInput";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faAt } from "@fortawesome/free-solid-svg-icons";
-import {
-  setDoc,
-  doc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { DibbyUser } from "../constants/DibbyTypes";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
-import { generateColor, userColors } from "../helpers/GenerateColor";
+import { generateColor } from "../helpers/GenerateColor";
 import { createDibbyUser } from "../helpers/FirebaseHelpers";
 
 const userColor = generateColor();
@@ -50,13 +42,14 @@ const CreateProfile = () => {
   useEffect(() => {
     setDisplayName(loggedInUser ? loggedInUser.displayName : null);
     setPhotoUrl(loggedInUser ? loggedInUser.photoURL : null);
+    console.log(loggedInUser?.photoURL);
   }, [loggedInUser]);
 
   const handleNext = async () => {
     if (loggedInUser && username && displayName) {
       try {
         await updateProfile(loggedInUser, {
-          displayName: username,
+          displayName: displayName,
           photoURL: photoURL,
         });
         await createDibbyUser(
