@@ -1,5 +1,9 @@
 import { Timestamp } from "firebase/firestore";
-import { DibbySplitMethod } from "../constants/DibbyTypes";
+import {
+  DibbyParticipant,
+  DibbySplitMethod,
+  DibbyUser,
+} from "../constants/DibbyTypes";
 import { capitalizeName } from "./AppHelpers";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import React from "react";
@@ -71,4 +75,23 @@ export const getDibbySplitMethodString = (
   splitMethod: DibbySplitMethod
 ): string => {
   return capitalizeName(splitMethod.replace("_", " "));
+};
+
+export const dibbyUserToAvatarObject = (
+  user: DibbyUser | DibbyParticipant
+): {
+  displayName: string | null;
+  uid: string;
+  username: string | null;
+  photoURL: string | null;
+  color: string;
+} => {
+  return {
+    displayName:
+      (user as DibbyUser).displayName || (user as DibbyParticipant).name,
+    uid: user.uid,
+    username: user.username,
+    photoURL: user.photoURL,
+    color: user.color,
+  };
 };

@@ -125,6 +125,7 @@ const LoginScreen = () => {
     setMethod("logIn");
     signInWithEmailAndPassword(auth, email, password)
       .then((user: UserCredential) => {
+        console.log(user.user.photoURL);
         setLoading(false);
       })
       .catch((err: FirebaseError) => {

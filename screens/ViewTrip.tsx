@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Modal,
   Platform,
-  ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,36 +15,13 @@ import { useNavigation } from "@react-navigation/core";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { useUser } from "../hooks/useUser";
-import {
-  Timestamp,
-  collection,
-  doc,
-  documentId,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  query,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import {
-  DibbyExpense,
-  DibbyParticipant,
-  DibbyTrip,
-  Traveler,
-  Trip,
-  TripDoc,
-} from "../constants/DibbyTypes";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { DibbyExpense, DibbyTrip } from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import { DibbyCard } from "../components/DibbyCard";
 import CreateExpense from "../components/CreateExpense";
-import { inRange, numberWithCommas, sumOfValues } from "../helpers/AppHelpers";
-import {
-  ITransactionResponse,
-  calculateTrip,
-  getAmountOfTransactionsString,
-  getTransactionString,
-} from "../helpers/DibbyLogic";
+import { numberWithCommas } from "../helpers/AppHelpers";
+import { ITransactionResponse, calculateTrip } from "../helpers/DibbyLogic";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
   faCaretDown,
@@ -74,7 +50,7 @@ const ViewTrip = ({ route }: any) => {
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId } = route.params;
-  const { dibbyUser, loggedInUser } = useUser();
+  const { dibbyUser } = useUser();
   const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
   const [expenses, setExpenses] = useState<DibbyExpense[]>([]);
   const [calculatedTrip, setCalculatedTrip] = useState<ITransactionResponse>();
@@ -98,12 +74,12 @@ const ViewTrip = ({ route }: any) => {
   }, [tripId]);
 
   const onRefresh = useCallback(async () => {
-    if (loggedInUser && loggedInUser.uid) {
+    if (dibbyUser?.uid) {
       setRefreshing(true);
       await fetchTrip();
       setRefreshing(false);
     }
-  }, [loggedInUser]);
+  }, [dibbyUser]);
 
   useEffect(() => {
     setLoadingIndicator(true);
@@ -124,12 +100,12 @@ const ViewTrip = ({ route }: any) => {
   }, [calculatedTrip, currentTrip]);
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid && currentTrip) {
+    if (dibbyUser?.uid && currentTrip) {
       const copyOfTrip = JSON.parse(JSON.stringify(currentTrip));
       const newCalculatedTrip = calculateTrip(copyOfTrip);
       setCalculatedTrip(newCalculatedTrip);
     }
-  }, [loggedInUser, currentTrip]);
+  }, [dibbyUser, currentTrip]);
 
   useEffect(() => {
     if (currentTrip) {

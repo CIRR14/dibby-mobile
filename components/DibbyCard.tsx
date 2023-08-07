@@ -143,14 +143,15 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
   ): DibbyParticipant[] => {
     const arr: DibbyParticipant[] = [
       ...pplInExpense.map((p) => {
-        const travelerColor = getTravelerFromId(trip, p.uid)?.color;
+        const traveler = getTravelerFromId(trip, p.uid);
         return {
           name: p.name,
           uid: p.uid,
           username: null,
           owed: p.amount,
           amountPaid: 0,
-          color: travelerColor || "",
+          photoURL: traveler?.photoURL || null,
+          color: traveler?.color || "",
         };
       }),
     ];
@@ -251,20 +252,20 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
                     <Text
                       style={{
                         color: colors.primary.text,
-                        position: "absolute",
-                        zIndex: 1,
-                        fontWeight: "300",
-                        right: 16,
-                        top: 20,
-                        textAlign: "right",
+                        // position: "absolute",
+                        // zIndex: 1,
+                        // fontWeight: "300",
+                        // right: 16,
+                        // top: 20,
+                        // textAlign: "right",
                       }}
                     >
                       {getDibbySplitMethodString(expense.splitMethod)}
                     </Text>
-                    {getDibbySplitMethodIcon(
+                    {/* {getDibbySplitMethodIcon(
                       expense.splitMethod,
                       colors.disabled.background
-                    )}
+                    )} */}
                   </View>
                 </View>
               ) : (

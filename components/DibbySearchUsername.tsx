@@ -12,58 +12,68 @@ import {
   TAutocompleteDropdownItem,
   AutocompleteDropdownRef,
 } from "react-native-autocomplete-dropdown";
-import { DibbyTrip, DibbyUser } from "../constants/DibbyTypes";
+import {
+  DibbyParticipant,
+  DibbyTrip,
+  DibbyUser,
+} from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import { generateColor } from "../helpers/GenerateColor";
-import { DibbyTravelerFormData } from "./CreateTrip";
 import { useUser } from "../hooks/useUser";
 import { useTheme } from "@react-navigation/native";
 import { ColorTheme } from "../constants/Colors";
 import { Text, View } from "react-native";
 import { DibbyChip } from "./DibbyChip";
-import { User } from "firebase/auth";
 import { capitalizeName } from "../helpers/AppHelpers";
 
 export const DibbySearchUsername: React.FC<{
-  results: (res: DibbyTravelerFormData[]) => void;
+  results: (res: DibbyParticipant[]) => void;
   selectLoggedInUser?: boolean;
   multi?: boolean;
   currentTrip?: DibbyTrip;
-}> = ({ results, selectLoggedInUser, multi = true, currentTrip }) => {
-  const { dibbyUser, loggedInUser } = useUser();
+  useDefaultSuggestion?: boolean;
+}> = ({
+  results,
+  selectLoggedInUser,
+  multi = true,
+  currentTrip,
+  useDefaultSuggestion = true,
+}) => {
+  const { dibbyUser } = useUser();
   const [loading, setLoading] = useState<any>(false);
   const [suggestionsList, setSuggestionsList] = useState<
-    DibbyTravelerFormData[] | undefined
+    DibbyParticipant[] | undefined
   >(undefined);
   const dropdownController = useRef<AutocompleteDropdownRef>(null);
   const { colors } = useTheme() as unknown as ColorTheme;
-  const [selectedResults, setSelectedResults] = useState<
-    DibbyTravelerFormData[]
-  >([]);
+  const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
+    []
+  );
 
   useEffect(() => {
     results(selectedResults);
   }, [selectedResults]);
 
   useEffect(() => {
-    if (selectLoggedInUser && loggedInUser && dibbyUser) {
+    if (selectLoggedInUser && dibbyUser) {
       setSelectedResults([
         {
           name: dibbyUser.displayName,
           username: dibbyUser.username,
-          uid: loggedInUser.uid,
+          uid: dibbyUser.uid,
           createdUser: false,
           owed: 0,
           amountPaid: 0,
+          photoURL: dibbyUser.photoURL,
           color: dibbyUser.color,
         },
       ]);
     }
-  }, [selectLoggedInUser, loggedInUser, dibbyUser]);
+  }, [selectLoggedInUser, dibbyUser]);
 
   const getSuggestions = useCallback(
     async (textValue: string) => {
-      if (loggedInUser && dibbyUser) {
+      if (dibbyUser) {
         const filterToken = capitalizeName(textValue);
         if (typeof textValue !== "string" || textValue.length < 3) {
           setSuggestionsList(undefined);
@@ -91,17 +101,18 @@ export const DibbySearchUsername: React.FC<{
           ),
           (doc) => {
             const results = doc.docs.map((data) => data.data()) as DibbyUser[];
-            const suggestions: DibbyTravelerFormData[] = results.map((r) => ({
+            const suggestions: DibbyParticipant[] = results.map((r) => ({
               username: r.username,
               name: r.displayName,
               uid: r.uid,
               createdUser: false,
               owed: 0,
               amountPaid: 0,
+              photoURL: r.photoURL,
               color: generateColor(),
             }));
 
-            const defaultSuggestion: DibbyTravelerFormData = {
+            const defaultSuggestion: DibbyParticipant = {
               uid: currentTrip
                 ? `${currentTrip.id}-${
                     currentTrip.participants.length + 1
@@ -111,6 +122,7 @@ export const DibbySearchUsername: React.FC<{
                     "-"
                   )}`,
               name: filterToken,
+              photoURL: null,
               username: `${filterToken.toLowerCase().replace(" ", "-")}-${
                 currentTrip
                   ? currentTrip.participants.length + 1
@@ -121,8 +133,10 @@ export const DibbySearchUsername: React.FC<{
               amountPaid: 0,
               color: generateColor(),
             };
-
-            setSuggestionsList([defaultSuggestion, ...suggestions]);
+            const newSuggestionsList = useDefaultSuggestion
+              ? [defaultSuggestion, ...suggestions]
+              : [...suggestions];
+            setSuggestionsList(newSuggestionsList);
             setLoading(false);
           }
         );
@@ -132,7 +146,7 @@ export const DibbySearchUsername: React.FC<{
         };
       }
     },
-    [selectedResults, dibbyUser, loggedInUser]
+    [selectedResults, dibbyUser]
   );
 
   const onClearPress = useCallback(() => {
@@ -140,15 +154,15 @@ export const DibbySearchUsername: React.FC<{
   }, []);
 
   const onRemoveItem = useCallback(
-    (item: DibbyTravelerFormData) => {
-      if (loggedInUser && item && item.uid !== loggedInUser.uid) {
+    (item: DibbyParticipant) => {
+      if (dibbyUser && item && item.uid !== dibbyUser.uid) {
         const updatedSelectedResults = selectedResults.filter(
           (i) => i.uid !== item.uid
         );
         setSelectedResults(updatedSelectedResults);
       }
     },
-    [loggedInUser, selectedResults]
+    [dibbyUser, selectedResults]
   );
 
   const onSelectItem = useCallback(
@@ -213,10 +227,13 @@ export const DibbySearchUsername: React.FC<{
           backgroundColor: colors.background.default,
           borderRadius: 12,
         }}
+        suggestionsListTextStyle={{
+          color: colors.background.text,
+        }}
         suggestionsListContainerStyle={{
           backgroundColor: colors.background.paper,
         }}
-        containerStyle={{ flexGrow: 1, flexShrink: 1, marginBottom: 16 }}
+        containerStyle={{ width: "100%", marginBottom: 16 }}
         renderItem={(item, text) => (
           <Text
             key={item.id}
@@ -266,13 +283,13 @@ export const DibbySearchUsername: React.FC<{
       >
         {selectedResults
           .filter((r) => r)
-          .map((item: DibbyTravelerFormData) => {
+          .map((item: DibbyParticipant) => {
             return (
               <DibbyChip
                 key={item.uid}
                 onRemove={onRemoveItem}
                 item={item}
-                disabled={item.uid === loggedInUser?.uid}
+                disabled={item.uid === dibbyUser?.uid}
               />
             );
           })}

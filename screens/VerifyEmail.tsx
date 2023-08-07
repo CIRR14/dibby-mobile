@@ -18,13 +18,13 @@ import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
 
 export const VerifyEmail = () => {
-  const { loggedInUser, dibbyUser } = useUser();
+  const { loggedInUser } = useUser();
   const navigation = useNavigation();
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   const navigateTo = (userObj: User) => {
-    if (userObj.displayName && userObj.emailVerified && dibbyUser) {
+    if (userObj.displayName && userObj.emailVerified) {
       navigation.navigate("Home");
     } else {
       navigation.navigate("CreateProfile");

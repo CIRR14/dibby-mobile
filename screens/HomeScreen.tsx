@@ -48,7 +48,7 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const navigation = useNavigation();
-  const { loggedInUser, dibbyUser } = useUser();
+  const { dibbyUser } = useUser();
 
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(colors as unknown as ThemeColors);
@@ -72,17 +72,17 @@ const HomeScreen = () => {
   }, [dibbyUser?.trips]);
 
   const onRefresh = useCallback(async () => {
-    if (loggedInUser && loggedInUser.uid && dibbyUser) {
+    if (dibbyUser?.uid) {
       setRefreshing(true);
       const trips = await fetchTrips();
       setCurrentTrips(trips);
       setRefreshing(false);
     }
-  }, [loggedInUser, dibbyUser]);
+  }, [dibbyUser]);
 
   useEffect(() => {
     const tripsExist = dibbyUser?.trips.length && dibbyUser?.trips.length > 0;
-    if (loggedInUser && loggedInUser.uid && tripsExist) {
+    if (dibbyUser?.uid && tripsExist) {
       const q = query(
         collection(db, "trips"),
         where(documentId(), "in", dibbyUser.trips)
@@ -102,7 +102,7 @@ const HomeScreen = () => {
     if (!tripsExist) {
       setLoading(false);
     }
-  }, [dibbyUser?.trips, loggedInUser]);
+  }, [dibbyUser]);
 
   const completeTrip = async (trip: DibbyTrip, complete: boolean) => {
     const tripRef = doc(db, "trips", trip.id);
@@ -188,12 +188,19 @@ const HomeScreen = () => {
           rightButton={
             <DibbyButton
               type="clear"
-              onPress={() => {}}
+              onPress={() => {
+                navigation.navigate("Profile");
+              }}
               title={
                 <Avatar
                   size="small"
                   rounded
-                  title={getInitials(loggedInUser?.displayName)}
+                  source={{
+                    uri: dibbyUser?.photoURL || undefined,
+                  }}
+                  title={
+                    dibbyUser?.photoURL || getInitials(dibbyUser?.displayName)
+                  }
                   containerStyle={{
                     borderWidth: 1,
                     borderStyle: "solid",
@@ -211,7 +218,7 @@ const HomeScreen = () => {
             />
           }
         />
-        {loggedInUser && (
+        {dibbyUser && (
           <View style={styles.grid}>
             {loading ? (
               <DibbyLoading />

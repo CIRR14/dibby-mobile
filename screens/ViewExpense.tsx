@@ -8,7 +8,7 @@ import { FlatList } from "react-native-gesture-handler";
 import { Divider } from "@rneui/themed";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
-import { getTravelerFromId } from "../helpers/AppHelpers";
+import { getTravelerFromId, numberWithCommas } from "../helpers/AppHelpers";
 import DibbyButton from "../components/DibbyButton";
 import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
@@ -121,7 +121,11 @@ const ViewExpense = ({ route }: any) => {
               {getTravelerFromId(currentTrip, currentExpense?.paidBy)?.name}
             </Text>
             <Text style={{ color: colors.background.default }}>
-              {/* ${numberWithCommas(currentExpense?.amount.toString())} */}
+              {`$${
+                currentExpense?.peopleInExpense.find(
+                  (p) => p.uid === currentExpense.paidBy
+                )?.amount || 0
+              }`}
             </Text>
           </LinearGradient>
 
@@ -174,13 +178,12 @@ const ViewExpense = ({ route }: any) => {
                         color: colors.background.default,
                       }}
                     >
-                      {/* {traveler && Math.sign(traveler?.owed) === -1
-                        ? `($${numberWithCommas(
-                            Math.abs(currentExpense.perPerson).toString()
-                          )})`
-                        : `$${numberWithCommas(
-                            currentExpense?.perPerson.toString()
-                          )}`} */}
+                      $
+                      {numberWithCommas(
+                        currentExpense.peopleInExpense
+                          .find((p) => p.uid === traveler?.uid)
+                          ?.amount.toString()
+                      )}
                     </Text>
                   </LinearGradient>
                 );

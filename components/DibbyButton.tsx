@@ -14,7 +14,7 @@ import {
 interface IButtonProps {
   onPress: () => void;
   title?: string | ReactElement<{}, string | JSXElementConstructor<any>>;
-  type?: "solid" | "clear" | "outline";
+  type?: "solid" | "clear" | "outline" | "danger";
   disabled?: boolean;
   add?: boolean;
   fullWidth?: boolean;
@@ -33,7 +33,7 @@ const DibbyButton: React.FC<IButtonProps> = ({
 
   return (
     <Button
-      type={type}
+      type={type === "danger" ? "solid" : type}
       onPress={onPress}
       title={
         add ? (
@@ -71,6 +71,12 @@ const DibbyButton: React.FC<IButtonProps> = ({
               start: linearGradientStart,
               end: linearGradientEnd,
             }
+          : type === "danger"
+          ? {
+              colors: [colors.danger.background, colors.danger.button],
+              start: linearGradientStart,
+              end: linearGradientEnd,
+            }
           : {
               colors: ["transparent"],
             }
@@ -83,7 +89,7 @@ export default DibbyButton;
 
 const makeStyles = (
   colors: ThemeColors,
-  type: "solid" | "clear" | "outline",
+  type: "solid" | "clear" | "outline" | "danger",
   fullWidth?: boolean
 ) =>
   StyleSheet.create({

@@ -36,6 +36,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       PrintPDF: 'printPDF',
       VerifyEmail: 'verifyEmail',
       CreateTrip: 'CreateTrip',
+      Profile: 'Profile',
       // Modal: 'modal',
       NotFound: '*',
     },

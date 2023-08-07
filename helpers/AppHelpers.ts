@@ -58,6 +58,7 @@ export const sumOfValues = (values?: number[]): number => {
     return values ? values.reduce((partialSum, a) => partialSum + a, 0) : 0;
 }
 
+
 export const inRange = (x: number, min: number, max: number): boolean => {
     return (x - min) * (x - max) <= 0;
   };
