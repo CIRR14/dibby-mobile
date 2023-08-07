@@ -1,5 +1,5 @@
 import { User } from "firebase/auth";
-import { DocumentData, DocumentReference, Timestamp, arrayRemove, arrayUnion, collection, deleteDoc, doc, documentId, getDocs, increment, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { DocumentData, DocumentReference, Timestamp, arrayRemove, arrayUnion, collection, deleteDoc, doc, documentId, getDocs, increment, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { DibbyExpense, DibbyFriend, DibbyParticipant, DibbySplits, DibbyTrip, DibbyUser } from "../constants/DibbyTypes";
 import { getTravelerFromId } from "./AppHelpers";
@@ -203,7 +203,7 @@ import { v4 } from "uuid";
     const updatedFriendsArray = user.friends.map(f => {
       if (friend.uid === f.uid) {
         return (
-          {...f, requestPending: false, dateFriendAdded: serverTimestamp()
+          {...f, requestPending: false, dateFriendAdded: Timestamp.now()
           }
         )
       } else {
@@ -221,7 +221,7 @@ import { v4 } from "uuid";
         return ({
           ...f,
           requestPending: false,
-          dateFriendAdded: serverTimestamp()
+          dateFriendAdded: Timestamp.now()
         })
       } else {
         return f
