@@ -17,7 +17,7 @@ interface DibbyDocWithID extends DibbyDoc {
 export interface DibbyFriend {
     uid: string;
     displayName: string;
-    friendAdded: Timestamp;
+    dateFriendAdded: Timestamp;
     requestPending: boolean;
     requestedBy: string;
 }

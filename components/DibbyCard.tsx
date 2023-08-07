@@ -252,20 +252,20 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
                     <Text
                       style={{
                         color: colors.primary.text,
-                        position: "absolute",
-                        zIndex: 1,
-                        fontWeight: "300",
-                        right: 16,
-                        top: 20,
-                        textAlign: "right",
+                        // position: "absolute",
+                        // zIndex: 1,
+                        // fontWeight: "300",
+                        // right: 16,
+                        // top: 20,
+                        // textAlign: "right",
                       }}
                     >
                       {getDibbySplitMethodString(expense.splitMethod)}
                     </Text>
-                    {getDibbySplitMethodIcon(
+                    {/* {getDibbySplitMethodIcon(
                       expense.splitMethod,
                       colors.disabled.background
-                    )}
+                    )} */}
                   </View>
                 </View>
               ) : (

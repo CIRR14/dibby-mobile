@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   SafeAreaView,
   StyleSheet,
@@ -32,13 +32,16 @@ import {
   windowWidth,
 } from "../constants/DeviceWidth";
 import {
+  Timestamp,
   collection,
   documentId,
+  getDocs,
   onSnapshot,
   query,
   where,
 } from "firebase/firestore";
 import {
+  DibbyFriend,
   DibbyParticipant,
   DibbyTrip,
   DibbyUser,
@@ -49,6 +52,11 @@ import { numberWithCommas } from "../helpers/AppHelpers";
 import { DibbyProfileCard } from "../components/DibbyProfileCard";
 import { timestampToString } from "../helpers/TypeHelpers";
 import { DibbySearchUsername } from "../components/DibbySearchUsername";
+import {
+  addDibbyFriends,
+  onAcceptDibbyFriend,
+  onRejectDibbyFriend,
+} from "../helpers/FirebaseHelpers";
 
 export const Profile = () => {
   const { colors } = useTheme() as unknown as ColorTheme;
@@ -84,16 +92,20 @@ export const Profile = () => {
     }
     if (!tripsExist) {
       setLoading(false);
+      setTripsInvolvedIn([]);
     }
-  }, [dibbyUser]);
+  }, [dibbyUser, setLoading]);
 
   useEffect(() => {
-    const friendsExist =
-      dibbyUser?.friends.length && dibbyUser?.trips.length > 0;
+    const friendsExist = dibbyUser?.friends.length;
     if (dibbyUser?.uid && friendsExist) {
       const q = query(
         collection(db, "users"),
-        where(documentId(), "in", dibbyUser.friends)
+        where(
+          documentId(),
+          "in",
+          dibbyUser.friends.map((f) => f.uid)
+        )
       );
 
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -108,10 +120,46 @@ export const Profile = () => {
     }
     if (!friendsExist) {
       setLoading(false);
+      setCurrentFriends([]);
     }
-  }, [dibbyUser]);
+  }, [dibbyUser, setLoading]);
 
-  const onAddFriend = () => {};
+  const onAddFriend = async () => {
+    if (dibbyUser) {
+      setLoading(true);
+      const addFriends: DibbyFriend[] = selectedResults.map((r) => {
+        return {
+          uid: r.uid,
+          displayName: r.name || "",
+          dateFriendAdded: Timestamp.now(),
+          requestPending: true,
+          requestedBy: dibbyUser.uid,
+        };
+      });
+      await addDibbyFriends(dibbyUser, addFriends).finally(() => {
+        setLoading(false);
+        setAddFriendsView(false);
+        setSelectedResults([]);
+      });
+    }
+  };
+
+  const actionTaken = async (
+    action: "accept" | "reject",
+    friend: DibbyUser
+  ) => {
+    if (dibbyUser) {
+      if (action === "accept") {
+        setLoading(true);
+        await onAcceptDibbyFriend(dibbyUser, friend);
+        setLoading(false);
+      } else if (action === "reject") {
+        setLoading(true);
+        await onRejectDibbyFriend(dibbyUser, friend);
+        setLoading(false);
+      }
+    }
+  };
 
   return (
     <LinearGradient
@@ -207,11 +255,32 @@ export const Profile = () => {
                       <DibbyProfileCard
                         key={u.uid}
                         dibbyUser={u}
-                        title={u.displayName || ""}
-                        subtitle={[u.username || undefined]}
+                        title={
+                          u.displayName ||
+                          dibbyUser.friends.find((f) => f.uid === u.uid)
+                            ?.displayName ||
+                          ""
+                        }
+                        pending={
+                          dibbyUser.friends.find((f) => f.uid === u.uid)
+                            ?.requestPending
+                        }
+                        subtitle={[`@${u.username}` || undefined]}
+                        actionNeeded={
+                          dibbyUser.friends.find((f) => f.uid === u.uid)
+                            ?.requestedBy !== dibbyUser.uid
+                        }
+                        actionTaken={(action) => actionTaken(action, u)}
                       />
                     );
                   })}
+                  {(currentFriends?.length === 0 || !currentFriends) && (
+                    <View style={{ justifyContent: "center" }}>
+                      <Text style={{ color: colors.background.text }}>
+                        No friends!
+                      </Text>
+                    </View>
+                  )}
                 </ScrollView>
               </View>
               <View style={{ gap: 24, marginBottom: 24, marginLeft: 16 }}>
@@ -258,10 +327,11 @@ export const Profile = () => {
                   </Text>
                   <Text style={{ color: colors.background.text }}>
                     $
-                    {tripsInvolvedIn &&
-                      tripsInvolvedIn.reduce((acc, t) => {
-                        return acc + t.perPersonAverage;
-                      }, 0) / tripsInvolvedIn.length}
+                    {tripsInvolvedIn && tripsInvolvedIn.length > 0
+                      ? tripsInvolvedIn.reduce((acc, t) => {
+                          return acc + t.perPersonAverage;
+                        }, 0) / tripsInvolvedIn.length
+                      : 0}
                   </Text>
                 </View>
                 <View style={{ ...styles.container }}>
@@ -273,22 +343,24 @@ export const Profile = () => {
 
                   <Text style={{ color: colors.background.text }}>
                     $
-                    {numberWithCommas(
-                      (
-                        tripsInvolvedIn &&
-                        tripsInvolvedIn.reduce((acc, t) => {
-                          return (
-                            acc +
-                            t.expenses.reduce((acc2, e) => {
-                              return acc2 + e.perPersonAverage;
-                            }, 0)
-                          );
-                        }, 0) /
-                          tripsInvolvedIn.reduce((acc, t) => {
-                            return acc + t.expenses.length;
-                          }, 0)
-                      )?.toString()
-                    )}
+                    {tripsInvolvedIn && tripsInvolvedIn.length > 0
+                      ? numberWithCommas(
+                          (
+                            tripsInvolvedIn &&
+                            tripsInvolvedIn.reduce((acc, t) => {
+                              return (
+                                acc +
+                                t.expenses.reduce((acc2, e) => {
+                                  return acc2 + e.perPersonAverage;
+                                }, 0)
+                              );
+                            }, 0) /
+                              tripsInvolvedIn.reduce((acc, t) => {
+                                return acc + t.expenses.length;
+                              }, 0)
+                          )?.toString()
+                        )
+                      : 0}
                   </Text>
                 </View>
               </View>

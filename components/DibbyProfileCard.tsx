@@ -6,19 +6,17 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { DibbyAvatar } from "./DibbyAvatars";
 import { Divider } from "@rneui/themed";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import {
-  faUser,
-  faAt,
-  faEnvelope,
-  faAdd,
-  faChevronLeft,
-} from "@fortawesome/free-solid-svg-icons";
+import { faAt, faEnvelope } from "@fortawesome/free-solid-svg-icons";
+import DibbyButton from "./DibbyButton";
 
 export interface IDibbyProfileCardProps {
   title: string;
   dibbyUser?: DibbyUser | DibbyParticipant;
   subtitle?: (string | undefined)[];
   divider?: boolean;
+  pending?: boolean;
+  actionNeeded?: boolean;
+  actionTaken?: (action: "reject" | "accept") => void;
 }
 
 export const DibbyProfileCard: React.FC<IDibbyProfileCardProps> = ({
@@ -26,12 +24,38 @@ export const DibbyProfileCard: React.FC<IDibbyProfileCardProps> = ({
   dibbyUser,
   subtitle,
   divider,
+  pending,
+  actionNeeded,
+  actionTaken = () => {},
 }) => {
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(colors as unknown as ThemeColors);
+
   return (
-    <View style={{ ...styles.card, justifyContent: "space-around" }}>
+    <View
+      style={{
+        ...styles.card,
+        justifyContent: "space-around",
+        backgroundColor: pending ? colors.disabled.button : "transparent",
+      }}
+    >
       <View style={{ gap: 8, alignItems: "center" }}>
+        {pending && !actionNeeded && (
+          <View
+            style={
+              {
+                // borderRadius: 8,
+                // borderColor: colors.background.text,
+                // borderWidth: 2,
+                // padding: 6,
+              }
+            }
+          >
+            <Text style={{ color: colors.background.text }}>
+              Request pending
+            </Text>
+          </View>
+        )}
         {dibbyUser && (
           <DibbyAvatar
             shadow={false}
@@ -42,16 +66,40 @@ export const DibbyProfileCard: React.FC<IDibbyProfileCardProps> = ({
         )}
         <Text style={{ color: colors.background.text }}>{title}</Text>
 
-        {subtitle?.map(
-          (s, i) =>
-            s && (
+        {subtitle
+          ?.filter((t) => t)
+          .map((s, i) => (
+            <View key={i}>
               <Text
-                key={i}
                 style={{ color: colors.background.text, fontWeight: "200" }}
               >
                 {s}
               </Text>
-            )
+            </View>
+          ))}
+        {actionNeeded && pending && (
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: 8,
+              marginTop: 16,
+            }}
+          >
+            <DibbyButton
+              title="ACCEPT"
+              onPress={() => {
+                actionTaken("accept");
+              }}
+            />
+            <DibbyButton
+              type="danger"
+              title="REJECT"
+              onPress={() => {
+                actionTaken("reject");
+              }}
+            />
+          </View>
         )}
       </View>
 

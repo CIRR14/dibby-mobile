@@ -1,7 +1,7 @@
 import { User } from "firebase/auth";
-import { DocumentData, DocumentReference, Timestamp, arrayRemove, arrayUnion, collection, deleteDoc, doc, documentId, getDocs, increment, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { DocumentData, DocumentReference, Timestamp, arrayRemove, arrayUnion, collection, deleteDoc, doc, documentId, getDocs, increment, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { db } from "../firebase";
-import { DibbyExpense, DibbyParticipant, DibbySplits, DibbyTrip, DibbyUser } from "../constants/DibbyTypes";
+import { DibbyExpense, DibbyFriend, DibbyParticipant, DibbySplits, DibbyTrip, DibbyUser } from "../constants/DibbyTypes";
 import { getTravelerFromId } from "./AppHelpers";
 import { CreateExpenseForm } from "../components/CreateExpense";
 import { v4 } from "uuid";
@@ -168,4 +168,83 @@ import { v4 } from "uuid";
         };
         await updateDoc(docRef, updatedUser)
     })
+  }
+
+
+  export const addDibbyFriends = async (user: DibbyUser, newFriends: DibbyFriend[]): Promise<void> => {
+    const userRef = doc(db, 'users', user.uid);
+
+    newFriends.forEach(async (friendUser) => {
+      const userId = friendUser.uid;
+      const requestedRef = doc(db, 'users', userId);
+      const requestedObject: DibbyFriend = {
+        uid: user.uid,
+        displayName: user.displayName || '',
+        dateFriendAdded: friendUser.dateFriendAdded,
+        requestPending: true,
+        requestedBy: user.uid 
+      }      
+
+      const updatedFriendUser = {
+        friends: arrayUnion(requestedObject)
+      }
+      await setDoc(requestedRef, updatedFriendUser, {merge: true})
+    })
+
+    const updatedUser = {
+      friends: [...user.friends, ...newFriends]
+    }
+
+    await setDoc(userRef, updatedUser, {merge: true});
+  }
+
+  export const onAcceptDibbyFriend = async (user: DibbyUser, friend: DibbyUser) => { 
+    const userRef = doc(db, 'users', user.uid);
+    const updatedFriendsArray = user.friends.map(f => {
+      if (friend.uid === f.uid) {
+        return (
+          {...f, requestPending: false, dateFriendAdded: serverTimestamp()
+          }
+        )
+      } else {
+        return f
+      }
+    })
+    const updatedUser = {
+      ...user,
+      friends: updatedFriendsArray
+    }
+
+    const friendRef = doc(db, 'users', friend.uid);
+    const updatedFriendsFriendsArray = friend.friends.map(f => {
+      if (user.uid === f.uid) {
+        return ({
+          ...f,
+          requestPending: false,
+          dateFriendAdded: serverTimestamp()
+        })
+      } else {
+        return f
+      }
+    })
+
+    const updatedFriend = {
+      ...friend, 
+      friends: updatedFriendsFriendsArray
+    }
+
+    await updateDoc(friendRef, updatedFriend)
+    await updateDoc(userRef, updatedUser)
+  }
+
+  export const onRejectDibbyFriend = async (user: DibbyUser, friend: DibbyUser) => {
+    const userRef = doc(db, 'users', user.uid);
+    const friendRef = doc(db, 'users', friend.uid);
+
+    const newUserFriendsObject = user.friends.filter(f => f.uid !== friend.uid);
+    const newFriendsFriendsObject = friend.friends.filter(u => u.uid !== user.uid);
+
+    await updateDoc(userRef, {friends: newUserFriendsObject});
+    await updateDoc(friendRef, {friends: newFriendsFriendsObject})
+
   }

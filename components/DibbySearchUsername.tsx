@@ -133,7 +133,6 @@ export const DibbySearchUsername: React.FC<{
               amountPaid: 0,
               color: generateColor(),
             };
-            console.log(useDefaultSuggestion);
             const newSuggestionsList = useDefaultSuggestion
               ? [defaultSuggestion, ...suggestions]
               : [...suggestions];
@@ -227,6 +226,9 @@ export const DibbySearchUsername: React.FC<{
         inputContainerStyle={{
           backgroundColor: colors.background.default,
           borderRadius: 12,
+        }}
+        suggestionsListTextStyle={{
+          color: colors.background.text,
         }}
         suggestionsListContainerStyle={{
           backgroundColor: colors.background.paper,
