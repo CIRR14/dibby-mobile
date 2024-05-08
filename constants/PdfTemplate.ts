@@ -1,9 +1,9 @@
 import { getTravelerFromId, numberWithCommas } from "../helpers/AppHelpers"
-import { ITransactionResponse, ITransactions, getAmountOfTransactionsString, getTransactionString } from "../helpers/DibbyLogic"
+import { ITransactionResponse, ITransaction, getAmountOfTransactionsString, getTransactionString } from "../helpers/DibbyLogic"
 import { timestampToString } from "../helpers/TypeHelpers"
-import { Expense, Traveler, Trip } from "./DibbyTypes"
+import { DibbyExpense, DibbyParticipant, DibbyTrip} from "./DibbyTypes"
 
-export const generateHTML = (transactions: ITransactionResponse, trip: Trip): string => {
+export const generateHTML = (transactions: ITransactionResponse, trip: DibbyTrip): string => {
     
     return ` <html>
     <head>
@@ -35,22 +35,22 @@ export const generateHTML = (transactions: ITransactionResponse, trip: Trip): st
     </head>
     <body style="text-align: center; font-family: Helvetica Neue">
       <h1 style="font-size: 24px; font-family: Helvetica Neue; font-weight: bold;">
-        ${trip.name}
+        ${trip.title}
       </h1>
       <h4 style="font-size: 12px; font-family: Helvetica Neue; font-weight: normal;">
-      ${timestampToString(trip.created)}
+      ${timestampToString(trip.dateCreated)}
       </h4>
       <h4 style="font-size: 12px; font-family: Helvetica Neue; font-weight: normal;">
       $${numberWithCommas(trip.amount.toString())}
       </h4>
       <h4 style="font-size: 12px; font-family: Helvetica Neue; font-weight: normal;">
-      Per Person Average: $${numberWithCommas(trip.perPerson.toString())}
+      Per Person Average: $${numberWithCommas(trip.perPersonAverage.toString())}
       </h4>
 
       <div style="text-align: left; margin-top: 24px;" name="transactions">
         <h4 style="font-size: 16px; font-family: Helvetica Neue; font-weight: bold; text-decoration: underline;"> ${getAmountOfTransactionsString(transactions.finalNumberOfTransactions)} </h4>
         <ul style="list-style: none; padding-left: 0;">
-        ${transactions.transactions.map((t) => generateTransactions(t)).toString().replace(/,/g, '')}
+        ${transactions?.transactions?.map((t) => generateTransactions(t)).toString().replace(/,/g, '')}
         </ul>
         </div>
 
@@ -71,11 +71,11 @@ export const generateHTML = (transactions: ITransactionResponse, trip: Trip): st
           </tr>
         </thead>
         <tbody>
-        ${trip.travelers.map((t) => generateTravelersTable(t)).toString().replace(/,/g, '')}
+        ${trip?.participants?.map((t) => generateTravelersTable(t)).toString().replace(/,/g, '')}
         <tr style="background-color: #f8f9fa" >
         <td></td>
         <td></td>
-        <td style="font-weight: bold; color: ${Math.abs(getTotalOwed(trip.travelers)) > 0.01 ? '#952320' : '#168e48'}"> $${numberWithCommas(getTotalOwed(trip.travelers).toString())} </td>
+        <td style="font-weight: bold; color: ${Math.abs(getTotalOwed(trip.participants)) > 0.01 ? '#952320' : '#168e48'}"> $${numberWithCommas(getTotalOwed(trip.participants).toString())} </td>
         <td></td>
         <td></td>
         </tr>
@@ -100,7 +100,7 @@ export const generateHTML = (transactions: ITransactionResponse, trip: Trip): st
           </tr>
         </thead>
         <tbody>
-        ${trip.expenses.map((e) => generateExpensesTable(e, trip)).toString().replace(/,/g, '')}
+        ${trip?.expenses?.map((e) => generateExpensesTable(e, trip)).toString().replace(/,/g, '')}
         </tbody>
       </table>
     </div>
@@ -108,11 +108,11 @@ export const generateHTML = (transactions: ITransactionResponse, trip: Trip): st
   </html>`
 }
 
-const generateTransactions = (transaction: ITransactions): string => {
+const generateTransactions = (transaction: ITransaction): string => {
     return `<li>${getTransactionString(transaction)}</li>`
 }
 
-const generateTravelersTable = (traveler: Traveler) => {
+const generateTravelersTable = (traveler: DibbyParticipant) => {
   const totalPaid = numberWithCommas(Math.abs(traveler.owed - traveler.amountPaid).toString())
     return `<tr>
     <td>${traveler.name}</td>
@@ -124,16 +124,16 @@ const generateTravelersTable = (traveler: Traveler) => {
 
 }
 
-const generateExpensesTable = (expense: Expense, trip: Trip) => {
+const generateExpensesTable = (expense: DibbyExpense, trip: DibbyTrip) => {
     return `<tr>
-    <td>${expense.name}</td>
-    <td>${timestampToString(expense.created)}</td>
+    <td>${expense.title}</td>
+    <td>${timestampToString(expense.dateCreated)}</td>
     <td>$${numberWithCommas(expense.amount.toString())}</td>
-    <td>${getTravelerFromId(trip, expense.payer)?.name}</td>
-    <td>${expense.peopleInExpense.map((uid) => getTravelerFromId(trip, uid)?.name).join('&comma; ')}</td>
+    <td>${getTravelerFromId(trip, expense.paidBy)?.name}</td>
+    <td>${expense.peopleInExpense.map((split) => getTravelerFromId(trip, split.uid)?.name).join('&comma; ')}</td>
   </tr>`
 }
 
-const getTotalOwed = (travelers: Traveler[]): number => {
+const getTotalOwed = (travelers: DibbyParticipant[]): number => {
   return travelers.map((t) =>  t.owed).reduce((x, y) => x + y)
 }

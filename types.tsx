@@ -23,9 +23,12 @@ export type RootStackParamList = {
   Home: undefined;
   Login: undefined;
   CreateProfile: undefined;
+  VerifyEmail: undefined;
   PrintPDF: { tripId: string };
   ViewTrip: { tripName: string; tripId: string };
   ViewTravelers: { tripName: string; tripId: string };
+  CreateTrip: undefined;
+  Profile: undefined;
   ViewExpense: {
     tripName: string;
     tripId: string;

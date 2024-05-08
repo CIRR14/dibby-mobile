@@ -1,4 +1,5 @@
-import { Traveler, Trip } from "../constants/DibbyTypes";
+import { Item } from "react-native-picker-select";
+import { DibbyParticipant, DibbySplits, DibbyTrip, DibbyUser } from "../constants/DibbyTypes";
 
 export const getInitials = (name?: string | null): string => {
     if (name) {
@@ -14,39 +15,33 @@ export const getInitials = (name?: string | null): string => {
     }
 }
 
-export const getTravelerFromId = (tripInfo: Trip | undefined, id: string | undefined): Traveler | undefined => {
-    return tripInfo && id ? tripInfo.travelers.find((t) => t.id === id) : undefined;
+export const getTravelerFromId = (tripInfo: DibbyTrip | undefined, id: string | undefined): DibbyParticipant | undefined => {
+    return tripInfo && id ? tripInfo.participants.find((t) => t.uid === id) : undefined;
 }
 
 
-export const getItemFormatFromTravelerIds = (tripInfo: Trip): {
-    label: string,
-    value: any,
-    key: string,
-    color: string,
-    inputLabel: string
-}[] => {
-    return tripInfo.travelers.map((t) => ({
-        label: t.name,
-        value: t.id,
-        key: t.id,
+export const getItemFormatFromTravelerIds = (tripInfo: DibbyTrip): Item[] => {
+    return tripInfo.participants.map((t) => ({
+        label: t.name || '',
+        value: t.uid,
+        key: t.uid,
         color: t.color,
-        inputLabel: t.name
+        inputLabel: t.name || ''
     }))
 }
 
-export const getInfoFromTravelerId = (tripInfo: Trip, id: string): {
+export const getInfoFromTravelerId = (tripInfo: DibbyTrip, id: string): {
     label: string,
     value: any,
     key: string,
     color: string,
     inputLabel: string
 } => {
-    const traveler = tripInfo.travelers.find((t) => t.id === id);
+    const traveler = tripInfo.participants.find((t) => t.uid === id);
     return {
         label: traveler?.name || '',
-        value: traveler?.id || '',
-        key: traveler?.id || '',
+        value: traveler?.uid || '',
+        key: traveler?.uid || '',
         color: traveler?.color || '',
         inputLabel: traveler?.name || ''
     }
@@ -62,6 +57,7 @@ export const capitalizeName = (stringToCap: string): string => {
 export const sumOfValues = (values?: number[]): number => {
     return values ? values.reduce((partialSum, a) => partialSum + a, 0) : 0;
 }
+
 
 export const inRange = (x: number, min: number, max: number): boolean => {
     return (x - min) * (x - max) <= 0;

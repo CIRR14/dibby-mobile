@@ -9,12 +9,20 @@ import {
 } from "../helpers/DibbyLogic";
 import { useTheme } from "@react-navigation/native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
-import { Trip } from "../constants/DibbyTypes";
+import { DibbyTrip } from "../constants/DibbyTypes";
+import { LinearGradient } from "expo-linear-gradient";
+import { changeOpacity } from "../helpers/GenerateColor";
+import {
+  linearGradientEnd,
+  linearGradientStart,
+  windowWidth,
+} from "../constants/DeviceWidth";
 
 interface DibbySummary {
-  currentTrip: Trip;
+  currentTrip: DibbyTrip;
   calculatedTrip: ITransactionResponse;
 }
+const itemWidth = (windowWidth - 40) / 5;
 
 const DibbySummary: React.FC<DibbySummary> = ({
   currentTrip,
@@ -50,12 +58,30 @@ const DibbySummary: React.FC<DibbySummary> = ({
             marginBottom: 16,
           }}
         />
-        {currentTrip.travelers.map((t) => {
+        {currentTrip.participants.map((t) => {
           return (
-            <View key={t.id} style={styles.tableRow}>
-              <Text style={{ ...styles.tableText, color: t.color }}>
-                {t.name}
-              </Text>
+            <View key={t.uid} style={styles.tableRow}>
+              <LinearGradient
+                colors={[changeOpacity(t.color, 0.7), t.color]}
+                start={linearGradientStart}
+                end={linearGradientEnd}
+                style={{
+                  borderRadius: 10,
+                  borderColor: colors.background.default,
+                  borderWidth: 1,
+                }}
+              >
+                <Text
+                  style={{
+                    ...styles.tableText,
+                    color: colors.background.text,
+                    textAlign: "center",
+                    margin: 6,
+                  }}
+                >
+                  {t.name}
+                </Text>
+              </LinearGradient>
               <Text
                 style={{
                   ...styles.tableText,
@@ -93,7 +119,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
               styles.headerText,
               {
                 color: inRange(
-                  sumOfValues(currentTrip.travelers.map((t) => t.owed)),
+                  sumOfValues(currentTrip.participants.map((t) => t.owed)),
                   -0.01,
                   0.01
                 )
@@ -105,7 +131,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
             $
             {inRange(
               sumOfValues(
-                currentTrip.travelers.map((t) => {
+                currentTrip.participants.map((t) => {
                   return t.owed;
                 })
               ),
@@ -114,7 +140,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
             )
               ? 0
               : sumOfValues(
-                  currentTrip.travelers.map((t) => {
+                  currentTrip.participants.map((t) => {
                     return t.owed;
                   })
                 )}
@@ -126,7 +152,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
               {
                 color:
                   sumOfValues(
-                    currentTrip.travelers.map((t) => t.amountPaid)
+                    currentTrip.participants.map((t) => t.amountPaid)
                   ) === currentTrip.amount
                     ? colors.success.background
                     : colors.danger.button,
@@ -136,7 +162,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
             $
             {numberWithCommas(
               sumOfValues(
-                currentTrip.travelers.map((t) => t.amountPaid)
+                currentTrip.participants.map((t) => t.amountPaid)
               ).toString()
             )}
           </Text>
@@ -194,6 +220,8 @@ const makeStyles = (colors: ThemeColors) =>
     },
     tableText: {
       color: colors.background.text,
+      width: itemWidth,
+      textAlign: "center",
     },
     headerText: {
       fontWeight: "bold",

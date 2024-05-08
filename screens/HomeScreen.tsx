@@ -1,6 +1,5 @@
 import {
   FlatList,
-  Modal,
   StyleSheet,
   View,
   Text,
@@ -20,96 +19,94 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import {
   onSnapshot,
   collection,
-  deleteDoc,
   doc,
-  orderBy,
   query,
   updateDoc,
+  getDocs,
+  where,
+  documentId,
 } from "firebase/firestore";
-import { Expense, Trip, TripDoc } from "../constants/DibbyTypes";
-import CreateTrip from "../components/CreateTrip";
+import { DibbyTrip } from "../constants/DibbyTypes";
 import { Platform } from "react-native";
 import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 import DibbyButton from "../components/DibbyButton";
 import { faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { Avatar } from "@rneui/themed";
-import { userColors } from "../helpers/GenerateColor";
 import { getInitials } from "../helpers/AppHelpers";
 import { LinearGradient } from "expo-linear-gradient";
 import DibbyVersion from "../components/DibbyVersion";
 import DibbyLoading from "../components/DibbyLoading";
+import { deleteDibbyTrip } from "../helpers/FirebaseHelpers";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
 
 const HomeScreen = () => {
-  const [currentTrips, setCurrentTrips] = useState<Trip[]>([]);
-  const [isCreateTripModalVisible, setIsCreateTripModalVisible] =
-    useState(false);
+  const [currentTrips, setCurrentTrips] = useState<DibbyTrip[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const navigation = useNavigation();
-  const { loggedInUser } = useUser();
+  const { dibbyUser } = useUser();
 
   const { colors } = useTheme() as unknown as ColorTheme;
   const styles = makeStyles(colors as unknown as ThemeColors);
 
-  const onRefresh = useCallback(() => {
-    if (loggedInUser) {
-      setRefreshing(true);
-      onSnapshot(
-        query(
-          collection(db, loggedInUser.uid),
-          orderBy("completed", "asc"),
-          orderBy("created", "desc")
-        ),
-        (doc) => {
-          const newData: Trip[] = doc.docs.flatMap((doc) => ({
-            ...(doc.data() as TripDoc),
-            id: doc.id,
-          }));
-          setCurrentTrips(newData);
-          setRefreshing(false);
-        }
+  const fetchTrips = useCallback(async () => {
+    if (dibbyUser?.trips.length && dibbyUser?.trips.length > 0) {
+      const q = query(
+        collection(db, "trips"),
+        where(documentId(), "in", dibbyUser!!.trips)
+        // orderBy("dateCreated", "desc")
       );
+      const querySnapshot = await getDocs(q);
+      const trips: DibbyTrip[] = [];
+      querySnapshot.forEach((doc) => {
+        trips.push(doc.data() as DibbyTrip);
+      });
+      return trips;
+    } else {
+      return [];
     }
-  }, [loggedInUser]);
+  }, [dibbyUser?.trips]);
+
+  const onRefresh = useCallback(async () => {
+    if (dibbyUser?.uid) {
+      setRefreshing(true);
+      const trips = await fetchTrips();
+      setCurrentTrips(trips);
+      setRefreshing(false);
+    }
+  }, [dibbyUser]);
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid) {
-      setLoading(true);
-      const unsub = onSnapshot(
-        query(
-          collection(db, loggedInUser.uid),
-          // orderBy("completed", "asc")
-          orderBy("created", "desc")
-        ),
-        (doc) => {
-          const newData: Trip[] = doc.docs.flatMap((doc) => ({
-            ...(doc.data() as TripDoc),
-            id: doc.id,
-          }));
-          setCurrentTrips(newData);
-          setLoading(false);
-        }
+    const tripsExist = dibbyUser?.trips.length && dibbyUser?.trips.length > 0;
+    if (dibbyUser?.uid && tripsExist) {
+      const q = query(
+        collection(db, "trips"),
+        where(documentId(), "in", dibbyUser.trips)
+        // orderBy("dateCreated", "desc")
       );
 
-      return () => {
-        unsub();
-      };
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const trips: DibbyTrip[] = [];
+        querySnapshot.forEach((doc) => {
+          trips.push(doc.data() as DibbyTrip);
+        });
+        setCurrentTrips(trips);
+      });
+
+      return () => unsubscribe();
     }
-  }, [loggedInUser]);
+    if (!tripsExist) {
+      setLoading(false);
+    }
+  }, [dibbyUser]);
 
-  const deleteTrip = async (trip: Trip) => {
-    await deleteDoc(doc(db, loggedInUser!!.uid, trip.id));
-  };
-
-  const completeTrip = async (trip: Trip, complete: boolean) => {
-    const tripRef = doc(db, loggedInUser!!.uid, trip.id);
-    const res = await updateDoc(tripRef, { completed: complete });
-    console.log(res);
+  const completeTrip = async (trip: DibbyTrip, complete: boolean) => {
+    const tripRef = doc(db, "trips", trip.id);
+    await updateDoc(tripRef, { completed: complete });
   };
 
   const handleSignOut = () => {
@@ -125,29 +122,30 @@ const HomeScreen = () => {
       });
   };
 
-  const toggleCreateTripModal = () => {
-    setIsCreateTripModalVisible(!isCreateTripModalVisible);
-  };
-
-  const deleteAlert = (item: Trip | Expense) => {
-    const title = `Are you sure you want to delete ${item.name}?`;
-    const message = "This will be permanently deleted.";
+  const deleteAlert = (item: DibbyTrip) => {
+    const tripOwner = dibbyUser?.uid === item.createdBy;
+    const title = tripOwner
+      ? `Are you sure you want to delete ${item.title}?`
+      : "Only the owner can delete this trip!";
+    const message = tripOwner ? "This will be permanently deleted." : "";
     const options: {
       text: string;
       onPress?: (value?: string) => void;
       style?: "cancel" | "default" | "destructive" | undefined;
     }[] = [
       {
-        text: "Cancel",
+        text: tripOwner ? "Cancel" : "Close",
         onPress: () => console.log("Cancel Pressed"),
         style: "cancel",
       },
-      {
-        text: "Delete",
-        onPress: () => deleteTrip(item as Trip),
-        style: "destructive",
-      },
     ];
+
+    tripOwner &&
+      options.push({
+        text: "Delete",
+        onPress: async () => await deleteDibbyTrip(item),
+        style: "destructive",
+      });
 
     if (Platform.OS === "web") {
       const result = window.confirm(
@@ -190,12 +188,19 @@ const HomeScreen = () => {
           rightButton={
             <DibbyButton
               type="clear"
-              onPress={() => navigation.navigate("CreateProfile")}
+              onPress={() => {
+                navigation.navigate("Profile");
+              }}
               title={
                 <Avatar
                   size="small"
                   rounded
-                  title={getInitials(loggedInUser?.displayName)}
+                  source={{
+                    uri: dibbyUser?.photoURL || undefined,
+                  }}
+                  title={
+                    dibbyUser?.photoURL || getInitials(dibbyUser?.displayName)
+                  }
                   containerStyle={{
                     borderWidth: 1,
                     borderStyle: "solid",
@@ -203,17 +208,17 @@ const HomeScreen = () => {
                   }}
                   overlayContainerStyle={{
                     backgroundColor:
-                      userColors[0].background || colors.primary.background,
+                      dibbyUser?.color || colors.primary.background,
                   }}
                   titleStyle={{
-                    color: userColors[0].text || colors.primary.text,
+                    color: colors.primary.text,
                   }}
                 />
               }
             />
           }
         />
-        {loggedInUser && (
+        {dibbyUser && (
           <View style={styles.grid}>
             {loading ? (
               <DibbyLoading />
@@ -247,7 +252,7 @@ const HomeScreen = () => {
                     onCompleteItem={(complete) => completeTrip(item, complete)}
                     onPress={() =>
                       navigation.navigate("ViewTrip", {
-                        tripName: item.name,
+                        tripName: item.title,
                         tripId: item.id,
                       })
                     }
@@ -255,20 +260,11 @@ const HomeScreen = () => {
                 )}
               />
             )}
-            <DibbyButton add onPress={toggleCreateTripModal} />
+            <DibbyButton
+              add
+              onPress={() => navigation.navigate("CreateTrip")}
+            />
             <DibbyVersion />
-            <Modal
-              animationType="slide"
-              visible={isCreateTripModalVisible}
-              onRequestClose={toggleCreateTripModal}
-            >
-              {loggedInUser && (
-                <CreateTrip
-                  currentUser={loggedInUser}
-                  onPressBack={toggleCreateTripModal}
-                />
-              )}
-            </Modal>
           </View>
         )}
       </SafeAreaView>

@@ -3,30 +3,26 @@
  * https://reactnavigation.org/docs/getting-started
  *
  */
-import { FontAwesome } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer, Theme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as React from "react";
-import { ColorSchemeName, Pressable, Text } from "react-native";
+import { ColorSchemeName, Text } from "react-native";
 
 import { CustomDarkTheme, CustomLightTheme } from "../constants/Colors";
-import useColorScheme from "../hooks/useColorScheme";
 import CreateProfile from "../screens/CreateProfile";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import NotFoundScreen from "../screens/NotFoundScreen";
-import {
-  RootStackParamList,
-  RootTabParamList,
-  RootTabScreenProps,
-} from "../types";
+import { RootStackParamList, RootTabParamList } from "../types";
 import LinkingConfiguration from "./LinkingConfiguration";
-import CreateTrip from "../components/CreateTrip";
 import ViewTrip from "../screens/ViewTrip";
 import ViewExpense from "../screens/ViewExpense";
 import ViewTravelers from "../screens/ViewTravelers";
 import PdfScreen from "../screens/PdfScreen";
+import { VerifyEmail } from "../screens/VerifyEmail";
+import CreateTrip from "../components/CreateTrip";
+import { Profile } from "../screens/Profile";
 
 export default function Navigation({
   colorScheme,
@@ -65,46 +61,60 @@ function RootNavigator() {
       <Stack.Screen
         name="Login"
         component={LoginScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: "Login" }}
       />
       <Stack.Screen
         name="CreateProfile"
         component={CreateProfile}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: "Create Profile" }}
       />
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: "Home" }}
       />
       <Stack.Screen
         name="ViewTrip"
         component={ViewTrip}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: "View Trip" }}
       />
       <Stack.Screen
         name="ViewExpense"
         component={ViewExpense}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: "View Expense" }}
       />
       <Stack.Screen
         name="ViewTravelers"
         component={ViewTravelers}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: "View Travelers" }}
       />
       <Stack.Screen
         name="PrintPDF"
         component={PdfScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: "Print PDF" }}
+      />
+      <Stack.Screen
+        name="VerifyEmail"
+        component={VerifyEmail}
+        options={{ headerShown: false, title: "Verify Email" }}
       />
       <Stack.Screen
         name="NotFound"
         component={NotFoundScreen}
-        options={{ title: "Oops!" }}
+        options={{ headerShown: false, title: "Oops!" }}
       />
-      {/* <Stack.Group screenOptions={{ presentation: "modal" }}>
-        <Stack.Screen name="Modal" component={ModalScreen} />
-      </Stack.Group> */}
+      <Stack.Screen
+        name="Profile"
+        component={Profile}
+        options={{ headerShown: false, title: "Profile" }}
+      />
+      {/* <Stack.Group screenOptions={{ presentation: "modal" }}> */}
+      <Stack.Screen
+        name="CreateTrip"
+        component={CreateTrip}
+        options={{ headerShown: false, title: "Create Trip" }}
+      />
+      {/* </Stack.Group> */}
     </Stack.Navigator>
   );
 }

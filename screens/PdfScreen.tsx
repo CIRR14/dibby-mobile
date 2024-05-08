@@ -4,7 +4,7 @@ import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { useTheme } from "@react-navigation/native";
 import { faClose, faDownload } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { Trip, TripDoc } from "../constants/DibbyTypes";
+import { DibbyTrip } from "../constants/DibbyTypes";
 import { ITransactionResponse, calculateTrip } from "../helpers/DibbyLogic";
 import { generateHTML } from "../constants/PdfTemplate";
 import { useNavigation } from "@react-navigation/core";
@@ -20,15 +20,15 @@ const PdfScreen = ({ route }: any) => {
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripId } = route.params;
-  const { loggedInUser } = useUser();
+  const { dibbyUser } = useUser();
 
   const [calculatedTrip, setCalculatedTrip] = useState<ITransactionResponse>();
-  const [currentTrip, setCurrentTrip] = useState<Trip>();
+  const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid) {
-      const unsub = onSnapshot(doc(db, loggedInUser.uid, tripId), (doc) => {
-        const newData: Trip = { ...(doc.data() as TripDoc), id: doc.id };
+    if (dibbyUser?.uid) {
+      const unsub = onSnapshot(doc(db, dibbyUser.uid, tripId), (doc) => {
+        const newData: DibbyTrip = { ...(doc.data() as DibbyTrip), id: doc.id };
         setCurrentTrip(newData);
       });
 
@@ -36,23 +36,20 @@ const PdfScreen = ({ route }: any) => {
         unsub();
       };
     }
-  }, [loggedInUser, tripId]);
+  }, [dibbyUser, tripId]);
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid && currentTrip) {
+    if (dibbyUser?.uid && currentTrip) {
       const copyOfTrip = JSON.parse(JSON.stringify(currentTrip));
       const newCalculatedTrip = calculateTrip(copyOfTrip);
       setCalculatedTrip(newCalculatedTrip);
     }
-  }, [loggedInUser, currentTrip]);
+  }, [dibbyUser, currentTrip]);
 
   return (
     <LinearGradient
       style={styles.topContainer}
-      colors={[
-        colors.background.gradient.start,
-        colors.background.gradient.end,
-      ]}
+      colors={[...colors.background.gradient]}
     >
       <SafeAreaView style={styles.topContainer}>
         <TopBar

@@ -6,11 +6,15 @@ import { Button } from "@rneui/themed";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { LinearGradient } from "expo-linear-gradient";
+import {
+  linearGradientEnd,
+  linearGradientStart,
+} from "../constants/DeviceWidth";
 
 interface IButtonProps {
   onPress: () => void;
   title?: string | ReactElement<{}, string | JSXElementConstructor<any>>;
-  type?: "solid" | "clear" | "outline";
+  type?: "solid" | "clear" | "outline" | "danger";
   disabled?: boolean;
   add?: boolean;
   fullWidth?: boolean;
@@ -29,7 +33,7 @@ const DibbyButton: React.FC<IButtonProps> = ({
 
   return (
     <Button
-      type={type}
+      type={type === "danger" ? "solid" : type}
       onPress={onPress}
       title={
         add ? (
@@ -64,8 +68,14 @@ const DibbyButton: React.FC<IButtonProps> = ({
         type === "solid"
           ? {
               colors: [...colors.gradient],
-              start: { x: 0, y: 0.5 },
-              end: { x: 1, y: 0.5 },
+              start: linearGradientStart,
+              end: linearGradientEnd,
+            }
+          : type === "danger"
+          ? {
+              colors: [colors.danger.background, colors.danger.button],
+              start: linearGradientStart,
+              end: linearGradientEnd,
             }
           : {
               colors: ["transparent"],
@@ -79,13 +89,12 @@ export default DibbyButton;
 
 const makeStyles = (
   colors: ThemeColors,
-  type: "solid" | "clear" | "outline",
+  type: "solid" | "clear" | "outline" | "danger",
   fullWidth?: boolean
 ) =>
   StyleSheet.create({
     buttonContainer: {
       width: fullWidth ? "100%" : "auto",
-      margin: 8,
       borderColor: colors.dark.background,
       borderWidth: type === "solid" ? 1 : 0,
       borderBottomWidth: type !== "clear" ? 4 : 0,

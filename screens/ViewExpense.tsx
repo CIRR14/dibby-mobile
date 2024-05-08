@@ -1,20 +1,12 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  useColorScheme,
-  StyleSheet,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
 import { useNavigation, useTheme } from "@react-navigation/native";
 import { ColorTheme, ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
-import { useUser } from "../hooks/useUser";
 import { Divider } from "@rneui/themed";
 import { doc, onSnapshot } from "firebase/firestore";
-import { Expense, Traveler, Trip, TripDoc } from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import {
   getTravelerFromId,
@@ -23,9 +15,20 @@ import {
   sumOfValues,
 } from "../helpers/AppHelpers";
 import DibbyButton from "../components/DibbyButton";
-import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { faChevronLeft, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { LinearGradient } from "expo-linear-gradient";
+import {
+  DibbyExpense,
+  DibbyParticipant,
+  DibbyTrip,
+} from "../constants/DibbyTypes";
+import { changeOpacity } from "../helpers/GenerateColor";
+import {
+  linearGradientEnd,
+  linearGradientStart,
+} from "../constants/DeviceWidth";
+import { deleteDibbyExpense } from "../helpers/FirebaseHelpers";
 
 const windowWidth = Dimensions.get("window").width;
 const numColumns = Math.floor(windowWidth / 500);
@@ -35,24 +38,21 @@ const ViewExpense = ({ route }: any) => {
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId, expenseId } = route.params;
-  const { loggedInUser } = useUser();
-  const [currentExpense, setCurrentExpense] = useState<Expense>();
-  const [currentTrip, setCurrentTrip] = useState<Trip>();
+  const [currentExpense, setCurrentExpense] = useState<DibbyExpense>();
+  const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
 
   useEffect(() => {
-    if (loggedInUser && loggedInUser.uid) {
-      const unsub = onSnapshot(doc(db, loggedInUser.uid, tripId), (doc) => {
-        const newData: Trip = { ...(doc.data() as TripDoc), id: doc.id };
-        setCurrentTrip(newData);
-        const expense = newData.expenses.find((e) => e.id === expenseId);
-        setCurrentExpense(expense);
-      });
+    const unsub = onSnapshot(doc(db, "trips", tripId), (doc) => {
+      const newData: DibbyTrip = { ...(doc.data() as DibbyTrip), id: doc.id };
+      setCurrentTrip(newData);
+      const expense = newData.expenses.find((e) => e.id === expenseId);
+      setCurrentExpense(expense);
+    });
 
-      return () => {
-        unsub();
-      };
-    }
-  }, [loggedInUser, tripId]);
+    return () => {
+      unsub();
+    };
+  }, [tripId]);
 
   return (
     <LinearGradient
@@ -61,7 +61,7 @@ const ViewExpense = ({ route }: any) => {
     >
       <SafeAreaView style={styles.topContainer}>
         <TopBar
-          title={`${currentExpense?.name}`}
+          title={`${currentExpense?.title}`}
           leftButton={
             <DibbyButton
               type="clear"
@@ -73,6 +73,23 @@ const ViewExpense = ({ route }: any) => {
                   icon={faChevronLeft}
                   size={24}
                   color={colors.background.text}
+                />
+              }
+            />
+          }
+          rightButton={
+            <DibbyButton
+              type="clear"
+              onPress={() => {
+                currentExpense &&
+                  currentTrip &&
+                  deleteDibbyExpense(currentExpense, currentTrip);
+              }}
+              title={
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  size={24}
+                  color={colors.danger.button}
                 />
               }
             />
@@ -93,20 +110,17 @@ const ViewExpense = ({ route }: any) => {
               alignItems: "center",
             }}
           >
-            <Text style={styles.title}>{currentExpense?.name}</Text>
+            <Text style={styles.title}>{currentExpense?.title}</Text>
             <Text style={styles.title}>${currentExpense?.amount}</Text>
           </View>
 
-          <View
+          <LinearGradient
             style={{
               marginTop: 16,
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              backgroundColor: getTravelerFromId(
-                currentTrip,
-                currentExpense?.payer
-              )?.color,
+              backgroundColor: colors.light.background,
               padding: 10,
               borderRadius: 10,
               borderWidth: 1,
@@ -114,44 +128,66 @@ const ViewExpense = ({ route }: any) => {
               borderLeftWidth: 4,
               borderColor: colors.dark.background,
             }}
+            colors={[
+              changeOpacity(
+                getTravelerFromId(currentTrip, currentExpense?.paidBy)?.color ||
+                  colors.primary.background,
+                0.8
+              ),
+              getTravelerFromId(currentTrip, currentExpense?.paidBy)?.color ||
+                colors.primary.background,
+            ]}
+            start={linearGradientStart}
+            end={linearGradientEnd}
           >
             <Text style={{ color: colors.background.default }}>
-              {getTravelerFromId(currentTrip, currentExpense?.payer)?.name}
+              {getTravelerFromId(currentTrip, currentExpense?.paidBy)?.name}
             </Text>
             <Text style={{ color: colors.background.default }}>
-              {/* ${numberWithCommas(currentExpense?.amount.toString())} */}
+              {`$${
+                currentExpense?.peopleInExpense.find(
+                  (p) => p.uid === currentExpense.paidBy
+                )?.amount || 0
+              }`}
             </Text>
-          </View>
+          </LinearGradient>
 
           {currentExpense && (
             <FlatList
               data={currentExpense.peopleInExpense.filter(
-                (p) => p !== currentExpense.payer
+                (p) => p.uid !== currentExpense.paidBy
               )}
               key={numColumns}
               numColumns={numColumns}
-              keyExtractor={(item) => item}
+              keyExtractor={(item) => item.uid}
               style={{ marginVertical: 16 }}
               renderItem={({ item }) => {
-                const traveler: Traveler | undefined = getTravelerFromId(
-                  currentTrip,
-                  item
-                );
+                const traveler: DibbyParticipant | undefined =
+                  getTravelerFromId(currentTrip, item.uid);
                 return (
-                  <View
+                  <LinearGradient
                     style={{
                       marginTop: 16,
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      backgroundColor: traveler?.color,
                       padding: 10,
                       borderRadius: 10,
                       borderWidth: 1,
                       borderBottomWidth: 4,
                       borderLeftWidth: 4,
                       borderColor: colors.dark.background,
+                      backgroundColor: colors.light.background,
                     }}
+                    colors={[
+                      changeOpacity(
+                        traveler?.color || colors.primary.background,
+                        0.8
+                      ),
+                      traveler?.color || colors.primary.background,
+                    ]}
+                    start={linearGradientStart}
+                    end={linearGradientEnd}
                   >
                     <Text
                       style={{
@@ -165,15 +201,14 @@ const ViewExpense = ({ route }: any) => {
                         color: colors.background.default,
                       }}
                     >
-                      {/* {traveler && Math.sign(traveler?.owed) === -1
-                        ? `($${numberWithCommas(
-                            Math.abs(currentExpense.perPerson).toString()
-                          )})`
-                        : `$${numberWithCommas(
-                            currentExpense?.perPerson.toString()
-                          )}`} */}
+                      $
+                      {numberWithCommas(
+                        currentExpense.peopleInExpense
+                          .find((p) => p.uid === traveler?.uid)
+                          ?.amount.toString()
+                      )}
                     </Text>
-                  </View>
+                  </LinearGradient>
                 );
               }}
             />
@@ -194,14 +229,14 @@ const ViewExpense = ({ route }: any) => {
               borderRadius: 10,
             }}
           >
-            {/* <Text></Text>
+            <Text></Text>
             <Text
               style={{
                 color: inRange(
                   sumOfValues(
-                    currentExpense?.peopleInExpense.map((p: string) => {
-                      const traveler = getTravelerFromId(currentTrip, p);
-                      return traveler!!.owed;
+                    currentExpense?.peopleInExpense.map((p) => {
+                      const traveler = getTravelerFromId(currentTrip, p.uid);
+                      return traveler ? traveler.owed : 0;
                     })
                   ),
                   -0.01,
@@ -214,9 +249,9 @@ const ViewExpense = ({ route }: any) => {
               $
               {inRange(
                 sumOfValues(
-                  currentExpense?.peopleInExpense.map((p: string) => {
-                    const traveler = getTravelerFromId(currentTrip, p);
-                    return traveler!!.owed;
+                  currentExpense?.peopleInExpense.map((p) => {
+                    const traveler = getTravelerFromId(currentTrip, p.uid);
+                    return traveler ? traveler.owed : 0;
                   })
                 ),
                 -0.01,
@@ -225,13 +260,13 @@ const ViewExpense = ({ route }: any) => {
                 ? 0
                 : numberWithCommas(
                     sumOfValues(
-                      currentExpense?.peopleInExpense.map((p: string) => {
-                        const traveler = getTravelerFromId(currentTrip, p);
-                        return traveler!!.owed;
+                      currentExpense?.peopleInExpense.map((p) => {
+                        const traveler = getTravelerFromId(currentTrip, p.uid);
+                        return traveler ? traveler.owed : 0;
                       })
                     ).toString()
                   )}
-            </Text> */}
+            </Text>
           </View>
         </View>
       </SafeAreaView>

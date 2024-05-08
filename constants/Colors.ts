@@ -58,7 +58,7 @@ export const lightTheme: ThemeColors = {
     card: '#8a1e29'
   },
   warning: {
-    background: '#ffc107',
+    background: '#f8c323',
     text: '#ffffff',
     button: '#e0a800',
   },
@@ -106,8 +106,8 @@ export const lightTheme: ThemeColors = {
   card: [
     '#9cd39cff',
     '#82b182ff',
+    '#648e64ff',
 
-    // '#788eb188',
   ]
 };
 
@@ -133,7 +133,7 @@ export const darkTheme: ThemeColors = {
     button: '#b32720',
   },
   warning: {
-    background: '#ffc107',
+    background: '#fbe08f',
     text: '#ffffff',
     button: '#d39e00',
   },
@@ -158,8 +158,9 @@ export const darkTheme: ThemeColors = {
     text: '#f8f9fa', 
     paper: '#343a40',
     gradient: [
-     '#343a40',
-     '#212529'
+     '#485661',
+     '#383d42',
+     '#2a2d2f',
     ]
   },
   disabled: {
@@ -181,8 +182,7 @@ export const darkTheme: ThemeColors = {
   card: [
     '#12869d',
     '#106c7f',
-
-    // '#a4cbb4',
+    '#a4cbb4',
   ]
 };
 
