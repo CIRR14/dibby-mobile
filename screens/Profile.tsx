@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   StyleSheet,
@@ -15,27 +15,17 @@ import DibbyButton from "../components/DibbyButton";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { useNavigation } from "@react-navigation/core";
 import { useUser } from "../hooks/useUser";
-import { DibbyAvatar } from "../components/DibbyAvatars";
-import { Divider } from "@rneui/themed";
 import {
-  faUser,
-  faAt,
-  faEnvelope,
   faAdd,
   faChevronLeft,
   faSubtract,
 } from "@fortawesome/free-solid-svg-icons";
 
-import {
-  linearGradientEnd,
-  linearGradientStart,
-  windowWidth,
-} from "../constants/DeviceWidth";
+import { windowWidth } from "../constants/DeviceWidth";
 import {
   Timestamp,
   collection,
   documentId,
-  getDocs,
   onSnapshot,
   query,
   where,
@@ -249,6 +239,7 @@ export const Profile = () => {
                     gap: 16,
                     width: "100%",
                   }}
+                  style={{ width: "100%" }}
                 >
                   {currentFriends?.map((u) => {
                     return (

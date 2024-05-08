@@ -11,6 +11,7 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   User,
@@ -174,6 +175,21 @@ const LoginScreen = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    setError("");
+    if (email) {
+      sendPasswordResetEmail(auth, email)
+        .then((res) => {
+          // TODO: POP UP MODAL OR SOMETHING
+        })
+        .catch((err) => {
+          setError(errorMessage(err?.code));
+        });
+    } else {
+      setError("Please enter an email");
+    }
+  };
+
   return (
     <LinearGradient
       style={styles.topContainer}
@@ -273,6 +289,11 @@ const LoginScreen = () => {
               onPress={handleAppleLogin}
             />
           </View>
+          <DibbyButton
+            title={"forgot password?"}
+            type="clear"
+            onPress={handleForgotPassword}
+          />
         </View>
         <DibbyVersion bottom={30} />
       </KeyboardAvoidingView>

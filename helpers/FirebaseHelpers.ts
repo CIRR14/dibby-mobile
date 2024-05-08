@@ -74,7 +74,21 @@ import { v4 } from "uuid";
           owed: isPayer ? p.owed + payerAmountOwed : p.owed - amountOwed,
         }
     })
-    return [...participantsNotIncluded, ...participants]
+
+
+    const newParticipants = participantsNotIncluded.map(p => {
+      const isPayer = p.uid === formData.paidBy;
+
+      return {
+        ...p,
+        amountPaid: isPayer ? p.amountPaid + expenseAmount : p.amountPaid,
+        owed: isPayer ? p.owed + expenseAmount : p.owed
+      }
+
+    })
+
+
+    return [...newParticipants, ...participants]
   }
 
     const peopleInExpense: DibbySplits[] = (formData.peopleInExpense.map(t => {
@@ -114,6 +128,8 @@ import { v4 } from "uuid";
       perPersonAverage: increment(parseFloat(formData.amount) / trip.participants.length ),
       dateUpdated: Timestamp.now(),
     }
+
+    console.log({newTripData})
 
     await updateDoc(tripRef, newTripData);
   }

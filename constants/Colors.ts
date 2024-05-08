@@ -182,8 +182,7 @@ export const darkTheme: ThemeColors = {
   card: [
     '#12869d',
     '#106c7f',
-
-    // '#a4cbb4',
+    '#a4cbb4',
   ]
 };
 

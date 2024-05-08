@@ -158,9 +158,12 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
     const itemToFind = payer;
 
     const foundIdx = arr.findIndex((el) => el.uid == itemToFind);
-    const payingParticipant = arr[foundIdx];
-    arr.splice(foundIdx, 1);
-    arr.unshift(payingParticipant);
+
+    if (foundIdx > 0) {
+      const payingParticipant = arr[foundIdx];
+      arr.splice(foundIdx, 1);
+      arr.unshift(payingParticipant);
+    }
     return arr;
   };
 

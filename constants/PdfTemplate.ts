@@ -1,5 +1,5 @@
 import { getTravelerFromId, numberWithCommas } from "../helpers/AppHelpers"
-import { ITransactionResponse, ITransactions, getAmountOfTransactionsString, getTransactionString } from "../helpers/DibbyLogic"
+import { ITransactionResponse, ITransaction, getAmountOfTransactionsString, getTransactionString } from "../helpers/DibbyLogic"
 import { timestampToString } from "../helpers/TypeHelpers"
 import { DibbyExpense, DibbyParticipant, DibbyTrip} from "./DibbyTypes"
 
@@ -50,7 +50,7 @@ export const generateHTML = (transactions: ITransactionResponse, trip: DibbyTrip
       <div style="text-align: left; margin-top: 24px;" name="transactions">
         <h4 style="font-size: 16px; font-family: Helvetica Neue; font-weight: bold; text-decoration: underline;"> ${getAmountOfTransactionsString(transactions.finalNumberOfTransactions)} </h4>
         <ul style="list-style: none; padding-left: 0;">
-        ${transactions.transactions.map((t) => generateTransactions(t)).toString().replace(/,/g, '')}
+        ${transactions?.transactions?.map((t) => generateTransactions(t)).toString().replace(/,/g, '')}
         </ul>
         </div>
 
@@ -71,7 +71,7 @@ export const generateHTML = (transactions: ITransactionResponse, trip: DibbyTrip
           </tr>
         </thead>
         <tbody>
-        ${trip.participants.map((t) => generateTravelersTable(t)).toString().replace(/,/g, '')}
+        ${trip?.participants?.map((t) => generateTravelersTable(t)).toString().replace(/,/g, '')}
         <tr style="background-color: #f8f9fa" >
         <td></td>
         <td></td>
@@ -100,7 +100,7 @@ export const generateHTML = (transactions: ITransactionResponse, trip: DibbyTrip
           </tr>
         </thead>
         <tbody>
-        ${trip.expenses.map((e) => generateExpensesTable(e, trip)).toString().replace(/,/g, '')}
+        ${trip?.expenses?.map((e) => generateExpensesTable(e, trip)).toString().replace(/,/g, '')}
         </tbody>
       </table>
     </div>
@@ -108,7 +108,7 @@ export const generateHTML = (transactions: ITransactionResponse, trip: DibbyTrip
   </html>`
 }
 
-const generateTransactions = (transaction: ITransactions): string => {
+const generateTransactions = (transaction: ITransaction): string => {
     return `<li>${getTransactionString(transaction)}</li>`
 }
 

@@ -1,14 +1,14 @@
 import { DibbyExpense, DibbyParticipant, DibbySplitMethod, DibbyTrip } from "../constants/DibbyTypes";
 import { numberWithCommas } from "./AppHelpers";
 
-export interface ITransactions {
+export interface ITransaction {
     owed: DibbyParticipant, 
     owee: DibbyParticipant, 
     amount: number
 }
 
 export interface ITransactionResponse {
-    transactions: ITransactions[],
+    transactions: ITransaction[],
     finalNumberOfTransactions: number
 }
 
@@ -139,7 +139,7 @@ export const calculateTrip = (
   return returnThis;
 };
 
-export const getTransactionString = (transaction: ITransactions): string => {
+export const getTransactionString = (transaction: ITransaction): string => {
     return `💰 ${transaction.owee.name} owes ${transaction.owed.name}: $${numberWithCommas(transaction.amount.toString())}`
 }
 
@@ -148,7 +148,7 @@ return ` Number of transactions: ${numberOfTransactions}`
 }
 
 
-export const checkResults = (ogTrip: DibbyTrip, finalTransactions: ITransactions[]): boolean => {
+export const checkResults = (ogTrip: DibbyTrip, finalTransactions: ITransaction[]): boolean => {
     finalTransactions.forEach((t) => {
         //
     })

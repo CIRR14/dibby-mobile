@@ -8,9 +8,14 @@ import { FlatList } from "react-native-gesture-handler";
 import { Divider } from "@rneui/themed";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
-import { getTravelerFromId, numberWithCommas } from "../helpers/AppHelpers";
+import {
+  getTravelerFromId,
+  inRange,
+  numberWithCommas,
+  sumOfValues,
+} from "../helpers/AppHelpers";
 import DibbyButton from "../components/DibbyButton";
-import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { faChevronLeft, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -23,6 +28,7 @@ import {
   linearGradientEnd,
   linearGradientStart,
 } from "../constants/DeviceWidth";
+import { deleteDibbyExpense } from "../helpers/FirebaseHelpers";
 
 const windowWidth = Dimensions.get("window").width;
 const numColumns = Math.floor(windowWidth / 500);
@@ -67,6 +73,23 @@ const ViewExpense = ({ route }: any) => {
                   icon={faChevronLeft}
                   size={24}
                   color={colors.background.text}
+                />
+              }
+            />
+          }
+          rightButton={
+            <DibbyButton
+              type="clear"
+              onPress={() => {
+                currentExpense &&
+                  currentTrip &&
+                  deleteDibbyExpense(currentExpense, currentTrip);
+              }}
+              title={
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  size={24}
+                  color={colors.danger.button}
                 />
               }
             />
@@ -206,14 +229,14 @@ const ViewExpense = ({ route }: any) => {
               borderRadius: 10,
             }}
           >
-            {/* <Text></Text>
+            <Text></Text>
             <Text
               style={{
                 color: inRange(
                   sumOfValues(
-                    currentExpense?.peopleInExpense.map((p: string) => {
-                      const traveler = getTravelerFromId(currentTrip, p);
-                      return traveler!!.owed;
+                    currentExpense?.peopleInExpense.map((p) => {
+                      const traveler = getTravelerFromId(currentTrip, p.uid);
+                      return traveler ? traveler.owed : 0;
                     })
                   ),
                   -0.01,
@@ -226,9 +249,9 @@ const ViewExpense = ({ route }: any) => {
               $
               {inRange(
                 sumOfValues(
-                  currentExpense?.peopleInExpense.map((p: string) => {
-                    const traveler = getTravelerFromId(currentTrip, p);
-                    return traveler!!.owed;
+                  currentExpense?.peopleInExpense.map((p) => {
+                    const traveler = getTravelerFromId(currentTrip, p.uid);
+                    return traveler ? traveler.owed : 0;
                   })
                 ),
                 -0.01,
@@ -237,13 +260,13 @@ const ViewExpense = ({ route }: any) => {
                 ? 0
                 : numberWithCommas(
                     sumOfValues(
-                      currentExpense?.peopleInExpense.map((p: string) => {
-                        const traveler = getTravelerFromId(currentTrip, p);
-                        return traveler!!.owed;
+                      currentExpense?.peopleInExpense.map((p) => {
+                        const traveler = getTravelerFromId(currentTrip, p.uid);
+                        return traveler ? traveler.owed : 0;
                       })
                     ).toString()
                   )}
-            </Text> */}
+            </Text>
           </View>
         </View>
       </SafeAreaView>

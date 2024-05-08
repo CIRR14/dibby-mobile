@@ -42,7 +42,6 @@ const CreateProfile = () => {
   useEffect(() => {
     setDisplayName(loggedInUser ? loggedInUser.displayName : null);
     setPhotoUrl(loggedInUser ? loggedInUser.photoURL : null);
-    console.log(loggedInUser?.photoURL);
   }, [loggedInUser]);
 
   const handleNext = async () => {

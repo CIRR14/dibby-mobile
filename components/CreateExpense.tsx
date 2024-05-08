@@ -279,12 +279,6 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (!peopleInExpense.includes(paidBy)) {
-      setValue("peopleInExpense", [...peopleInExpense, paidBy]);
-    }
-  }, [peopleInExpense, paidBy]);
-
   return (
     <SafeAreaView style={styles.topContainer}>
       <TopBar
