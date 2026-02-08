@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView,
   StyleSheet,
@@ -7,21 +7,14 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
-import { useTheme } from "@react-navigation/native";
+import { ThemeColors } from "../constants/Colors";
 import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { useNavigation } from "@react-navigation/core";
 import { useUser } from "../hooks/useUser";
-import {
-  faAdd,
-  faChevronLeft,
-  faSubtract,
-} from "@fortawesome/free-solid-svg-icons";
+import { faAdd, faSubtract } from "@fortawesome/free-solid-svg-icons";
 
-import { windowWidth } from "../constants/DeviceWidth";
+import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 import {
   Timestamp,
   collection,
@@ -47,18 +40,42 @@ import {
   onAcceptDibbyFriend,
   onRejectDibbyFriend,
 } from "../helpers/FirebaseHelpers";
+import NeumoSurface from "../components/NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
+import StatsSection from "../components/StatsSection";
+import { buildProfileStats, pickStats } from "../helpers/StatsHelpers";
 
 export const Profile = () => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
-  const navigation = useNavigation();
   const { dibbyUser } = useUser();
   const [tripsInvolvedIn, setTripsInvolvedIn] = useState<DibbyTrip[]>();
   const [currentFriends, setCurrentFriends] = useState<DibbyUser[]>();
   const [loading, setLoading] = useState<boolean>(true);
   const [addFriendsView, setAddFriendsView] = useState<boolean>(false);
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
-    []
+    [],
+  );
+  const profileStats = useMemo(
+    () =>
+      buildProfileStats(
+        tripsInvolvedIn || [],
+        dibbyUser?.uid,
+        currentFriends?.length || 0,
+      ),
+    [tripsInvolvedIn, dibbyUser?.uid, currentFriends?.length],
+  );
+  const profileCompactStats = useMemo(
+    () =>
+      pickStats(profileStats, [
+        "profile-trips",
+        "profile-friends",
+        "profile-total-spent",
+        "profile-net",
+      ]),
+    [profileStats],
   );
 
   useEffect(() => {
@@ -66,7 +83,7 @@ export const Profile = () => {
     if (dibbyUser?.uid && tripsExist) {
       const q = query(
         collection(db, "trips"),
-        where(documentId(), "in", dibbyUser.trips)
+        where(documentId(), "in", dibbyUser.trips),
         // orderBy("dateCreated", "desc")
       );
 
@@ -94,8 +111,8 @@ export const Profile = () => {
         where(
           documentId(),
           "in",
-          dibbyUser.friends.map((f) => f.uid)
-        )
+          dibbyUser.friends.map((f) => f.uid),
+        ),
       );
 
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -136,7 +153,7 @@ export const Profile = () => {
 
   const actionTaken = async (
     action: "accept" | "reject",
-    friend: DibbyUser
+    friend: DibbyUser,
   ) => {
     if (dibbyUser) {
       if (action === "accept") {
@@ -152,29 +169,11 @@ export const Profile = () => {
   };
 
   return (
-    <LinearGradient
-      style={styles.topContainer}
-      colors={[...colors.background.gradient]}
-    >
+    <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         {loading && <DibbyLoading />}
-        <TopBar
-          title="Profile"
-          leftButton={
-            <DibbyButton
-              type="clear"
-              onPress={() => navigation.navigate("Home")}
-              title={
-                <FontAwesomeIcon
-                  icon={faChevronLeft}
-                  size={24}
-                  color={colors.background.text}
-                />
-              }
-            />
-          }
-        />
-        <ScrollView>
+        <TopBar title="Profile" />
+        <ScrollView contentContainerStyle={styles.scrollContent}>
           {dibbyUser && (
             <View style={styles.content}>
               <DibbyProfileCard
@@ -183,39 +182,22 @@ export const Profile = () => {
                 divider={true}
               />
 
-              <View
-                style={{
-                  ...styles.container,
-                  gap: 16,
-                  marginBottom: 24,
-                  marginHorizontal: 8,
-                }}
+              <NeumoSurface
+                variant="raised"
+                tone="surface"
+                radius={NeumoTokens.radius.lg}
+                style={styles.sectionCard}
               >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    width: "100%",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: colors.background.text,
-                      fontWeight: "300",
-                    }}
-                  >
-                    Friends
-                  </Text>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Friends</Text>
                   <TouchableOpacity
                     onPress={() => setAddFriendsView(!addFriendsView)}
-                    style={{
-                      height: 32,
-                    }}
+                    style={{ height: 32 }}
                   >
                     <FontAwesomeIcon
                       icon={addFriendsView ? faSubtract : faAdd}
-                      color={colors.background.text}
-                      size={24}
+                      color={colors.textPrimary}
+                      size={20}
                     />
                   </TouchableOpacity>
                 </View>
@@ -267,19 +249,21 @@ export const Profile = () => {
                   })}
                   {(currentFriends?.length === 0 || !currentFriends) && (
                     <View style={{ justifyContent: "center" }}>
-                      <Text style={{ color: colors.background.text }}>
-                        No friends!
+                      <Text style={{ color: colors.textSecondary }}>
+                        No friends yet.
                       </Text>
                     </View>
                   )}
                 </ScrollView>
-              </View>
-              <View style={{ gap: 24, marginBottom: 24, marginLeft: 16 }}>
-                <Text
-                  style={{ color: colors.background.text, fontWeight: "300" }}
-                >
-                  Trips involved in:
-                </Text>
+              </NeumoSurface>
+
+              <NeumoSurface
+                variant="raised"
+                tone="surface"
+                radius={NeumoTokens.radius.lg}
+                style={styles.sectionCard}
+              >
+                <Text style={styles.sectionTitle}>Trips involved in</Text>
                 <ScrollView
                   horizontal
                   contentContainerStyle={{
@@ -296,77 +280,35 @@ export const Profile = () => {
                           `Total: $${t.amount.toString()}`,
                           `Paid: $${t.expenses.reduce((acc, e) => {
                             const usersSpent = e.peopleInExpense.find(
-                              (ue) => ue.uid === dibbyUser.uid
+                              (ue) => ue.uid === dibbyUser.uid,
                             )?.amount;
                             return acc + +(usersSpent || 0);
                           }, 0)}`,
                           t.description,
                           timestampToString(t.dateCreated),
                           `Per person Avg: $${numberWithCommas(
-                            t.perPersonAverage.toString()
+                            t.perPersonAverage.toString(),
                           )}`,
                         ]}
                       />
                     );
                   })}
                 </ScrollView>
-                <View style={{ ...styles.container }}>
-                  <Text
-                    style={{ color: colors.background.text, fontWeight: "300" }}
-                  >
-                    Average spent per trip:
-                  </Text>
-                  <Text style={{ color: colors.background.text }}>
-                    $
-                    {tripsInvolvedIn && tripsInvolvedIn.length > 0
-                      ? tripsInvolvedIn.reduce((acc, t) => {
-                          return acc + t.perPersonAverage;
-                        }, 0) / tripsInvolvedIn.length
-                      : 0}
-                  </Text>
+                <View style={styles.statsWrap}>
+                  <StatsSection
+                    title="Your stats"
+                    compactItems={profileCompactStats}
+                    fullItems={profileStats}
+                    compactColumns={2}
+                    expandedColumns={wideScreen ? 3 : 2}
+                  />
                 </View>
-                <View style={{ ...styles.container }}>
-                  <Text
-                    style={{ color: colors.background.text, fontWeight: "300" }}
-                  >
-                    Avg money spent per expense:
-                  </Text>
-
-                  <Text style={{ color: colors.background.text }}>
-                    $
-                    {tripsInvolvedIn && tripsInvolvedIn.length > 0
-                      ? numberWithCommas(
-                          (
-                            tripsInvolvedIn &&
-                            tripsInvolvedIn.reduce((acc, t) => {
-                              return (
-                                acc +
-                                t.expenses.reduce((acc2, e) => {
-                                  return acc2 + e.perPersonAverage;
-                                }, 0)
-                              );
-                            }, 0) /
-                              tripsInvolvedIn.reduce((acc, t) => {
-                                return acc + t.expenses.length;
-                              }, 0)
-                          )?.toString()
-                        )
-                      : 0}
-                  </Text>
-                </View>
-              </View>
-              {/* <View style={styles.mapContainer}>
-              <Text
-                style={{ color: colors.background.text, fontWeight: "300" }}
-              >
-                Map of all trips taken
-              </Text>
-            </View> */}
+              </NeumoSurface>
             </View>
           )}
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -374,23 +316,29 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
+      backgroundColor: colors.background.default,
     },
     content: {
       margin: 16,
+      gap: 16,
     },
-    card: {
-      borderColor: colors.dark.background,
-      borderWidth: 1,
-      borderLeftWidth: 4,
-      borderBottomWidth: 4,
-      width: "100%",
-      alignItems: "center",
-      paddingVertical: 40,
-      borderRadius: 32,
+    scrollContent: {
+      paddingBottom: 40,
+    },
+    sectionCard: {
+      gap: 12,
+    },
+    sectionHeader: {
       flexDirection: "row",
-      marginBottom: 24,
-    },
-    container: {
+      justifyContent: "space-between",
       alignItems: "center",
+    },
+    sectionTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    statsWrap: {
+      marginTop: 8,
     },
   });

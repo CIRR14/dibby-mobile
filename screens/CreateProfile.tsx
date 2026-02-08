@@ -2,29 +2,31 @@ import { Text, StyleSheet, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateProfile } from "firebase/auth";
-import { useNavigation, useTheme } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { useUser } from "../hooks/useUser";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { ThemeColors } from "../constants/Colors";
 import { Avatar } from "@rneui/themed";
 import { capitalizeName, getInitials } from "../helpers/AppHelpers";
+import { useAvatarUrl } from "../hooks/useAvatarUrl";
 import DibbyButton from "../components/DibbyButton";
-import { LinearGradient } from "expo-linear-gradient";
 import DibbyInput from "../components/DibbyInput";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faAt } from "@fortawesome/free-solid-svg-icons";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
-import { generateColor } from "../helpers/GenerateColor";
+import { getParticipantColor } from "../helpers/GenerateColor";
 import { createDibbyUser } from "../helpers/FirebaseHelpers";
-
-const userColor = generateColor();
+import NeumoSurface from "../components/NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
 
 const CreateProfile = () => {
   const { loggedInUser, dibbyUser } = useUser();
 
   const navigation = useNavigation();
 
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   const [username, setUsername] = useState<string | null>(null);
@@ -32,10 +34,20 @@ const CreateProfile = () => {
   const [photoURL, setPhotoUrl] = useState<string | null>(null);
   const [invalidReason, setInvalidReason] = useState<"pattern" | "taken">();
   const [validDisplayName, setValidDisplayName] = useState<boolean>();
+  const { uri: avatarUrl, imageProps } = useAvatarUrl(photoURL, 160);
+  const userColor = getParticipantColor(
+    loggedInUser?.uid ||
+      loggedInUser?.email ||
+      loggedInUser?.displayName ||
+      "user"
+  );
 
   useEffect(() => {
     if (dibbyUser?.displayName && dibbyUser.username && dibbyUser.email) {
-      navigation.navigate("Home");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Root" }],
+      });
     }
   }, [dibbyUser]);
 
@@ -58,7 +70,10 @@ const CreateProfile = () => {
           photoURL,
           userColor
         );
-        navigation.navigate("Home");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Root" }],
+        });
       } catch (err) {
         console.log("something went wrong", err);
       }
@@ -104,30 +119,49 @@ const CreateProfile = () => {
   }, [username]);
 
   return (
-    <LinearGradient
-      style={styles.topContainer}
-      colors={[...colors.background.gradient]}
-    >
-      <SafeAreaView>
-        <Text style={styles.title}>Complete Profile</Text>
-        <View style={styles.sectionContainer}>
-          <View style={styles.profilePictureContainer}>
+    <View style={styles.topContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Text style={styles.stepLabel}>Step 2 of 3</Text>
+          <Text style={styles.title}>Complete Profile</Text>
+          <Text style={styles.subtitle}>
+            Add a display name and username so friends can find you.
+          </Text>
+        </View>
+        <NeumoSurface
+          variant="raised"
+          tone="surface"
+          radius={NeumoTokens.radius.lg}
+          style={styles.sectionContainer}
+        >
+          <View
+            style={[
+              styles.profilePictureContainer,
+              { backgroundColor: userColor },
+            ]}
+          >
             <Avatar
               rounded
-              source={{
-                uri: photoURL || undefined,
-              }}
+              source={
+                avatarUrl
+                  ? {
+                      uri: avatarUrl,
+                      cache: "force-cache",
+                    }
+                  : undefined
+              }
+              imageProps={imageProps}
               title={getInitials(loggedInUser?.displayName)}
-              titleStyle={{ color: colors.background.paper }}
+              titleStyle={{ color: colors.textPrimary }}
               containerStyle={{
                 backgroundColor: userColor,
                 borderWidth: 1,
-                borderColor: colors.background.text,
+                borderColor: colors.background.default,
               }}
               icon={{
                 name: "user",
                 type: "font-awesome",
-                color: colors.background.paper,
+                color: colors.textPrimary,
               }}
             />
           </View>
@@ -138,56 +172,77 @@ const CreateProfile = () => {
               <FontAwesomeIcon
                 icon={faAt}
                 size={12}
-                color={colors.background.text}
+                color={colors.textSecondary}
               />
               <Text
-                style={{ fontWeight: "300", color: colors.background.text }}
+                style={{ fontWeight: "300", color: colors.textSecondary }}
               >
                 {username || "username"}
               </Text>
             </View>
-            <Text style={{ fontWeight: "bold", color: colors.background.text }}>
+            <Text style={{ fontWeight: "bold", color: colors.textPrimary }}>
               {displayName || "Display Name"}
             </Text>
-            <Text style={{ color: colors.background.text }}>
+            <Text style={{ color: colors.textSecondary }}>
               {loggedInUser?.email}
             </Text>
           </View>
-        </View>
-        <View>
+        </NeumoSurface>
+        <NeumoSurface
+          variant="raised"
+          tone="surface"
+          radius={NeumoTokens.radius.lg}
+          style={styles.inputsCard}
+        >
+          <Text style={styles.sectionTitle}>Your details</Text>
           <DibbyInput
-            placeholder="Display Name"
+            label="Display name"
+            placeholder="Display name"
             value={displayName || ""}
             onChangeText={(txt) => setDisplayName(capitalizeName(txt))}
             errorText={
               validDisplayName === false
-                ? "Display name is invalid. It should have 1 to 20 alphanumeric characters, or spaces."
+                ? "Display name should be 1–20 letters or numbers."
                 : undefined
             }
           />
           <DibbyInput
             username
-            placeholder="Username"
+            label="Username"
+            placeholder="username"
             value={username || ""}
             onChangeText={(text) => setUsername(text.toLowerCase().trim())}
             errorText={
               invalidReason === "pattern"
-                ? "Username must only contain alphanumeric values"
+                ? "Only lowercase letters, numbers, and underscores."
                 : invalidReason === "taken"
                 ? "Username is already taken!"
                 : undefined
             }
             valid={invalidReason === undefined}
           />
-          <DibbyButton
-            fullWidth
-            disabled={!username || !displayName || !!invalidReason}
-            onPress={handleNext}
-            title="Next"
-          />
-        </View>
+          <Text
+            style={[
+              styles.usernameHint,
+              invalidReason === undefined && username
+                ? styles.usernameHintOk
+                : null,
+              invalidReason === "pattern" ? styles.usernameHintError : null,
+            ]}
+          >
+            Use lowercase letters, numbers, and underscores.
+          </Text>
+          <View style={styles.ctaContainer}>
+            <DibbyButton
+              fullWidth
+              disabled={!username || !displayName || !!invalidReason}
+              onPress={handleNext}
+              title="Next"
+            />
+          </View>
+        </NeumoSurface>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -197,26 +252,49 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      padding: 32,
+      backgroundColor: colors.background.default,
+    },
+    safeArea: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 24,
       alignItems: "center",
     },
-    title: {
-      fontSize: 24,
-      fontWeight: "bold",
-      textAlign: "center",
+    header: {
+      width: "100%",
+      maxWidth: 420,
       marginBottom: 20,
-      color: colors.background.text,
+      alignItems: "center",
+      gap: 6,
+    },
+    title: {
+      fontSize: Typography.size.xl,
+      fontWeight: Typography.weight.bold as any,
+      textAlign: "center",
+      color: colors.textPrimary,
+    },
+    stepLabel: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      textAlign: "center",
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    subtitle: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      textAlign: "center",
     },
     sectionContainer: {
-      backgroundColor: colors.background.paper,
-      borderRadius: 10,
-      padding: 20,
+      borderRadius: NeumoTokens.radius.lg,
+      padding: 18,
       marginBottom: 20,
       flexDirection: "row",
       alignItems: "center",
+      width: "100%",
+      maxWidth: 420,
     },
     profilePictureContainer: {
-      backgroundColor: userColor,
       borderRadius: 100,
       width: 50,
       height: 50,
@@ -227,5 +305,29 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "flex-start",
       paddingLeft: 20,
       gap: 5,
+    },
+    inputsCard: {
+      width: "100%",
+      maxWidth: 420,
+      gap: 12,
+      paddingVertical: 18,
+    },
+    sectionTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    usernameHint: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+    },
+    usernameHintOk: {
+      color: colors.success.background,
+    },
+    usernameHintError: {
+      color: colors.danger.background,
+    },
+    ctaContainer: {
+      marginTop: 8,
     },
   });

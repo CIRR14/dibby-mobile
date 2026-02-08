@@ -5,6 +5,7 @@ import {
   DibbyUser,
 } from "../constants/DibbyTypes";
 import { capitalizeName } from "./AppHelpers";
+import { resolveParticipantColor } from "./GenerateColor";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import React from "react";
 import {
@@ -92,6 +93,10 @@ export const dibbyUserToAvatarObject = (
     uid: user.uid,
     username: user.username,
     photoURL: user.photoURL,
-    color: user.color,
+    color:
+      resolveParticipantColor(
+        user.color,
+        user.uid || user.username || (user as DibbyUser).displayName || ""
+      ),
   };
 };

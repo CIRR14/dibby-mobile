@@ -4,25 +4,43 @@
  *
  */
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer, Theme } from "@react-navigation/native";
+import {
+  CommonActions,
+  NavigationContainer,
+  useNavigation,
+  useNavigationState,
+} from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as React from "react";
-import { ColorSchemeName, Text } from "react-native";
+import { ColorSchemeName, Text, View } from "react-native";
 
 import { CustomDarkTheme, CustomLightTheme } from "../constants/Colors";
 import CreateProfile from "../screens/CreateProfile";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import NotFoundScreen from "../screens/NotFoundScreen";
-import { RootStackParamList, RootTabParamList } from "../types";
+import {
+  ProfileStackParamList,
+  RootStackParamList,
+  RootTabParamList,
+  TripsStackParamList,
+} from "../types";
 import LinkingConfiguration from "./LinkingConfiguration";
 import ViewTrip from "../screens/ViewTrip";
 import ViewExpense from "../screens/ViewExpense";
-import ViewTravelers from "../screens/ViewTravelers";
 import PdfScreen from "../screens/PdfScreen";
 import { VerifyEmail } from "../screens/VerifyEmail";
 import CreateTrip from "../components/CreateTrip";
 import { Profile } from "../screens/Profile";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faPlus, faSuitcase, faUser } from "@fortawesome/free-solid-svg-icons";
+import NeumoPressable from "../components/NeumoPressable";
+import { NeumoTokens } from "../constants/Neumo";
+import useAppTheme from "../hooks/useAppTheme";
+import NeumoSurface from "../components/NeumoSurface";
+import { useUser } from "../hooks/useUser";
+import DibbyLoading from "../components/DibbyLoading";
+import DibbyVersion from "../components/DibbyVersion";
 
 export default function Navigation({
   colorScheme,
@@ -32,14 +50,11 @@ export default function Navigation({
   return (
     <NavigationContainer
       linking={LinkingConfiguration}
-      theme={
-        colorScheme === "dark"
-          ? (CustomDarkTheme as unknown as Theme)
-          : (CustomLightTheme as unknown as Theme)
-      }
+      theme={colorScheme === "dark" ? CustomDarkTheme : CustomLightTheme}
       fallback={<Text>Loading...</Text>}
     >
       <RootNavigator />
+      <DibbyVersion bottom={2} />
     </NavigationContainer>
   );
 }
@@ -49,72 +64,81 @@ export default function Navigation({
  * https://reactnavigation.org/docs/modal
  */
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const TripsStack = createNativeStackNavigator<TripsStackParamList>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
 function RootNavigator() {
+  const colors = useAppTheme();
+  const { loggedInUser, authReady, profileReady, profileStatus } = useUser();
+  const needsEmailVerification = Boolean(
+    loggedInUser && !loggedInUser.emailVerified,
+  );
+  const needsProfile =
+    loggedInUser && !needsEmailVerification && profileStatus !== "complete";
+
+  if (!authReady || (loggedInUser && !profileReady)) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background.default,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <DibbyLoading />
+      </View>
+    );
+  }
+
   return (
     <Stack.Navigator
-      screenOptions={({ route }) => ({
-        title: `Dibby - ${route.name}`,
-        contentStyle: { backgroundColor: "white" },
-      })}
+      initialRouteName={
+        loggedInUser
+          ? needsEmailVerification
+            ? "VerifyEmail"
+            : needsProfile
+              ? "CreateProfile"
+              : "Root"
+          : "Login"
+      }
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background.default },
+      }}
     >
-      <Stack.Screen
-        name="Login"
-        component={LoginScreen}
-        options={{ headerShown: false, title: "Login" }}
-      />
-      <Stack.Screen
-        name="CreateProfile"
-        component={CreateProfile}
-        options={{ headerShown: false, title: "Create Profile" }}
-      />
-      <Stack.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ headerShown: false, title: "Home" }}
-      />
-      <Stack.Screen
-        name="ViewTrip"
-        component={ViewTrip}
-        options={{ headerShown: false, title: "View Trip" }}
-      />
-      <Stack.Screen
-        name="ViewExpense"
-        component={ViewExpense}
-        options={{ headerShown: false, title: "View Expense" }}
-      />
-      <Stack.Screen
-        name="ViewTravelers"
-        component={ViewTravelers}
-        options={{ headerShown: false, title: "View Travelers" }}
-      />
-      <Stack.Screen
-        name="PrintPDF"
-        component={PdfScreen}
-        options={{ headerShown: false, title: "Print PDF" }}
-      />
-      <Stack.Screen
-        name="VerifyEmail"
-        component={VerifyEmail}
-        options={{ headerShown: false, title: "Verify Email" }}
-      />
-      <Stack.Screen
-        name="NotFound"
-        component={NotFoundScreen}
-        options={{ headerShown: false, title: "Oops!" }}
-      />
-      <Stack.Screen
-        name="Profile"
-        component={Profile}
-        options={{ headerShown: false, title: "Profile" }}
-      />
-      {/* <Stack.Group screenOptions={{ presentation: "modal" }}> */}
-      <Stack.Screen
-        name="CreateTrip"
-        component={CreateTrip}
-        options={{ headerShown: false, title: "Create Trip" }}
-      />
-      {/* </Stack.Group> */}
+      {!loggedInUser ? (
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ headerShown: false, title: "Login" }}
+        />
+      ) : needsEmailVerification ? (
+        <Stack.Screen
+          name="VerifyEmail"
+          component={VerifyEmail}
+          options={{ headerShown: false, title: "Verify Email" }}
+        />
+      ) : needsProfile ? (
+        <Stack.Screen
+          name="CreateProfile"
+          component={CreateProfile}
+          options={{ headerShown: false, title: "Create Profile" }}
+        />
+      ) : (
+        <>
+          <Stack.Screen
+            name="Root"
+            component={BottomTabNavigator}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="NotFound"
+            component={NotFoundScreen}
+            options={{ headerShown: false, title: "Oops!" }}
+          />
+        </>
+      )}
     </Stack.Navigator>
   );
 }
@@ -125,57 +149,189 @@ function RootNavigator() {
  */
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
 
-// function BottomTabNavigator() {
-//   const colorScheme = useColorScheme();
+const AddActionScreen = () => null;
 
-//   return (
-//     <BottomTab.Navigator
-//       initialRouteName="TabOne"
-//       screenOptions={{
-//         tabBarActiveTintColor: Colors[colorScheme].tint,
-//       }}
-//     >
-//       <BottomTab.Screen
-//         name="TabOne"
-//         component={TabOneScreen}
-//         options={({ navigation }: RootTabScreenProps<"TabOne">) => ({
-//           title: "Tab One",
-//           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-//           headerRight: () => (
-//             <Pressable
-//               onPress={() => navigation.navigate("Modal")}
-//               style={({ pressed }) => ({
-//                 opacity: pressed ? 0.5 : 1,
-//               })}
-//             >
-//               <FontAwesome
-//                 name="info-circle"
-//                 size={25}
-//                 color={Colors[colorScheme].text}
-//                 style={{ marginRight: 15 }}
-//               />
-//             </Pressable>
-//           ),
-//         })}
-//       />
-//       <BottomTab.Screen
-//         name="TabTwo"
-//         component={TabTwoScreen}
-//         options={{
-//           title: "Tab Two",
-//           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-//         }}
-//       />
-//     </BottomTab.Navigator>
-//   );
-// }
+const getActiveRoute = (state: any): any => {
+  if (!state || !state.routes || state.index == null) {
+    return undefined;
+  }
+  let route = state.routes[state.index];
+  while (route?.state && route.state.index != null) {
+    route = route.state.routes[route.state.index];
+  }
+  return route;
+};
+
+function AddTabButton() {
+  const colors = useAppTheme();
+  const state = useNavigationState((s) => s);
+  const activeRoute = getActiveRoute(state);
+  const nav = useNavigation<any>();
+
+  const handleAddPress = () => {
+    const name = activeRoute?.name;
+    const params = activeRoute?.params || {};
+
+    if (name === "ViewTrip") {
+      nav.navigate("TripsTab", {
+        screen: "ViewTrip",
+        params: { ...params, openAddExpense: Date.now() },
+      });
+      return;
+    }
+
+    if (name === "ViewExpense") {
+      nav.navigate("TripsTab", {
+        screen: "ViewTrip",
+        params: {
+          tripId: params.tripId,
+          tripName: params.tripName,
+          openAddExpense: Date.now(),
+        },
+      });
+      return;
+    }
+
+    nav.navigate("TripsTab", { screen: "CreateTrip" });
+  };
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: -NeumoTokens.spacing.lg,
+      }}
+    >
+      <NeumoPressable
+        onPress={handleAddPress}
+        tone="accent"
+        variant="raised"
+        gradient
+        gradientColors={colors.gradient}
+        radius={NeumoTokens.radius.pill}
+        padding={NeumoTokens.spacing.md}
+        style={{
+          width: 58,
+          height: 58,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <FontAwesomeIcon icon={faPlus} size={20} color={colors.primary.text} />
+      </NeumoPressable>
+    </View>
+  );
+}
+
+function TripsStackNavigator() {
+  const colors = useAppTheme();
+  return (
+    <TripsStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background.default },
+      }}
+    >
+      <TripsStack.Screen name="Home" component={HomeScreen} />
+      <TripsStack.Screen name="ViewTrip" component={ViewTrip} />
+      <TripsStack.Screen name="ViewExpense" component={ViewExpense} />
+      <TripsStack.Screen name="CreateTrip" component={CreateTrip} />
+      <TripsStack.Screen name="PrintPDF" component={PdfScreen} />
+    </TripsStack.Navigator>
+  );
+}
+
+function ProfileStackNavigator() {
+  const colors = useAppTheme();
+  return (
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background.default },
+      }}
+    >
+      <ProfileStack.Screen name="Profile" component={Profile} />
+    </ProfileStack.Navigator>
+  );
+}
+
+function BottomTabNavigator() {
+  const colors = useAppTheme();
+  return (
+    <BottomTab.Navigator
+      initialRouteName="TripsTab"
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarHideOnKeyboard: true,
+        sceneContainerStyle: {
+          backgroundColor: colors.background.default,
+        },
+        tabBarStyle: {
+          backgroundColor: "transparent",
+          borderTopWidth: 0,
+          height: 72,
+          paddingBottom: NeumoTokens.spacing.sm,
+          paddingTop: NeumoTokens.spacing.sm,
+          marginHorizontal: NeumoTokens.spacing.md,
+          marginBottom: NeumoTokens.spacing.md,
+          borderRadius: NeumoTokens.radius.xl,
+        },
+        tabBarBackground: () => (
+          <NeumoSurface
+            variant="raised"
+            tone="surface"
+            radius={NeumoTokens.radius.xl}
+            padding={0}
+            style={{ flex: 1 }}
+            pointerEvents="none"
+          />
+        ),
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+        },
+        tabBarItemStyle: {
+          paddingVertical: 2,
+        },
+      }}
+    >
+      <BottomTab.Screen
+        name="TripsTab"
+        component={TripsStackNavigator}
+        options={{
+          title: "Trips",
+          tabBarIcon: ({ color }) => (
+            <FontAwesomeIcon icon={faSuitcase} size={18} color={color} />
+          ),
+        }}
+      />
+      <BottomTab.Screen
+        name="AddAction"
+        component={AddActionScreen}
+        options={{
+          title: "",
+          tabBarLabel: "",
+          tabBarButton: () => <AddTabButton />,
+        }}
+      />
+      <BottomTab.Screen
+        name="ProfileTab"
+        component={ProfileStackNavigator}
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <FontAwesomeIcon icon={faUser} size={18} color={color} />
+          ),
+        }}
+      />
+    </BottomTab.Navigator>
+  );
+}
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
  */
-// function TabBarIcon(props: {
-//   name: React.ComponentProps<typeof FontAwesome>["name"];
-//   color: string;
-// }) {
-//   return <FontAwesome size={30} style={{ marginBottom: -3 }} {...props} />;
-// }

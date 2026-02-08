@@ -1,215 +1,354 @@
-import { DefaultTheme, DarkTheme } from '@react-navigation/native';
-
+import { DefaultTheme, DarkTheme, Theme } from "@react-navigation/native";
 
 interface ColorProps {
-  background: string
-  text: string,
-  button: string,
-  card?: string
+  background: string;
+  text: string;
+  button: string;
+  card?: string;
 }
 
 export interface ThemeColors {
-  primary: ColorProps,
-  secondary: ColorProps,
-  success: ColorProps,
-  danger: ColorProps,
-  warning: ColorProps,
-  info: ColorProps,
-  light: ColorProps,
-  dark: ColorProps,
+  primary: ColorProps;
+  secondary: ColorProps;
+  success: ColorProps;
+  danger: ColorProps;
+  warning: ColorProps;
+  info: ColorProps;
+  light: ColorProps;
+  dark: ColorProps;
   background: {
-    default: string,
-    text: string,
-    paper: string,
-    gradient: string[]
-  },
-  disabled: ColorProps,
-  input: ColorProps,
-  gradient: string[],
-  transparent: string,
-  outlinedButtonText: string,
-  card: string[]
+    default: string;
+    text: string;
+    paper: string;
+    gradient: string[];
+  };
+  disabled: ColorProps;
+  input: ColorProps;
+  gradient: string[];
+  transparent: string;
+  outlinedButtonText: string;
+  card: string[];
+  surface: string;
+  surfaceAlt: string;
+  textPrimary: string;
+  textSecondary: string;
+  accent: string;
+  shadowLight: string;
+  shadowDark: string;
 }
-export interface ColorTheme {
-  dark: boolean,
-  colors: ThemeColors
-}
+
+const accentColor = "#2db34c";
+const accentColorComplimentary = "#1db271";
 
 export const lightTheme: ThemeColors = {
+  surface: "#E9EDF2",
+  surfaceAlt: "#DDE2E9",
+  textPrimary: "#2B2F36",
+  textSecondary: "#61656E",
+  accent: accentColor,
+  shadowLight: "#F2F5F8",
+  shadowDark: "#C6CCD5",
   primary: {
-    background: '#6abf69',
-    text: '#ffffff',
-    button: '#3fbf3f',
+    background: accentColor,
+    text: "#ffffff",
+    button: accentColor,
   },
   secondary: {
-    background: '#6c757d',
-    text: '#ffffff',
-    button: '#6c757d',
+    background: "#C7CCD4",
+    text: "#2B2F36",
+    button: "#B7BDC7",
   },
   success: {
-    background: '#28a745',
-    text: '#ffffff',
-    button: '#198c19',
+    background: "#2FAD70",
+    text: "#ffffff",
+    button: "#27965F",
   },
   danger: {
-    background: '#dc3545',
-    text: '#ffffff',
-    button: '#c82333',
-    card: '#8a1e29'
+    background: "#E25555",
+    text: "#ffffff",
+    button: "#CC4747",
+    card: "#B63A3A",
   },
   warning: {
-    background: '#f8c323',
-    text: '#ffffff',
-    button: '#e0a800',
+    background: "#F3B33E",
+    text: "#ffffff",
+    button: "#E0A330",
   },
-  info: { 
-    background: '#17a2b8',
-    text: '#ffffff',
-    button: '#0f8a93',
-    card: '#15696f'
+  info: {
+    background: "#4C8BF5",
+    text: "#ffffff",
+    button: "#3E76D1",
+    card: "#2F5FB5",
   },
   light: {
-    background: '#f8f9fa',
-    text: '#212529',
-    button: '#d1d3d4',
+    background: "#F6F7F9",
+    text: "#2B2F36",
+    button: "#E9ECF0",
   },
   dark: {
-    background: '#343a40',
-    text: '#f8f9fa',
-    button: '#212529',
+    background: "#2B2F36",
+    text: "#F6F7F9",
+    button: "#1F2329",
   },
   background: {
-    default: '#e6e9ec',
-    text: '#212529',
-    paper: '#ffffff',
-    gradient: [
-      '#f1f1f1',
-       '#e6e2e2'
-    ]
+    default: "#E9EDF2",
+    text: "#2B2F36",
+    paper: "#E9EDF2",
+    gradient: ["#E9EDF2", "#E9EDF2"],
   },
   disabled: {
-    background: '#b9bec0',
-    text: '#919191',
-    button: '#c2c3c4'
+    background: "#D3D7DD",
+    text: "#9AA1AB",
+    button: "#C8CDD4",
   },
   input: {
-    background: '#ffffff',
-    text: '#5f6060',
-    button: '#f7f7f7',
+    background: "#E1E6EB",
+    text: "#2B2F36",
+    button: "#DEE3EA",
   },
-  gradient: [
-   '#6abf69',
-     '#17a2b8',
-  ],
-  transparent: 'transparent',
-  outlinedButtonText: '#6abf69',
-  card: [
-    '#9cd39cff',
-    '#82b182ff',
-    '#648e64ff',
-
-  ]
+  gradient: [accentColor, accentColorComplimentary],
+  transparent: "transparent",
+  outlinedButtonText: accentColor,
+  card: ["#E9EDF2", "#DDE2E9", "#D3D9E1"],
 };
 
 export const darkTheme: ThemeColors = {
+  surface: "#1F242A",
+  surfaceAlt: "#171B20",
+  textPrimary: "#F5F7FA",
+  textSecondary: "#C4C9D1",
+  accent: accentColor,
+  shadowLight: "#2A2F36",
+  shadowDark: "#121519",
   primary: {
-  background: '#1a936f',
-    text: '#ffffff',
-    button: '#136e4f',
+    background: accentColor,
+    text: "#1E2329",
+    button: accentColor,
   },
   secondary: {
-    background: '#6c757d',
-    text: '#ffffff',
-    button: '#6c757d',
+    background: "#3B414A",
+    text: "#F5F7FA",
+    button: "#333941",
   },
   success: {
-    background: '#198754',
-    text: '#ffffff',
-    button: '#116c41',
+    background: "#2FAD70",
+    text: "#0E1A12",
+    button: "#27965F",
   },
   danger: {
-    background: '#dc3545',
-    text: '#ffffff',
-    button: '#b32720',
+    background: "#E25555",
+    text: "#ffffff",
+    button: "#CC4747",
   },
   warning: {
-    background: '#fbe08f',
-    text: '#ffffff',
-    button: '#d39e00',
+    background: "#F3B33E",
+    text: "#1E2329",
+    button: "#E0A330",
   },
   info: {
-    background: '#0dcaf0',
-    text: '#ffffff',
-    button: '#0a8693',
-    card: '#6de3f0',
+    background: "#4C8BF5",
+    text: "#ffffff",
+    button: "#3E76D1",
+    card: "#2F5FB5",
   },
   light: {
-    background: '#f8f9fa',
-    text: '#212529',
-    button: '#d1d3d4',
+    background: "#2C3138",
+    text: "#F5F7FA",
+    button: "#333941",
   },
   dark: {
-    background: '#212529',
-    text: '#f8f9fa',
-    button: '#343a40',
+    background: "#15181D",
+    text: "#F5F7FA",
+    button: "#1E2329",
   },
   background: {
-    default: '#212529',
-    text: '#f8f9fa', 
-    paper: '#343a40',
-    gradient: [
-     '#485661',
-     '#383d42',
-     '#2a2d2f',
-    ]
+    default: "#1F242A",
+    text: "#F5F7FA",
+    paper: "#1F242A",
+    gradient: ["#1F242A", "#1F242A", "#1F242A"],
   },
   disabled: {
-    background: '#b4b5b5',
-    text: '#a6a6a6',
-    button: '#6a6a6a'
+    background: "#3A3F47",
+    text: "#7E8794",
+    button: "#31363D",
   },
   input: {
-    background: '#535353',
-    text: '#eaeaea',
-    button: '#6a6a6a'
+    background: "#1B2026",
+    text: "#F5F7FA",
+    button: "#252A31",
   },
-  gradient: [
-    '#1a936f',
-     '#0dcaf0',
-  ],
-  transparent: 'transparent',
-  outlinedButtonText: '#eaeaea',
-  card: [
-    '#12869d',
-    '#106c7f',
-    '#a4cbb4',
-  ]
+  gradient: [accentColor, accentColorComplimentary],
+  transparent: "transparent",
+  outlinedButtonText: accentColor,
+  card: ["#1F242A", "#171B20", "#1C2126"],
+};
+
+export const blushLightTheme: ThemeColors = {
+  surface: "#F8EDEA",
+  surfaceAlt: "#EED4CF",
+  textPrimary: "#4E3A37",
+  textSecondary: "#8C6A66",
+  accent: "#E68D82",
+  shadowLight: "#FFF6F2",
+  shadowDark: "#D6B2AC",
+  primary: {
+    background: "#E68D82",
+    text: "#ffffff",
+    button: "#E68D82",
+  },
+  secondary: {
+    background: "#E9C9C4",
+    text: "#4E3A37",
+    button: "#E2B9B3",
+  },
+  success: {
+    background: "#86C8A2",
+    text: "#1E3B2E",
+    button: "#73B58F",
+  },
+  danger: {
+    background: "#E58A8A",
+    text: "#ffffff",
+    button: "#D67474",
+    card: "#C45F5F",
+  },
+  warning: {
+    background: "#F3B76B",
+    text: "#4E3A37",
+    button: "#E7A85E",
+  },
+  info: {
+    background: "#E58E82",
+    text: "#ffffff",
+    button: "#D67F74",
+    card: "#C86F65",
+  },
+  light: {
+    background: "#FBF2EF",
+    text: "#4E3A37",
+    button: "#F2DEDA",
+  },
+  dark: {
+    background: "#4E3A37",
+    text: "#FBF2EF",
+    button: "#3E2F2D",
+  },
+  background: {
+    default: "#F4DCD7",
+    text: "#4E3A37",
+    paper: "#F4DCD7",
+    gradient: ["#F6E1DC", "#F2D7D2"],
+  },
+  disabled: {
+    background: "#E3C9C5",
+    text: "#B5948F",
+    button: "#D8B9B3",
+  },
+  input: {
+    background: "#EFD6D1",
+    text: "#4E3A37",
+    button: "#E7C7C1",
+  },
+  gradient: ["#F2A49A", "#E58379"],
+  transparent: "transparent",
+  outlinedButtonText: "#E68D82",
+  card: ["#FAF1EE", "#F6E5E1", "#F2D9D4"],
+};
+
+export const blushDarkTheme: ThemeColors = {
+  surface: "#2A2121",
+  surfaceAlt: "#1C1515",
+  textPrimary: "#F7ECEA",
+  textSecondary: "#CBAEAA",
+  accent: "#E89A90",
+  shadowLight: "#3A2D2D",
+  shadowDark: "#120C0C",
+  primary: {
+    background: "#E89A90",
+    text: "#1E1515",
+    button: "#E89A90",
+  },
+  secondary: {
+    background: "#3A2C2C",
+    text: "#F7ECEA",
+    button: "#302424",
+  },
+  success: {
+    background: "#5FAE7D",
+    text: "#0E1A12",
+    button: "#4E9C6D",
+  },
+  danger: {
+    background: "#D97A7A",
+    text: "#ffffff",
+    button: "#C86767",
+  },
+  warning: {
+    background: "#E5A25D",
+    text: "#1E1515",
+    button: "#D8924F",
+  },
+  info: {
+    background: "#D98B80",
+    text: "#ffffff",
+    button: "#C97C72",
+    card: "#B86C63",
+  },
+  light: {
+    background: "#2F2424",
+    text: "#F7ECEA",
+    button: "#352828",
+  },
+  dark: {
+    background: "#1B1414",
+    text: "#F7ECEA",
+    button: "#140F0F",
+  },
+  background: {
+    default: "#201818",
+    text: "#F7ECEA",
+    paper: "#201818",
+    gradient: ["#231B1B", "#1E1616", "#1C1414"],
+  },
+  disabled: {
+    background: "#3B2C2C",
+    text: "#8E6E6A",
+    button: "#322525",
+  },
+  input: {
+    background: "#241B1B",
+    text: "#F7ECEA",
+    button: "#2B2020",
+  },
+  gradient: ["#EAA49A", "#D87A70"],
+  transparent: "transparent",
+  outlinedButtonText: "#E89A90",
+  card: ["#2D2323", "#261D1D", "#221A1A"],
 };
 
 // mytheme: {
-          
+
 //   "primary": "#ef9995",
-           
+
 //   "secondary": "#a4cbb4",
-           
+
 //   "accent": "#dc8850",
-           
+
 //   "neutral": "#2e282a",
-           
+
 //   "base-100": "#e4d8b4",
-           
+
 //   "info": "#2463eb",
-           
+
 //   "success": "#16a249",
-           
+
 //   "warning": "#db7706",
-           
+
 //   "error": "#dc2828",
 //            },
 //          },
 
 // linear-gradient(to right, #64748b, #fef9c3)
-
 
 // export const greenLightTheme: ThemeColors = {
 //     primary: {
@@ -313,18 +452,25 @@ export const darkTheme: ThemeColors = {
 //   gradient: 'linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)',
 // }
 
+const buildNavigationTheme = (
+  baseTheme: Theme,
+  appColors: ThemeColors
+): Theme => ({
+  ...baseTheme,
+  colors: {
+    ...baseTheme.colors,
+    primary: appColors.accent,
+    background: appColors.background.default,
+    card: appColors.surface,
+    text: appColors.textPrimary,
+    border: appColors.surfaceAlt,
+    notification: appColors.accent,
+  },
+});
 
+export const CustomLightTheme: Theme = buildNavigationTheme(
+  DefaultTheme,
+  lightTheme
+);
 
-export const CustomLightTheme: ColorTheme = {
-  ...DefaultTheme,
-  colors: lightTheme
-};
-
-export const CustomDarkTheme: ColorTheme = {
-  ...DarkTheme,
-  colors: darkTheme
-};
-
-
-
-
+export const CustomDarkTheme: Theme = buildNavigationTheme(DarkTheme, darkTheme);

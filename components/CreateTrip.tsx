@@ -6,8 +6,8 @@ import {
   Text,
   KeyboardAvoidingView,
 } from "react-native";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
-import { useNavigation, useTheme } from "@react-navigation/native";
+import { ThemeColors } from "../constants/Colors";
+import { useNavigation } from "@react-navigation/native";
 import { db } from "../firebase";
 import { faClose } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
@@ -30,6 +30,11 @@ import DibbyLoading from "./DibbyLoading";
 import { useUser } from "../hooks/useUser";
 import { createDibbyTrip } from "../helpers/FirebaseHelpers";
 import { DibbySearchUsername } from "./DibbySearchUsername";
+import NeumoSurface from "./NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
+import { assignUniqueParticipantColors } from "../helpers/GenerateColor";
 
 export interface DibbyTripFormValues {
   title: string;
@@ -38,7 +43,7 @@ export interface DibbyTripFormValues {
 }
 
 const CreateTrip = () => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const navigation = useNavigation();
   const { dibbyUser } = useUser();
   const styles = makeStyles(colors as unknown as ThemeColors);
@@ -46,6 +51,7 @@ const CreateTrip = () => {
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
     []
   );
+  const needsMoreTravelers = selectedResults.length <= 1;
 
   const initialValues = {
     title: "",
@@ -62,6 +68,9 @@ const CreateTrip = () => {
   const onSubmit = async (data: DibbyTripFormValues) => {
     if (dibbyUser) {
       const newTripRef = doc(collection(db, "trips"));
+      const participantsWithColors = assignUniqueParticipantColors(
+        selectedResults
+      );
 
       const newTripData: DibbyTrip = {
         ...data,
@@ -73,11 +82,11 @@ const CreateTrip = () => {
         perPersonAverage: 0,
         dateCreated: Timestamp.now(),
         dateUpdated: Timestamp.now(),
-        participants: selectedResults,
+        participants: participantsWithColors,
         createdBy: dibbyUser.uid,
       };
 
-      const usersToAddTripTo = selectedResults.filter(
+      const usersToAddTripTo = participantsWithColors.filter(
         (r) => r && !r.createdUser
       );
 
@@ -105,7 +114,7 @@ const CreateTrip = () => {
               <FontAwesomeIcon
                 icon={faClose}
                 size={24}
-                color={colors.background.text}
+                color={colors.textPrimary}
               />
             }
           />
@@ -115,44 +124,80 @@ const CreateTrip = () => {
         <DibbyLoading />
       ) : (
         <View style={styles.content}>
-          <Controller
-            control={control}
-            name="title"
-            rules={{
-              required: true,
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <DibbyInput
-                placeholder="Name of Trip"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                clearButtonMode="always"
-              />
-            )}
-          />
-          {formState.errors.title && (
-            <Text style={styles.errorText}>Trip must have a name.</Text>
-          )}
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Travelers</Text>
-          </View>
-
           <KeyboardAvoidingView
             behavior="padding"
             enabled
             keyboardVerticalOffset={150}
           >
-            <DibbySearchUsername
-              results={(res) => setSelectedResults(res)}
-              selectLoggedInUser
-            />
+            <NeumoSurface
+              variant="raised"
+              tone="surface"
+              radius={NeumoTokens.radius.lg}
+              style={styles.sectionCard}
+            >
+              <Text style={styles.sectionTitle}>Trip details</Text>
+              <Controller
+                control={control}
+                name="title"
+                rules={{
+                  required: true,
+                }}
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <DibbyInput
+                    placeholder="Name of Trip"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    clearButtonMode="always"
+                  />
+                )}
+              />
+              <Text style={styles.helperText}>
+                Trip name helps everyone recognize it.
+              </Text>
+              {formState.errors.title && (
+                <Text style={styles.errorText}>Trip must have a name.</Text>
+              )}
+            </NeumoSurface>
+
+            <NeumoSurface
+              variant="raised"
+              tone="surface"
+              radius={NeumoTokens.radius.lg}
+              style={styles.sectionCard}
+            >
+              <Text style={styles.sectionTitle}>Travelers</Text>
+              <Text style={styles.searchHint}>
+                Search by username or add a guest name.
+              </Text>
+              <DibbySearchUsername
+                results={(res) => setSelectedResults(res)}
+                selectLoggedInUser
+              />
+              <View style={styles.legendRow}>
+                <View style={[styles.legendPill, styles.legendGuest]}>
+                  <Text style={styles.legendGuestText}>Guest (no account)</Text>
+                </View>
+                <View style={[styles.legendPill, styles.legendUser]}>
+                  <Text style={styles.legendUserText}>Dibby user</Text>
+                </View>
+              </View>
+              <Text style={styles.helperText}>
+                Select at least two travelers to create a trip.
+              </Text>
+            </NeumoSurface>
 
             <DibbyButton
               onPress={handleSubmit(onSubmit)}
-              disabled={!formState.isValid || selectedResults.length <= 1}
+              disabled={!formState.isValid || needsMoreTravelers}
               title="Add Trip"
+              fullWidth
             />
+            {needsMoreTravelers && (
+              <Text style={styles.helperTextCentered}>
+                Add one more traveler to continue.
+              </Text>
+            )}
           </KeyboardAvoidingView>
         </View>
       )}
@@ -173,20 +218,64 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       justifyContent: "space-between",
     },
-    titleContainer: {
-      alignItems: "center",
-      marginTop: 20,
+    sectionCard: {
       marginBottom: 16,
+      gap: 12,
     },
-    title: {
-      color: colors.background.text,
-      fontSize: 22,
+    sectionTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    searchHint: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      marginBottom: 8,
+    },
+    legendRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginTop: 8,
+      marginBottom: 4,
+    },
+    legendPill: {
+      borderRadius: NeumoTokens.radius.pill,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    legendGuest: {
+      backgroundColor: colors.success.background,
+    },
+    legendGuestText: {
+      color: colors.success.text,
+      fontSize: Typography.size.xs,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    legendUser: {
+      backgroundColor: colors.surfaceAlt,
+    },
+    legendUserText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      fontWeight: Typography.weight.semibold as any,
     },
     errorText: {
       color: colors.danger.background,
       marginTop: 8,
     },
+    helperText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+    },
+    helperTextCentered: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      textAlign: "center",
+      marginTop: 8,
+    },
     content: {
       margin: 16,
+      gap: 12,
     },
   });

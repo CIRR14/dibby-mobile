@@ -1,15 +1,12 @@
 import React, { JSXElementConstructor, ReactElement } from "react";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
-import { StyleSheet } from "react-native";
-import { useTheme } from "@react-navigation/native";
-import { Button } from "@rneui/themed";
+import { ThemeColors } from "../constants/Colors";
+import { StyleSheet, Text, View } from "react-native";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  linearGradientEnd,
-  linearGradientStart,
-} from "../constants/DeviceWidth";
+import NeumoPressable from "./NeumoPressable";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
 
 interface IButtonProps {
   onPress: () => void;
@@ -28,60 +25,67 @@ const DibbyButton: React.FC<IButtonProps> = ({
   add,
   fullWidth = false,
 }) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors, type, fullWidth);
+  const tone =
+    type === "danger"
+      ? "danger"
+      : type === "solid"
+        ? "accent"
+        : type === "clear"
+          ? "base"
+          : "surface";
+  const variant =
+    type === "outline" ? "raised" : type === "clear" ? "flat" : "raised";
+  const useGradient = type === "solid";
+  const gradientColors = type === "solid" ? colors.gradient : undefined;
+  const textColor =
+    type === "solid"
+      ? colors.primary.text
+      : type === "danger"
+        ? colors.danger.text
+        : type === "clear"
+          ? colors.accent
+          : colors.textPrimary;
 
   return (
-    <Button
-      type={type === "danger" ? "solid" : type}
+    <NeumoPressable
       onPress={onPress}
-      title={
-        add ? (
+      disabled={disabled}
+      tone={tone}
+      variant={variant as any}
+      gradient={useGradient}
+      gradientColors={gradientColors}
+      radius={add ? NeumoTokens.radius.lg : NeumoTokens.radius.md}
+      padding={add ? NeumoTokens.spacing.sm : NeumoTokens.spacing.md}
+      style={[
+        add ? styles.addButton : styles.button,
+        disabled ? styles.buttonDisabled : null,
+      ]}
+      containerStyle={add ? styles.addButtonContainer : styles.buttonContainer}
+    >
+      <View style={styles.content}>
+        {add ? (
           <FontAwesomeIcon
             icon={faCirclePlus}
             size={24}
-            color={colors.info.text}
+            color={colors.background.text}
           />
+        ) : typeof title === "string" ? (
+          <Text
+            style={[
+              styles.buttonText,
+              { color: textColor },
+              disabled && styles.buttonTextDisabled,
+            ]}
+          >
+            {title}
+          </Text>
         ) : (
           title
-        )
-      }
-      titleStyle={add ? {} : styles.buttonText}
-      containerStyle={add ? styles.addButtonContainer : styles.buttonContainer}
-      disabled={disabled}
-      disabledStyle={styles.buttonDisabled}
-      disabledTitleStyle={styles.buttonTextDisabled}
-      buttonStyle={
-        add
-          ? styles.addButton
-          : type === "solid"
-          ? styles.button
-          : type === "outline"
-          ? styles.buttonOutline
-          : {}
-      }
-      uppercase
-      radius={7}
-      size={"lg"}
-      ViewComponent={LinearGradient}
-      linearGradientProps={
-        type === "solid"
-          ? {
-              colors: [...colors.gradient],
-              start: linearGradientStart,
-              end: linearGradientEnd,
-            }
-          : type === "danger"
-          ? {
-              colors: [colors.danger.background, colors.danger.button],
-              start: linearGradientStart,
-              end: linearGradientEnd,
-            }
-          : {
-              colors: ["transparent"],
-            }
-      }
-    />
+        )}
+      </View>
+    </NeumoPressable>
   );
 };
 
@@ -90,47 +94,39 @@ export default DibbyButton;
 const makeStyles = (
   colors: ThemeColors,
   type: "solid" | "clear" | "outline" | "danger",
-  fullWidth?: boolean
+  fullWidth?: boolean,
 ) =>
   StyleSheet.create({
     buttonContainer: {
       width: fullWidth ? "100%" : "auto",
-      borderColor: colors.dark.background,
-      borderWidth: type === "solid" ? 1 : 0,
-      borderBottomWidth: type !== "clear" ? 4 : 0,
-      borderLeftWidth: type !== "clear" ? 4 : 0,
-      borderRadius: type !== "clear" ? 13 : 0,
+      borderRadius: NeumoTokens.radius.md,
     },
     addButtonContainer: {
       position: "absolute",
       bottom: 16,
       width: "100%",
       zIndex: 2000,
-      borderWidth: 1,
-      borderColor: colors.dark.background,
+      paddingHorizontal: 16,
     },
     addButton: {
-      backgroundColor: colors.info.button,
+      backgroundColor: colors.surface,
     },
     button: {
-      backgroundColor: colors.primary.button,
+      backgroundColor: type === "clear" ? "transparent" : colors.surface,
     },
-    buttonOutline: {
-      borderColor: colors.primary.button,
-      borderTopWidth: 1,
-      borderRightWidth: 1,
-      borderLeftWidth: 0,
-      borderBottomWidth: 0,
+    content: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
     },
     buttonText: {
-      color:
-        type === "solid" ? colors.light.background : colors.outlinedButtonText,
-      fontWeight: "700",
-      fontSize: 16,
+      color: type === "clear" ? colors.accent : colors.textPrimary,
+      fontWeight: Typography.weight.semibold as any,
+      fontSize: Typography.size.md,
+      textTransform: "uppercase",
     },
     buttonDisabled: {
-      backgroundColor: colors.disabled.button,
-      opacity: 0.3,
+      opacity: 0.6,
     },
     buttonTextDisabled: {
       color: colors.disabled.text,

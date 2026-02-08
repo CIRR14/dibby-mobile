@@ -1,10 +1,11 @@
-import { useTheme } from "@react-navigation/native";
 import React from "react";
 import { View, ActivityIndicator } from "react-native";
-import { ColorTheme } from "../constants/Colors";
+import NeumoSurface from "./NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import useAppTheme from "../hooks/useAppTheme";
 
 const DibbyLoading: React.FC = () => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   return (
     <View
       style={{
@@ -14,9 +15,18 @@ const DibbyLoading: React.FC = () => {
         height: "100%",
         width: "100%",
         zIndex: 3000,
+        backgroundColor: "rgba(0,0,0,0.15)",
+        alignItems: "center",
       }}
     >
-      <ActivityIndicator size="large" color={colors.primary.background} />
+      <NeumoSurface
+        variant="raised"
+        tone="surface"
+        radius={NeumoTokens.radius.lg}
+        padding={NeumoTokens.spacing.lg}
+      >
+        <ActivityIndicator size="large" color={colors.primary.background} />
+      </NeumoSurface>
     </View>
   );
 };

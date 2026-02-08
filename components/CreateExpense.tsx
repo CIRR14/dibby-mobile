@@ -7,8 +7,7 @@ import {
   ScrollView,
   Dimensions,
 } from "react-native";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
-import { useTheme } from "@react-navigation/native";
+import { ThemeColors } from "../constants/Colors";
 import { faClose } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
@@ -33,7 +32,11 @@ import DibbyButton from "./DibbyButton";
 import TopBar from "./TopBar";
 import DibbyInput from "./DibbyInput";
 import { createDibbyExpense } from "../helpers/FirebaseHelpers";
-import { RadioButton } from "react-native-paper";
+import NeumoSurface from "./NeumoSurface";
+import NeumoPressable from "./NeumoPressable";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
 
 interface ICreateExpenseProps {
   currentUser: DibbyUser;
@@ -62,7 +65,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   onPressBack,
   tripInfo,
 }) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const [formValid, setFormValid] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -111,6 +114,15 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const peopleInExpense = watch("peopleInExpense");
   const peopleSplits = watch("peopleSplits");
   const paidBy = watch("paidBy");
+  const payerName = tripInfo
+    ? getInfoFromTravelerId(tripInfo, paidBy)?.label
+    : currentUser.displayName || currentUser.username || "You";
+  const splitDescription =
+    splitMethod === DibbySplitMethod.EQUAL_PARTS
+      ? "Everyone pays the same."
+      : splitMethod === DibbySplitMethod.PERCENTAGE
+      ? "Split by percentages."
+      : "Split by exact amounts.";
 
   const getExpenseSplitAmount = useCallback(
     (amount: number): number => {
@@ -279,6 +291,12 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     }
   };
 
+  const splitOptions = [
+    { label: "Equal", value: DibbySplitMethod.EQUAL_PARTS },
+    { label: "Percent", value: DibbySplitMethod.PERCENTAGE },
+    { label: "Amount", value: DibbySplitMethod.AMOUNT },
+  ];
+
   return (
     <SafeAreaView style={styles.topContainer}>
       <TopBar
@@ -291,195 +309,201 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
               <FontAwesomeIcon
                 icon={faClose}
                 size={24}
-                color={colors.background.text}
+                color={colors.textPrimary}
               />
             }
           />
         }
       />
 
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <KeyboardAvoidingView style={styles.content}>
-          <Controller
-            control={control}
-            name="title"
-            rules={{
-              required: true,
-              validate: (value) =>
-                tripInfo?.expenses.every(
-                  (exp) =>
-                    exp.title.toUpperCase().trim() !==
-                    value.toUpperCase().trim()
-                ),
-            }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <DibbyInput
-                label="Name of Expense"
-                placeholder="Name of Expense"
-                onBlur={onBlur}
-                onChangeText={(val) => onChange(val as string)}
-                value={value}
-              />
-            )}
-          />
-          {formState.errors.title && (
-            <Text style={styles.errorText}>Expense must have a name.</Text>
-          )}
-
-          <Controller
-            control={control}
-            name="amount"
-            rules={{
-              required: true,
-              validate: (value) => parseFloat(value) > 0,
-            }}
-            defaultValue={"0"}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <DibbyInput
-                label={"Expense Amount"}
-                money
-                keyboardType="numeric"
-                value={value.toString()}
-                placeholder="How much did this cost?"
-                onBlur={onBlur}
-                clearTextOnFocus
-                returnKeyType="done"
-                onChangeText={onChange}
-              />
-            )}
-          />
-          {formState.errors.amount && (
-            <Text style={styles.errorText}>Expense must cost something.</Text>
-          )}
-
-          <View>
-            <Text style={styles.inputLabel} numberOfLines={1}>
-              Payer
-            </Text>
-          </View>
-          <Controller
-            control={control}
-            name="paidBy"
-            rules={{
-              required: true,
-            }}
-            defaultValue={currentUser.uid}
-            render={({ field: { onChange, onBlur, value } }) => {
-              return Platform.OS === "web" ? (
-                <View>
-                  <FlatList
-                    key={numColumns}
-                    data={tripInfo ? [...tripInfo.participants] : []}
-                    renderItem={({ item }) => (
-                      <CheckBox
-                        checked={value === item.uid}
-                        onPress={() => setValue("paidBy", item.uid)}
-                        title={item.name || undefined}
-                        containerStyle={{
-                          backgroundColor: colors.input.background,
-                          borderRadius: 10,
-                        }}
-                        wrapperStyle={{
-                          backgroundColor: colors.input.background,
-                        }}
-                        textStyle={{
-                          color: colors.input.text,
-                        }}
-                      />
-                    )}
-                  />
-                </View>
-              ) : (
-                <RNPickerSelect
-                  onValueChange={onChange}
-                  onClose={onBlur}
-                  value={value}
-                  placeholder={{
-                    label: "Select who paid for this expense",
-                    value: null,
-                  }}
-                  items={tripInfo ? getItemFormatFromTravelerIds(tripInfo) : []}
-                  style={{
-                    inputIOS: {
-                      color: tripInfo
-                        ? getItemFormatFromTravelerIds(tripInfo).filter(
-                            (i) => i.key === value
-                          )[0]?.color
-                        : colors.disabled.text,
-                      paddingRight: 30,
-                    },
-                    inputIOSContainer: {
-                      backgroundColor: colors.background.paper,
-                      paddingHorizontal: 24,
-                      paddingVertical: 12,
-                      borderRadius: 12,
-                      marginTop: 8,
-                      minWidth: "90%",
-                    },
-                    placeholder: {
-                      color: colors.disabled.text,
-                    },
-                  }}
-                />
-              );
-            }}
-          />
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel} numberOfLines={1}>
-              People In Expense
-            </Text>
+          <NeumoSurface
+            variant="raised"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.sectionCard}
+          >
+            <Text style={styles.sectionTitle}>Expense details</Text>
             <Controller
               control={control}
-              name="peopleInExpense"
+              name="title"
               rules={{
                 required: true,
-                validate: (value) => value.length > 0,
+                validate: (value) =>
+                  tripInfo?.expenses.every(
+                    (exp) =>
+                      exp.title.toUpperCase().trim() !==
+                      value.toUpperCase().trim()
+                  ),
               }}
               render={({ field: { onChange, onBlur, value } }) => (
-                <MultiSelect
-                  items={tripInfo ? tripInfo.participants : []}
-                  styleDropdownMenuSubsection={{
-                    paddingLeft: 16,
-                    borderRadius: 10,
-                    backgroundColor: colors.input.background,
-                  }}
-                  textColor={colors.input.text}
-                  styleListContainer={{
-                    backgroundColor: colors.input.background,
-                  }}
-                  searchInputStyle={{
-                    backgroundColor: colors.input.background,
-                  }}
-                  uniqueKey={"uid"}
-                  onSelectedItemsChange={onChange}
-                  onAddItem={onChange}
-                  onToggleList={onBlur}
-                  selectedItems={value}
-                  selectText={getSelectText(value, "label")}
-                  displayKey="name"
-                  submitButtonText="Done"
-                  selectedItemTextColor={colors.info.button}
-                  selectedItemIconColor={colors.info.button}
-                  itemTextColor={colors.input.text}
-                  submitButtonColor={colors.info.button}
-                  tagRemoveIconColor={colors.danger.button}
-                  tagBorderColor={colors.info.button}
-                  tagTextColor={colors.info.button}
-                  styleMainWrapper={{
-                    marginTop: 8,
-                  }}
+                <DibbyInput
+                  label="Name of Expense"
+                  placeholder="Name of Expense"
+                  onBlur={onBlur}
+                  onChangeText={(val) => onChange(val as string)}
+                  value={value}
                 />
               )}
             />
-          </View>
-          {formState.errors.peopleInExpense && (
-            <Text style={styles.errorText}>Select at least one user.</Text>
-          )}
+            {formState.errors.title && (
+              <Text style={styles.errorText}>Expense must have a name.</Text>
+            )}
 
-          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="amount"
+              rules={{
+                required: true,
+                validate: (value) => parseFloat(value) > 0,
+              }}
+              defaultValue={"0"}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <DibbyInput
+                  label={"Expense Amount"}
+                  money
+                  keyboardType="numeric"
+                  value={value.toString()}
+                  placeholder="How much did this cost?"
+                  onBlur={onBlur}
+                  clearTextOnFocus
+                  returnKeyType="done"
+                  onChangeText={onChange}
+                />
+              )}
+            />
+            {formState.errors.amount && (
+              <Text style={styles.errorText}>Expense must cost something.</Text>
+            )}
+          </NeumoSurface>
+
+          <NeumoSurface
+            variant="raised"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.sectionCard}
+          >
+            <Text style={styles.sectionTitle}>People</Text>
             <Text style={styles.inputLabel} numberOfLines={1}>
-              Split By:
+              Payer
+            </Text>
+            <Controller
+              control={control}
+              name="paidBy"
+              rules={{
+                required: true,
+              }}
+              defaultValue={currentUser.uid}
+              render={({ field: { onChange, onBlur, value } }) => {
+                return Platform.OS === "web" ? (
+                  <View style={styles.checkboxGrid}>
+                    <FlatList
+                      key={numColumns}
+                      data={tripInfo ? [...tripInfo.participants] : []}
+                      renderItem={({ item }) => (
+                        <CheckBox
+                          checked={value === item.uid}
+                          onPress={() => setValue("paidBy", item.uid)}
+                          title={item.name || undefined}
+                          checkedColor={colors.accent}
+                          uncheckedColor={colors.textSecondary}
+                          containerStyle={styles.checkboxItem}
+                          wrapperStyle={styles.checkboxWrapper}
+                          textStyle={styles.checkboxText}
+                        />
+                      )}
+                    />
+                  </View>
+                ) : (
+                  <NeumoSurface
+                    variant="inset"
+                    tone="surface"
+                    radius={NeumoTokens.radius.md}
+                    padding={NeumoTokens.spacing.sm}
+                    style={styles.insetField}
+                  >
+                    <RNPickerSelect
+                      onValueChange={onChange}
+                      onClose={onBlur}
+                      value={value}
+                      placeholder={{
+                        label: "Select who paid for this expense",
+                        value: null,
+                      }}
+                      items={
+                        tripInfo ? getItemFormatFromTravelerIds(tripInfo) : []
+                      }
+                      style={{
+                        inputIOS: styles.pickerInput,
+                        inputAndroid: styles.pickerInput,
+                        inputIOSContainer: styles.pickerContainer,
+                        inputAndroidContainer: styles.pickerContainer,
+                        placeholder: styles.pickerPlaceholder,
+                      }}
+                    />
+                  </NeumoSurface>
+                );
+              }}
+            />
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel} numberOfLines={1}>
+                People In Expense
+              </Text>
+              <Controller
+                control={control}
+                name="peopleInExpense"
+                rules={{
+                  required: true,
+                  validate: (value) => value.length > 0,
+                }}
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <MultiSelect
+                    items={tripInfo ? tripInfo.participants : []}
+                    styleDropdownMenuSubsection={styles.multiSelectSubsection}
+                    textColor={colors.textPrimary}
+                    styleListContainer={styles.multiSelectList}
+                    searchInputStyle={styles.multiSelectSearch}
+                    uniqueKey={"uid"}
+                    onSelectedItemsChange={onChange}
+                    onAddItem={onChange}
+                    onToggleList={onBlur}
+                    selectedItems={value}
+                    selectText={getSelectText(value, "label")}
+                    displayKey="name"
+                    submitButtonText="Done"
+                    selectedItemTextColor={colors.accent}
+                    selectedItemIconColor={colors.accent}
+                    itemTextColor={colors.textPrimary}
+                    submitButtonColor={colors.accent}
+                    tagRemoveIconColor={colors.danger.background}
+                    tagBorderColor={colors.accent}
+                    tagTextColor={colors.accent}
+                    styleMainWrapper={{
+                      marginTop: 8,
+                    }}
+                  />
+                )}
+              />
+            </View>
+            {formState.errors.peopleInExpense && (
+              <Text style={styles.errorText}>Select at least one user.</Text>
+            )}
+          </NeumoSurface>
+
+          <NeumoSurface
+            variant="raised"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.sectionCard}
+          >
+            <Text style={styles.sectionTitle}>Split</Text>
+            <Text style={styles.splitPaidBy}>
+              Paid by: {payerName || "Select payer"}
+            </Text>
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              Split by
             </Text>
             <Controller
               control={control}
@@ -489,185 +513,161 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
               }}
               defaultValue={DibbySplitMethod.EQUAL_PARTS}
               render={({ field: { onChange, value } }) => (
-                <RadioButton.Group
-                  onValueChange={(value) => onChange(DibbySplitMethod[value])}
-                  value={value}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <RadioButton.Item
-                      label="Equal Parts"
-                      value="EQUAL_PARTS"
-                      mode="android"
-                      labelStyle={{
-                        color: colors.input.text,
-                        fontSize: 14,
-                      }}
-                    />
-                    <RadioButton.Item
-                      label="Percentage"
-                      value="PERCENTAGE"
-                      mode="android"
-                      labelStyle={{
-                        color: colors.input.text,
-                        fontSize: 14,
-                      }}
-                    />
-                    <RadioButton.Item
-                      label="Amount"
-                      value="AMOUNT"
-                      mode="android"
-                      labelStyle={{
-                        color: colors.input.text,
-                        fontSize: 14,
-                      }}
-                    />
-                  </View>
-                </RadioButton.Group>
-              )}
-            />
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-around",
-              marginBottom: 24,
-            }}
-          >
-            {splitMethod === DibbySplitMethod.PERCENTAGE && (
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight:
-                    !expenseAmount || percentageTotal !== 100 ? "200" : "400",
-                  color:
-                    !expenseAmount || percentageTotal !== 100
-                      ? colors.danger.button
-                      : colors.success.button,
-                }}
-              >
-                {percentageTotal || 0}% / 100%
-              </Text>
-            )}
-
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight:
-                  !expenseAmount || splitTotal !== +expenseAmount
-                    ? "200"
-                    : "400",
-                color:
-                  !expenseAmount || splitTotal !== +expenseAmount
-                    ? colors.danger.button
-                    : colors.success.button,
-              }}
-            >
-              ${numberWithCommas(splitTotal.toString()) || 0} / $
-              {numberWithCommas(expenseAmount) || 0}
-            </Text>
-          </View>
-
-          {splitMethod === DibbySplitMethod.AMOUNT ||
-          splitMethod === DibbySplitMethod.PERCENTAGE ? (
-            <KeyboardAvoidingView
-              style={{
-                flexDirection: Platform.OS === "web" ? "column" : "row",
-                flexWrap: "wrap",
-                gap: 16,
-                justifyContent: "space-between",
-              }}
-            >
-              {fields.map(({ name }: any, index: number) => {
-                return (
-                  <Controller
-                    key={name}
-                    control={control}
-                    rules={
-                      splitMethod === DibbySplitMethod.PERCENTAGE
-                        ? {
-                            required: true,
-                            validate: (val) =>
-                              +val.amount >= 0.01 && +val.amount <= 100,
-                            min: 0.01,
-                            maxLength: 4,
-                            max: 100,
-                          }
-                        : {
-                            required: true,
-                            validate: (val) =>
-                              +val.amount >= 0.01 &&
-                              +val.amount <= +expenseAmount,
-                            min: 0.01,
-                            max: expenseAmount,
-                          }
-                    }
-                    name={`peopleSplits.${index}`}
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <KeyboardAvoidingView
-                        style={{ width: windowWidth * 0.4 }}
+                <View style={styles.segmentRow}>
+                  {splitOptions.map((option) => {
+                    const isActive = value === option.value;
+                    return (
+                      <NeumoPressable
+                        key={option.value}
+                        onPress={() => onChange(option.value)}
+                        variant={isActive ? "raised" : "flat"}
+                        tone="surface"
+                        radius={NeumoTokens.radius.pill}
+                        padding={NeumoTokens.spacing.sm}
+                        style={[
+                          styles.segmentButton,
+                          isActive && styles.segmentButtonActive,
+                        ]}
+                        containerStyle={styles.segmentButtonContainer}
                       >
-                        <DibbyInput
-                          label={value.name}
-                          keyboardType="decimal-pad"
-                          maxLength={
-                            splitMethod === DibbySplitMethod.PERCENTAGE
-                              ? 3
-                              : undefined
-                          }
-                          percentage={
-                            splitMethod === DibbySplitMethod.PERCENTAGE
-                          }
-                          money={splitMethod === DibbySplitMethod.AMOUNT}
-                          placeholder={value.name}
-                          onBlur={onBlur}
-                          onChangeText={(val) => {
-                            onChange({
-                              amount: val,
-                              uid: value.uid,
-                              name: value.name,
-                            });
-                          }}
-                          value={
-                            typeof value.amount === "number"
-                              ? value.amount.toString()
-                              : value.amount
-                          }
-                        />
-                      </KeyboardAvoidingView>
-                    )}
-                  />
-                );
-              })}
-            </KeyboardAvoidingView>
-          ) : (
-            <Controller
-              control={control}
-              name="perPersonAverage"
-              defaultValue={0}
-              render={({ field: { onChange, value } }) => (
-                <DibbyInput
-                  money
-                  label="Per Person Average"
-                  value={
-                    typeof value === "number" ? `${value.toString()}` : "0"
-                  }
-                  placeholder="Per Person Average"
-                  disabled
-                  clearButtonMode="never"
-                  onChangeText={onChange}
-                />
+                        <Text
+                          style={[
+                            styles.segmentLabel,
+                            isActive && styles.segmentLabelActive,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </NeumoPressable>
+                    );
+                  })}
+                </View>
               )}
             />
-          )}
+            <Text style={styles.splitHelper}>{splitDescription}</Text>
+
+            <NeumoSurface
+              variant="flat"
+              tone="base"
+              radius={NeumoTokens.radius.md}
+              padding={NeumoTokens.spacing.sm}
+              style={styles.summaryCard}
+            >
+              <View style={styles.summaryRow}>
+                {splitMethod === DibbySplitMethod.PERCENTAGE && (
+                  <Text
+                    style={[
+                      styles.summaryText,
+                      !expenseAmount || percentageTotal !== 100
+                        ? styles.summaryWarning
+                        : styles.summaryOk,
+                    ]}
+                  >
+                    {percentageTotal || 0}% / 100%
+                  </Text>
+                )}
+
+                <Text
+                  style={[
+                    styles.summaryText,
+                    !expenseAmount || splitTotal !== +expenseAmount
+                      ? styles.summaryWarning
+                      : styles.summaryOk,
+                  ]}
+                >
+                  ${numberWithCommas(splitTotal.toString()) || 0} / $
+                  {numberWithCommas(expenseAmount) || 0}
+                </Text>
+              </View>
+            </NeumoSurface>
+
+            {splitMethod === DibbySplitMethod.AMOUNT ||
+            splitMethod === DibbySplitMethod.PERCENTAGE ? (
+              <KeyboardAvoidingView style={styles.splitInputs}>
+                {fields.map(({ name }: any, index: number) => {
+                  return (
+                    <Controller
+                      key={name}
+                      control={control}
+                      rules={
+                        splitMethod === DibbySplitMethod.PERCENTAGE
+                          ? {
+                              required: true,
+                              validate: (val) =>
+                                +val.amount >= 0.01 && +val.amount <= 100,
+                              min: 0.01,
+                              maxLength: 4,
+                              max: 100,
+                            }
+                          : {
+                              required: true,
+                              validate: (val) =>
+                                +val.amount >= 0.01 &&
+                                +val.amount <= +expenseAmount,
+                              min: 0.01,
+                              max: expenseAmount,
+                            }
+                      }
+                      name={`peopleSplits.${index}`}
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <View style={styles.splitInput}>
+                          <DibbyInput
+                            label={value.name}
+                            keyboardType="decimal-pad"
+                            maxLength={
+                              splitMethod === DibbySplitMethod.PERCENTAGE
+                                ? 3
+                                : undefined
+                            }
+                            percentage={
+                              splitMethod === DibbySplitMethod.PERCENTAGE
+                            }
+                            money={splitMethod === DibbySplitMethod.AMOUNT}
+                            placeholder={value.name}
+                            onBlur={onBlur}
+                            onChangeText={(val) => {
+                              onChange({
+                                amount: val,
+                                uid: value.uid,
+                                name: value.name,
+                              });
+                            }}
+                            value={
+                              typeof value.amount === "number"
+                                ? value.amount.toString()
+                                : value.amount
+                            }
+                          />
+                        </View>
+                      )}
+                    />
+                  );
+                })}
+              </KeyboardAvoidingView>
+            ) : (
+              <Controller
+                control={control}
+                name="perPersonAverage"
+                defaultValue={0}
+                render={({ field: { onChange, value } }) => (
+                  <DibbyInput
+                    money
+                    label="Per Person Average"
+                    value={
+                      typeof value === "number" ? `${value.toString()}` : "0"
+                    }
+                    placeholder="Per Person Average"
+                    disabled
+                    clearButtonMode="never"
+                    onChangeText={onChange}
+                  />
+                )}
+              />
+            )}
+          </NeumoSurface>
 
           {!formValid && (
-            <View style={{ marginVertical: 16, width: "80%" }}>
+            <View style={styles.errorContainer}>
               {errorMessage && (
                 <Text style={styles.errorText}>{errorMessage}</Text>
               )}
@@ -678,6 +678,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             disabled={!formValid}
             onPress={handleSubmit(onSubmit)}
             title={"Add Expense"}
+            fullWidth
           />
           <View style={{ paddingBottom: 200 }} />
         </KeyboardAvoidingView>
@@ -694,22 +695,149 @@ const makeStyles = (colors: ThemeColors) =>
       backgroundColor: colors.background.default,
       flex: 1,
     },
+    scrollContent: {
+      paddingBottom: 32,
+    },
     errorText: {
-      color: colors.danger.button,
+      color: colors.danger.background,
       marginTop: 8,
+    },
+    errorContainer: {
+      marginVertical: 16,
+      width: "90%",
+      alignSelf: "center",
     },
     content: {
       backgroundColor: colors.background.default,
       margin: 16,
       display: "flex",
+      gap: 16,
     },
     inputContainer: {
       marginVertical: 12,
     },
     inputLabel: {
-      color: colors.input.text,
-      fontSize: 16,
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
       textAlign: "left",
       marginBottom: 12,
+    },
+    sectionCard: {
+      gap: 12,
+    },
+    sectionTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    checkboxGrid: {
+      width: "100%",
+    },
+    checkboxItem: {
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: NeumoTokens.radius.md,
+      borderWidth: 0,
+      marginVertical: 6,
+    },
+    checkboxWrapper: {
+      backgroundColor: "transparent",
+    },
+    checkboxText: {
+      color: colors.textPrimary,
+    },
+    insetField: {
+      marginTop: 8,
+    },
+    pickerContainer: {
+      backgroundColor: "transparent",
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+      minWidth: "90%",
+    },
+    pickerInput: {
+      color: colors.textPrimary,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    },
+    pickerPlaceholder: {
+      color: colors.textSecondary,
+    },
+    multiSelectSubsection: {
+      paddingLeft: 16,
+      borderRadius: NeumoTokens.radius.md,
+      backgroundColor: colors.surfaceAlt,
+    },
+    multiSelectList: {
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: NeumoTokens.radius.md,
+    },
+    multiSelectSearch: {
+      backgroundColor: colors.surfaceAlt,
+      color: colors.textPrimary,
+    },
+    segmentRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+      marginBottom: 8,
+    },
+    segmentButtonContainer: {
+      flexGrow: 1,
+      flexBasis: "30%",
+    },
+    segmentButton: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 40,
+    },
+    segmentButtonActive: {
+      backgroundColor: colors.surfaceAlt,
+    },
+    segmentLabel: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    segmentLabelActive: {
+      color: colors.textPrimary,
+    },
+    summaryCard: {
+      marginVertical: 8,
+    },
+    splitPaidBy: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      marginBottom: 8,
+    },
+    splitHelper: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      marginTop: 4,
+    },
+    summaryRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 12,
+    },
+    summaryText: {
+      fontSize: Typography.size.sm,
+    },
+    summaryOk: {
+      color: colors.success.background,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    summaryWarning: {
+      color: colors.danger.background,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    splitInputs: {
+      flexDirection: Platform.OS === "web" ? "column" : "row",
+      flexWrap: "wrap",
+      gap: 16,
+      justifyContent: "space-between",
+    },
+    splitInput: {
+      width: Platform.OS === "web" ? "100%" : windowWidth * 0.4,
     },
   });

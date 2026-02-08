@@ -3,6 +3,7 @@ import { DocumentData, DocumentReference, Timestamp, arrayRemove, arrayUnion, co
 import { db } from "../firebase";
 import { DibbyExpense, DibbyFriend, DibbyParticipant, DibbySplits, DibbyTrip, DibbyUser } from "../constants/DibbyTypes";
 import { getTravelerFromId } from "./AppHelpers";
+import { assignUniqueParticipantColors } from "./GenerateColor";
 import { CreateExpenseForm } from "../components/CreateExpense";
 import { v4 } from "uuid";
 
@@ -167,11 +168,15 @@ import { v4 } from "uuid";
   export const addDibbyParticipant = async (travelers: DibbyParticipant[], trip: DibbyTrip): Promise<void> => {
     const newPerPersonAvg = trip.amount / trip.participants.length + travelers.length;
     const usersToAddTripTo: string[] = travelers.filter(t => !t.createdUser).map(p => p.uid);
+    const updatedParticipants = assignUniqueParticipantColors([
+      ...trip.participants,
+      ...travelers,
+    ]);
 
     const updatedTrip = {
       ...trip,
       dateUpdated: Timestamp.now(),
-      participants: arrayUnion(...travelers),
+      participants: updatedParticipants,
       perPersonAverage: newPerPersonAvg
     }
 

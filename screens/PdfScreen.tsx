@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, SafeAreaView, useColorScheme } from "react-native";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
-import { useTheme } from "@react-navigation/native";
+import { StyleSheet, SafeAreaView, View } from "react-native";
+import { ThemeColors } from "../constants/Colors";
 import { faClose, faDownload } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { DibbyTrip } from "../constants/DibbyTypes";
@@ -13,10 +12,12 @@ import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
-import { LinearGradient } from "expo-linear-gradient";
+import NeumoSurface from "../components/NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import useAppTheme from "../hooks/useAppTheme";
 
 const PdfScreen = ({ route }: any) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripId } = route.params;
@@ -47,10 +48,7 @@ const PdfScreen = ({ route }: any) => {
   }, [dibbyUser, currentTrip]);
 
   return (
-    <LinearGradient
-      style={styles.topContainer}
-      colors={[...colors.background.gradient]}
-    >
+    <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
           title={"Summary"}
@@ -60,7 +58,7 @@ const PdfScreen = ({ route }: any) => {
                 <FontAwesomeIcon
                   icon={faClose}
                   size={24}
-                  color={colors.light.text}
+                  color={colors.textPrimary}
                 />
               }
               type="clear"
@@ -73,7 +71,7 @@ const PdfScreen = ({ route }: any) => {
                 <FontAwesomeIcon
                   icon={faDownload}
                   size={24}
-                  color={colors.light.text}
+                  color={colors.textPrimary}
                 />
               }
               type="clear"
@@ -88,14 +86,21 @@ const PdfScreen = ({ route }: any) => {
           }
         />
         {calculatedTrip && currentTrip && (
-          <div
-            dangerouslySetInnerHTML={{
-              __html: generateHTML(calculatedTrip, currentTrip),
-            }}
-          />
+          <NeumoSurface
+            variant="raised"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.content}
+          >
+            <div
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(calculatedTrip, currentTrip),
+              }}
+            />
+          </NeumoSurface>
         )}
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -105,16 +110,14 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      // backgroundColor: colors.light.background,
-      margin: 16,
+      backgroundColor: colors.background.default,
     },
     title: {
-      color: colors.light.text,
+      color: colors.textPrimary,
       fontSize: 22,
       width: 120,
     },
     content: {
-      backgroundColor: colors.light.background,
       margin: 16,
       display: "flex",
     },

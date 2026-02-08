@@ -5,17 +5,18 @@ import {
   Text,
   Alert,
   RefreshControl,
+  Modal,
 } from "react-native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
 
-import { useNavigation, useTheme } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { useUser } from "../hooks/useUser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DibbyCard } from "../components/DibbyCard";
 import TopBar from "../components/TopBar";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { ThemeColors } from "../constants/Colors";
 import {
   onSnapshot,
   collection,
@@ -34,10 +35,19 @@ import { faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { Avatar } from "@rneui/themed";
 import { getInitials } from "../helpers/AppHelpers";
-import { LinearGradient } from "expo-linear-gradient";
 import DibbyVersion from "../components/DibbyVersion";
 import DibbyLoading from "../components/DibbyLoading";
 import { deleteDibbyTrip } from "../helpers/FirebaseHelpers";
+import NeumoSurface from "../components/NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
+import { resolveParticipantColor } from "../helpers/GenerateColor";
+import NeumoPressable from "../components/NeumoPressable";
+import SortFilterBar, { SortFilterOption } from "../components/SortFilterBar";
+import { useAvatarUrl } from "../hooks/useAvatarUrl";
+import StatsSection from "../components/StatsSection";
+import { buildHomeStats, pickStats } from "../helpers/StatsHelpers";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -46,18 +56,29 @@ const HomeScreen = () => {
   const [currentTrips, setCurrentTrips] = useState<DibbyTrip[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [showHowItWorks, setShowHowItWorks] = useState<boolean>(false);
+  const [tripFilter, setTripFilter] = useState<"all" | "open" | "completed">(
+    "all",
+  );
+  const [tripSort, setTripSort] = useState<
+    "recent" | "oldest" | "amount" | "name"
+  >("recent");
 
   const navigation = useNavigation();
-  const { dibbyUser } = useUser();
+  const { dibbyUser, loggedInUser } = useUser();
+  const { uri: avatarUrl, imageProps } = useAvatarUrl(
+    dibbyUser?.photoURL || loggedInUser?.photoURL,
+    96,
+  );
 
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   const fetchTrips = useCallback(async () => {
     if (dibbyUser?.trips.length && dibbyUser?.trips.length > 0) {
       const q = query(
         collection(db, "trips"),
-        where(documentId(), "in", dibbyUser!!.trips)
+        where(documentId(), "in", dibbyUser!!.trips),
         // orderBy("dateCreated", "desc")
       );
       const querySnapshot = await getDocs(q);
@@ -85,7 +106,7 @@ const HomeScreen = () => {
     if (dibbyUser?.uid && tripsExist) {
       const q = query(
         collection(db, "trips"),
-        where(documentId(), "in", dibbyUser.trips)
+        where(documentId(), "in", dibbyUser.trips),
         // orderBy("dateCreated", "desc")
       );
 
@@ -149,7 +170,7 @@ const HomeScreen = () => {
 
     if (Platform.OS === "web") {
       const result = window.confirm(
-        [title, message].filter(Boolean).join("\n")
+        [title, message].filter(Boolean).join("\n"),
       );
 
       if (result) {
@@ -164,11 +185,73 @@ const HomeScreen = () => {
     }
   };
 
+  const homeStats = useMemo(
+    () => buildHomeStats(currentTrips, dibbyUser?.uid),
+    [currentTrips, dibbyUser?.uid],
+  );
+  const homeCompactStats = useMemo(
+    () =>
+      pickStats(homeStats, [
+        "home-trips",
+        "home-active",
+        "home-total",
+        "home-net",
+      ]),
+    [homeStats],
+  );
+  const statsColumns = wideScreen ? 3 : 2;
+
+  const tripFilterOptions: SortFilterOption[] = [
+    { label: "All", value: "all" },
+    { label: "Open", value: "open" },
+    { label: "Completed", value: "completed" },
+  ];
+  const tripSortOptions: SortFilterOption[] = [
+    { label: "Newest", value: "recent" },
+    { label: "Oldest", value: "oldest" },
+    { label: "Amount", value: "amount" },
+    { label: "Name", value: "name" },
+  ];
+
+  const visibleTrips = useMemo(() => {
+    const filtered = currentTrips.filter((trip) => {
+      if (tripFilter === "open") {
+        return !trip.completed;
+      }
+      if (tripFilter === "completed") {
+        return Boolean(trip.completed);
+      }
+      return true;
+    });
+
+    const resolveTripDate = (trip: DibbyTrip) => {
+      const dateValue: any = trip.dateCreated;
+      if (!dateValue) {
+        return 0;
+      }
+      if (typeof dateValue.toDate === "function") {
+        return dateValue.toDate().getTime();
+      }
+      return new Date(dateValue).getTime();
+    };
+
+    return [...filtered].sort((a, b) => {
+      switch (tripSort) {
+        case "oldest":
+          return resolveTripDate(a) - resolveTripDate(b);
+        case "amount":
+          return (b.amount || 0) - (a.amount || 0);
+        case "name":
+          return (a.title || "").localeCompare(b.title || "");
+        case "recent":
+        default:
+          return resolveTripDate(b) - resolveTripDate(a);
+      }
+    });
+  }, [currentTrips, tripFilter, tripSort]);
+
   return (
-    <LinearGradient
-      style={styles.topContainer}
-      colors={[...colors.background.gradient]}
-    >
+    <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
           title="Trips"
@@ -180,7 +263,7 @@ const HomeScreen = () => {
                 <FontAwesomeIcon
                   icon={faSignOutAlt}
                   size={24}
-                  color={colors.background.text}
+                  color={colors.textPrimary}
                 />
               }
             />
@@ -189,26 +272,37 @@ const HomeScreen = () => {
             <DibbyButton
               type="clear"
               onPress={() => {
-                navigation.navigate("Profile");
+                navigation.navigate("ProfileTab");
               }}
               title={
                 <Avatar
                   size="small"
                   rounded
-                  source={{
-                    uri: dibbyUser?.photoURL || undefined,
-                  }}
-                  title={
-                    dibbyUser?.photoURL || getInitials(dibbyUser?.displayName)
+                  source={
+                    avatarUrl
+                      ? {
+                          uri: avatarUrl,
+                          cache: "force-cache",
+                        }
+                      : undefined
                   }
+                  imageProps={imageProps}
+                  title={getInitials(
+                    dibbyUser?.displayName || loggedInUser?.displayName,
+                  )}
                   containerStyle={{
                     borderWidth: 1,
                     borderStyle: "solid",
-                    borderColor: colors.dark.background,
+                    borderColor: colors.background.default,
                   }}
                   overlayContainerStyle={{
-                    backgroundColor:
-                      dibbyUser?.color || colors.primary.background,
+                    backgroundColor: resolveParticipantColor(
+                      dibbyUser?.color,
+                      dibbyUser?.uid ||
+                        dibbyUser?.username ||
+                        dibbyUser?.displayName ||
+                        "",
+                    ),
                   }}
                   titleStyle={{
                     color: colors.primary.text,
@@ -224,6 +318,7 @@ const HomeScreen = () => {
               <DibbyLoading />
             ) : (
               <FlatList
+                removeClippedSubviews={false}
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}
@@ -231,16 +326,100 @@ const HomeScreen = () => {
                   />
                 }
                 style={{ paddingBottom: 30 }}
+                contentContainerStyle={styles.listContent}
                 key={numColumns}
-                data={currentTrips}
+                data={visibleTrips}
                 keyExtractor={(trip) => trip.id}
                 numColumns={numColumns}
-                ListEmptyComponent={
-                  <View>
-                    <Text style={styles.emptyText}>
-                      No trips yet. Add some below!
-                    </Text>
+                ListHeaderComponent={
+                  <View style={styles.listHeader}>
+                    <NeumoSurface
+                      variant="raised"
+                      tone="surface"
+                      radius={NeumoTokens.radius.lg}
+                      style={styles.hero}
+                    >
+                      <Text style={styles.heroTitle}>Your trips</Text>
+                      <View style={styles.heroStats}>
+                        <StatsSection
+                          compactItems={homeCompactStats}
+                          fullItems={homeStats}
+                          compactColumns={2}
+                          expandedColumns={statsColumns}
+                        />
+                      </View>
+                    </NeumoSurface>
+                    {currentTrips.length > 0 && (
+                      <SortFilterBar
+                        filterOptions={tripFilterOptions}
+                        sortOptions={tripSortOptions}
+                        selectedFilter={tripFilter}
+                        selectedSort={tripSort}
+                        onFilterChange={(value) =>
+                          setTripFilter(value as "all" | "open" | "completed")
+                        }
+                        onSortChange={(value) =>
+                          setTripSort(
+                            value as "recent" | "oldest" | "amount" | "name",
+                          )
+                        }
+                      />
+                    )}
                   </View>
+                }
+                ListEmptyComponent={
+                  currentTrips.length > 0 ? (
+                    <NeumoSurface
+                      variant="inset"
+                      tone="surface"
+                      radius={NeumoTokens.radius.lg}
+                      style={styles.emptyState}
+                    >
+                      <Text style={styles.emptyTitle}>
+                        No trips match this filter
+                      </Text>
+                      <Text style={styles.emptyText}>
+                        Try changing the filter or sort.
+                      </Text>
+                      <DibbyButton
+                        title="Clear filters"
+                        onPress={() => {
+                          setTripFilter("all");
+                          setTripSort("recent");
+                        }}
+                        fullWidth
+                      />
+                    </NeumoSurface>
+                  ) : (
+                    <NeumoSurface
+                      variant="inset"
+                      tone="surface"
+                      radius={NeumoTokens.radius.lg}
+                      style={styles.emptyState}
+                    >
+                      <Text style={styles.emptyTitle}>
+                        Create your first trip
+                      </Text>
+                      <Text style={styles.emptyText}>
+                        Add friends and split expenses in minutes.
+                      </Text>
+                      <DibbyButton
+                        title="Create Trip"
+                        onPress={() => navigation.navigate("CreateTrip")}
+                        fullWidth
+                      />
+                      <NeumoPressable
+                        variant="flat"
+                        tone="base"
+                        onPress={() => setShowHowItWorks(true)}
+                        style={styles.howItWorksButton}
+                      >
+                        <Text style={styles.howItWorksText}>
+                          How it works (30 sec)
+                        </Text>
+                      </NeumoPressable>
+                    </NeumoSurface>
+                  )
                 }
                 renderItem={({ item }) => (
                   <DibbyCard
@@ -260,15 +439,41 @@ const HomeScreen = () => {
                 )}
               />
             )}
-            <DibbyButton
-              add
-              onPress={() => navigation.navigate("CreateTrip")}
-            />
-            <DibbyVersion />
           </View>
         )}
       </SafeAreaView>
-    </LinearGradient>
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showHowItWorks}
+        onRequestClose={() => setShowHowItWorks(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <NeumoSurface
+            variant="raised"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.modalCard}
+          >
+            <Text style={styles.modalTitle}>How it works</Text>
+            <Text style={styles.modalText}>
+              1. Create a trip and add travelers.
+            </Text>
+            <Text style={styles.modalText}>
+              2. Add expenses and choose how to split.
+            </Text>
+            <Text style={styles.modalText}>
+              3. See balances and settle up easily.
+            </Text>
+            <DibbyButton
+              title="Got it"
+              onPress={() => setShowHowItWorks(false)}
+              fullWidth
+            />
+          </NeumoSurface>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
@@ -278,14 +483,78 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
+      backgroundColor: colors.background.default,
     },
     grid: {
       flex: 1,
       display: "flex",
       margin: 16,
     },
-    emptyText: {
-      color: colors.background.text,
+    listContent: {
+      paddingHorizontal: NeumoTokens.spacing.xs,
+      paddingTop: NeumoTokens.spacing.xs,
+      paddingBottom: NeumoTokens.spacing.xxl,
+    },
+    listHeader: {
+      gap: 12,
+      marginBottom: 12,
+    },
+    hero: {
+      marginBottom: 16,
+    },
+    heroTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.lg,
+      fontWeight: Typography.weight.bold as any,
+      marginBottom: 8,
+    },
+    heroStats: {
+      marginTop: 4,
+    },
+    emptyState: {
+      marginVertical: 24,
+      gap: 12,
+    },
+    emptyTitle: {
+      color: colors.textPrimary,
       textAlign: "center",
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    emptyText: {
+      color: colors.textSecondary,
+      textAlign: "center",
+      fontSize: Typography.size.sm,
+    },
+    howItWorksButton: {
+      marginTop: 4,
+    },
+    howItWorksText: {
+      color: colors.accent,
+      textAlign: "center",
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.35)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    },
+    modalCard: {
+      width: "100%",
+      maxWidth: 420,
+      gap: 10,
+      ...(Platform.OS === "web" ? { boxShadow: "none" } : {}),
+    },
+    modalTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.lg,
+      fontWeight: Typography.weight.bold as any,
+    },
+    modalText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
     },
   });

@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
-import { useNavigation, useTheme } from "@react-navigation/native";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { useNavigation } from "@react-navigation/native";
+import { ThemeColors } from "../constants/Colors";
 import { FlatList } from "react-native-gesture-handler";
 import { Divider } from "@rneui/themed";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -17,29 +17,51 @@ import {
 import DibbyButton from "../components/DibbyButton";
 import { faChevronLeft, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   DibbyExpense,
   DibbyParticipant,
   DibbyTrip,
 } from "../constants/DibbyTypes";
-import { changeOpacity } from "../helpers/GenerateColor";
-import {
-  linearGradientEnd,
-  linearGradientStart,
-} from "../constants/DeviceWidth";
+import { changeOpacity, resolveParticipantColor } from "../helpers/GenerateColor";
 import { deleteDibbyExpense } from "../helpers/FirebaseHelpers";
+import NeumoSurface from "../components/NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
+import StatsSection from "../components/StatsSection";
+import { buildExpenseStats, pickStats } from "../helpers/StatsHelpers";
+import { useUser } from "../hooks/useUser";
+import { wideScreen } from "../constants/DeviceWidth";
 
 const windowWidth = Dimensions.get("window").width;
 const numColumns = Math.floor(windowWidth / 500);
 
 const ViewExpense = ({ route }: any) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId, expenseId } = route.params;
+  const { dibbyUser } = useUser();
   const [currentExpense, setCurrentExpense] = useState<DibbyExpense>();
   const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
+  const expenseStats = useMemo(
+    () =>
+      currentExpense
+        ? buildExpenseStats(currentExpense, currentTrip, dibbyUser?.uid)
+        : [],
+    [currentExpense, currentTrip, dibbyUser?.uid],
+  );
+  const expenseCompactStats = useMemo(
+    () =>
+      pickStats(expenseStats, [
+        "expense-amount",
+        "expense-split",
+        "expense-participants",
+        "expense-you-owe",
+      ]),
+    [expenseStats],
+  );
+  const statsColumns = wideScreen ? 3 : 2;
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "trips", tripId), (doc) => {
@@ -55,10 +77,7 @@ const ViewExpense = ({ route }: any) => {
   }, [tripId]);
 
   return (
-    <LinearGradient
-      style={styles.topContainer}
-      colors={[...colors.background.gradient]}
-    >
+    <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
           title={`${currentExpense?.title}`}
@@ -72,7 +91,7 @@ const ViewExpense = ({ route }: any) => {
                 <FontAwesomeIcon
                   icon={faChevronLeft}
                   size={24}
-                  color={colors.background.text}
+                  color={colors.textPrimary}
                 />
               }
             />
@@ -96,61 +115,58 @@ const ViewExpense = ({ route }: any) => {
           }
         />
 
-        <View
-          style={{
-            flexDirection: "column",
-            justifyContent: "space-between",
-            margin: 16,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+        <View style={styles.content}>
+          <View style={styles.headerRow}>
             <Text style={styles.title}>{currentExpense?.title}</Text>
             <Text style={styles.title}>${currentExpense?.amount}</Text>
           </View>
 
-          <LinearGradient
+          {currentExpense && (
+            <NeumoSurface
+              variant="raised"
+              tone="surface"
+              radius={NeumoTokens.radius.lg}
+              style={styles.statsCard}
+            >
+              <StatsSection
+                title="Expense stats"
+                compactItems={expenseCompactStats}
+                fullItems={expenseStats}
+                compactColumns={2}
+                expandedColumns={statsColumns}
+              />
+            </NeumoSurface>
+          )}
+
+          <NeumoSurface
+            variant="raised"
+            tone="surface"
+            radius={NeumoTokens.radius.md}
             style={{
               marginTop: 16,
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              backgroundColor: colors.light.background,
-              padding: 10,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderBottomWidth: 4,
-              borderLeftWidth: 4,
-              borderColor: colors.dark.background,
-            }}
-            colors={[
-              changeOpacity(
-                getTravelerFromId(currentTrip, currentExpense?.paidBy)?.color ||
-                  colors.primary.background,
-                0.8
+              backgroundColor: changeOpacity(
+                resolveParticipantColor(
+                  getTravelerFromId(currentTrip, currentExpense?.paidBy)?.color,
+                  currentExpense?.paidBy || ""
+                ),
+                0.85
               ),
-              getTravelerFromId(currentTrip, currentExpense?.paidBy)?.color ||
-                colors.primary.background,
-            ]}
-            start={linearGradientStart}
-            end={linearGradientEnd}
+            }}
           >
-            <Text style={{ color: colors.background.default }}>
+            <Text style={{ color: colors.textPrimary }}>
               {getTravelerFromId(currentTrip, currentExpense?.paidBy)?.name}
             </Text>
-            <Text style={{ color: colors.background.default }}>
+            <Text style={{ color: colors.textPrimary }}>
               {`$${
                 currentExpense?.peopleInExpense.find(
                   (p) => p.uid === currentExpense.paidBy
                 )?.amount || 0
               }`}
             </Text>
-          </LinearGradient>
+          </NeumoSurface>
 
           {currentExpense && (
             <FlatList
@@ -165,42 +181,28 @@ const ViewExpense = ({ route }: any) => {
                 const traveler: DibbyParticipant | undefined =
                   getTravelerFromId(currentTrip, item.uid);
                 return (
-                  <LinearGradient
+                  <NeumoSurface
+                    variant="raised"
+                    tone="surface"
+                    radius={NeumoTokens.radius.md}
                     style={{
                       marginTop: 16,
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      padding: 10,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderBottomWidth: 4,
-                      borderLeftWidth: 4,
-                      borderColor: colors.dark.background,
-                      backgroundColor: colors.light.background,
-                    }}
-                    colors={[
-                      changeOpacity(
-                        traveler?.color || colors.primary.background,
-                        0.8
+                      backgroundColor: changeOpacity(
+                        resolveParticipantColor(
+                          traveler?.color,
+                          traveler?.uid || traveler?.username || traveler?.name || ""
+                        ),
+                        0.85
                       ),
-                      traveler?.color || colors.primary.background,
-                    ]}
-                    start={linearGradientStart}
-                    end={linearGradientEnd}
+                    }}
                   >
-                    <Text
-                      style={{
-                        color: colors.background.default,
-                      }}
-                    >
+                    <Text style={{ color: colors.textPrimary }}>
                       {traveler?.name}
                     </Text>
-                    <Text
-                      style={{
-                        color: colors.background.default,
-                      }}
-                    >
+                    <Text style={{ color: colors.textPrimary }}>
                       $
                       {numberWithCommas(
                         currentExpense.peopleInExpense
@@ -208,27 +210,19 @@ const ViewExpense = ({ route }: any) => {
                           ?.amount.toString()
                       )}
                     </Text>
-                  </LinearGradient>
+                  </NeumoSurface>
                 );
               }}
             />
           )}
           <Divider
-            color={colors.disabled.button}
+            color={colors.shadowDark}
             style={{
               marginBottom: 16,
             }}
           />
 
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: 10,
-              borderRadius: 10,
-            }}
-          >
+          <View style={styles.totalRow}>
             <Text></Text>
             <Text
               style={{
@@ -270,7 +264,7 @@ const ViewExpense = ({ route }: any) => {
           </View>
         </View>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -280,11 +274,31 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
-      // backgroundColor: colors.background.default,
+      backgroundColor: colors.background.default,
+    },
+    content: {
+      margin: 16,
+    },
+    headerRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
     },
     title: {
-      fontSize: 20,
-      color: colors.background.text,
+      fontSize: Typography.size.lg,
+      color: colors.textPrimary,
       textTransform: "capitalize",
+      fontWeight: Typography.weight.semibold as any,
+    },
+    statsCard: {
+      marginTop: 16,
+      gap: 8,
+    },
+    totalRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 10,
+      borderRadius: 10,
     },
   });

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="%LANG_ISO_CODE%">
   <head>
     <meta charset="utf-8" />
@@ -25,6 +25,7 @@
         -webkit-overflow-scrolling: touch;
         margin: 0px;
         padding: 0px;
+        background-color: #e9edf2;
         /* Allows content to fill the viewport and go beyond the bottom */
         min-height: 100%;
       }
@@ -54,11 +55,15 @@
         -ms-overflow-style: scrollbar;
       }
       /* Enable for apps that support dark-theme */
-      /*@media (prefers-color-scheme: dark) {
+      @media (prefers-color-scheme: dark) {
         body {
-          background-color: black;
+          background-color: #1f242a;
         }
-      }*/
+        html,
+        #root {
+          background-color: #1f242a;
+        }
+      }
     </style>
   </head>
 
@@ -90,7 +95,7 @@
           "
         >
           <p>Oh no! It looks like JavaScript is not enabled in your browser.</p>
-          <p style="margin: 20px 0;">
+          <p style="margin: 20px 0">
             <button
               type="submit"
               style="

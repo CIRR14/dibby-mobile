@@ -1,12 +1,8 @@
 import React, { useEffect } from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { useUser } from "../hooks/useUser";
-import { useNavigation, useTheme } from "@react-navigation/native";
-import { Button, Card } from "@rneui/base";
-import { CardTitle } from "@rneui/base/dist/Card/Card.Title";
-import { CardFeaturedSubtitle } from "@rneui/base/dist/Card/Card.FeaturedSubtitle";
-import { LinearGradient } from "expo-linear-gradient";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { useNavigation } from "@react-navigation/native";
+import { ThemeColors } from "../constants/Colors";
 import {
   faEnvelopeCircleCheck,
   faSignOutAlt,
@@ -16,16 +12,24 @@ import { User, reload, sendEmailVerification, signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
+import NeumoSurface from "../components/NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
+import * as Linking from "expo-linking";
 
 export const VerifyEmail = () => {
   const { loggedInUser } = useUser();
   const navigation = useNavigation();
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   const navigateTo = (userObj: User) => {
     if (userObj.displayName && userObj.emailVerified) {
-      navigation.navigate("Home");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Root" }],
+      });
     } else {
       navigation.navigate("CreateProfile");
     }
@@ -49,6 +53,14 @@ export const VerifyEmail = () => {
     }
   };
 
+  const openEmailApp = async () => {
+    try {
+      await Linking.openURL("mailto:");
+    } catch (err) {
+      console.log("Could not open email app", err);
+    }
+  };
+
   const handleSignOut = () => {
     signOut(auth)
       .then(() => {
@@ -63,10 +75,7 @@ export const VerifyEmail = () => {
   };
 
   return (
-    <LinearGradient
-      style={styles.topContainer}
-      colors={[...colors.background.gradient]}
-    >
+    <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
           title={""}
@@ -78,48 +87,56 @@ export const VerifyEmail = () => {
                 <FontAwesomeIcon
                   icon={faSignOutAlt}
                   size={24}
-                  color={colors.background.text}
+                  color={colors.textPrimary}
                 />
               }
             />
           }
         />
-        <Card
-          containerStyle={styles.cardContainer}
-          wrapperStyle={{ margin: 16 }}
+        <NeumoSurface
+          variant="raised"
+          tone="surface"
+          radius={NeumoTokens.radius.lg}
+          style={styles.cardContainer}
         >
-          <CardTitle
-            h4
-            h4Style={{
-              textAlign: "left",
-              fontWeight: "200",
-              color: colors.background.text,
-            }}
-          >
-            Verify your email
-          </CardTitle>
-          <CardFeaturedSubtitle style={{ color: colors.background.text }}>
-            Account activation link has been sent to the e-mail address you
-            provided
-          </CardFeaturedSubtitle>
+          <Text style={styles.stepLabel}>Step 1 of 3</Text>
+          <Text style={styles.title}>Verify your email</Text>
+          <Text style={styles.subtitle}>
+            We sent an activation link to your email address.
+          </Text>
           <FontAwesomeIcon
             icon={faEnvelopeCircleCheck}
-            size={100}
-            color={colors.primary.background}
+            size={96}
+            color={colors.accent}
             style={{
               alignSelf: "center",
-              margin: 20,
+              marginVertical: 20,
             }}
           />
-          <Button
-            onPress={resendVerificationEmail}
-            title="Didnt get the email? Send it again"
-            type="clear"
-            titleStyle={{ fontSize: 14, color: colors.primary.background }}
-          />
-        </Card>
+          <View style={styles.buttonRow}>
+            <View style={styles.buttonSlot}>
+              <DibbyButton
+                onPress={openEmailApp}
+                title="Open email app"
+                type="solid"
+                fullWidth
+              />
+            </View>
+            <View style={styles.buttonSlot}>
+              <DibbyButton
+                onPress={resendVerificationEmail}
+                title="Resend link"
+                type="outline"
+                fullWidth
+              />
+            </View>
+          </View>
+          <Text style={styles.helperText}>
+            Didn’t get it? Check spam or wait a minute, then resend.
+          </Text>
+        </NeumoSurface>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -127,13 +144,38 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
+      backgroundColor: colors.background.default,
     },
     cardContainer: {
-      borderRadius: 20,
-      backgroundColor: colors.background.paper,
-      borderWidth: 1,
-      borderLeftWidth: 4,
-      borderBottomWidth: 4,
-      borderColor: colors.dark.background,
+      borderRadius: NeumoTokens.radius.lg,
+      margin: 16,
+      gap: 12,
+    },
+    stepLabel: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    title: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.lg,
+      fontWeight: Typography.weight.bold as any,
+      textAlign: "left",
+    },
+    subtitle: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+    },
+    buttonRow: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    buttonSlot: {
+      flex: 1,
+    },
+    helperText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
     },
   });

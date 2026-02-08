@@ -1,7 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 import React, { JSXElementConstructor, ReactElement } from "react";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
-import { useTheme } from "@react-navigation/native";
+import { ThemeColors } from "../constants/Colors";
+import NeumoSurface from "./NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
 
 interface ITopBarProps {
   title: string;
@@ -10,11 +13,17 @@ interface ITopBarProps {
 }
 
 const TopBar: React.FC<ITopBarProps> = ({ title, leftButton, rightButton }) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   return (
-    <View style={styles.container}>
+    <NeumoSurface
+      variant="flat"
+      tone="base"
+      radius={NeumoTokens.radius.lg}
+      padding={NeumoTokens.spacing.md}
+      style={styles.container}
+    >
       <View style={[styles.innerContainer, styles.leftContainer]}>
         {leftButton}
       </View>
@@ -24,7 +33,7 @@ const TopBar: React.FC<ITopBarProps> = ({ title, leftButton, rightButton }) => {
       <View style={[styles.innerContainer, styles.rightContainer]}>
         {rightButton}
       </View>
-    </View>
+    </NeumoSurface>
   );
 };
 
@@ -39,11 +48,11 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "space-between",
     },
     title: {
-      color: colors.background.text,
+      color: colors.textPrimary,
       textTransform: "capitalize",
-      fontSize: 22,
+      fontSize: Typography.size.lg,
       flexWrap: "wrap",
-      fontWeight: "bold",
+      fontWeight: Typography.weight.bold as any,
       textAlign: "center",
       overflow: "hidden",
     },

@@ -18,7 +18,7 @@ import {
   UserCredential,
 } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
-import { useNavigation, useTheme } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import errorMessage from "../constants/Errors";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
@@ -26,21 +26,24 @@ import {
   faGoogle,
   faApple,
 } from "@fortawesome/free-brands-svg-icons";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { ThemeColors } from "../constants/Colors";
 import { Platform } from "react-native";
 import { wideScreen } from "../constants/DeviceWidth";
 import DibbyButton from "../components/DibbyButton";
-import { LinearGradient } from "expo-linear-gradient";
 import DibbyInput from "../components/DibbyInput";
 import DibbyVersion from "../components/DibbyVersion";
 import DibbyLoading from "../components/DibbyLoading";
+import NeumoSurface from "../components/NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [method, setMethod] = useState<"signUp" | "logIn" | undefined>(
-    undefined
+    undefined,
   );
   const [passwordVerification, setPasswordVerification] = useState<string>("");
   const [passwordVerificationRequired, setPasswordVerificationRequired] =
@@ -49,12 +52,12 @@ const LoginScreen = () => {
 
   const navigation = useNavigation();
 
-  const { colors } = useTheme() as unknown as ColorTheme;
-  const styles = makeStyles(colors as unknown as ThemeColors);
+  const colors = useAppTheme();
+  const styles = makeStyles(colors);
 
   useEffect(() => {
     if (Platform.OS === "web") {
-      const listener = (event) => {
+      const listener = (event: any) => {
         if (event.code === "Enter") {
           event.preventDefault();
           handleLogin();
@@ -67,14 +70,23 @@ const LoginScreen = () => {
     }
   }, [Platform.OS]);
 
+  const goToApp = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Root" }],
+    });
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (userObj) => {
       if (userObj) {
-        !userObj.emailVerified
-          ? navigation.navigate("VerifyEmail")
-          : userObj.emailVerified && method === "logIn"
-          ? navigation.navigate("Home")
-          : navigation.navigate("CreateProfile");
+        if (!userObj.emailVerified) {
+          navigation.navigate("VerifyEmail");
+        } else if (method === "logIn") {
+          goToApp();
+        } else {
+          navigation.navigate("CreateProfile");
+        }
       }
     });
     return unsubscribe;
@@ -191,17 +203,13 @@ const LoginScreen = () => {
   };
 
   return (
-    <LinearGradient
-      style={styles.topContainer}
-      colors={[...colors.background.gradient]}
-    >
+    <View style={styles.topContainer}>
       <KeyboardAvoidingView style={styles.topContainer} behavior="padding">
         <View style={styles.innerContainer}>
           <View style={styles.titleContainer}>
             <Text style={styles.titleText}>Dibby</Text>
-            <Text style={styles.descriptionText}>Money Splitting</Text>
+            <Text style={styles.descriptionText}>Split money, simply</Text>
           </View>
-
           <View style={styles.inputContainer}>
             <DibbyInput
               placeholder="Email"
@@ -239,11 +247,16 @@ const LoginScreen = () => {
               fullWidth
             />
             <DibbyButton
-              fullWidth
-              type={passwordVerificationRequired ? "solid" : "outline"}
               onPress={handleSignUp}
+              type={passwordVerificationRequired ? "solid" : "outline"}
+              fullWidth
               title={"Register"}
             />
+          </View>
+          <View style={styles.nextStepContainer}>
+            <Text style={styles.nextStepHint}>
+              New here? Create an account.
+            </Text>
           </View>
 
           <View style={styles.orContainer}>
@@ -259,8 +272,8 @@ const LoginScreen = () => {
               title={
                 <FontAwesomeIcon
                   icon={faFacebookSquare}
-                  size={32}
-                  color={colors.background.text}
+                  size={28}
+                  color={colors.textPrimary}
                 />
               }
               type="clear"
@@ -270,8 +283,8 @@ const LoginScreen = () => {
               title={
                 <FontAwesomeIcon
                   icon={faGoogle}
-                  size={32}
-                  color={colors.background.text}
+                  size={28}
+                  color={colors.textPrimary}
                 />
               }
               type="clear"
@@ -281,8 +294,8 @@ const LoginScreen = () => {
               title={
                 <FontAwesomeIcon
                   icon={faApple}
-                  size={32}
-                  color={colors.background.text}
+                  size={28}
+                  color={colors.textPrimary}
                 />
               }
               type="clear"
@@ -298,7 +311,7 @@ const LoginScreen = () => {
         <DibbyVersion bottom={30} />
       </KeyboardAvoidingView>
       {loading && <DibbyLoading />}
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -308,62 +321,83 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
+      backgroundColor: colors.background.default,
     },
     innerContainer: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      margin: wideScreen ? "25%" : "10%",
+      paddingHorizontal: wideScreen ? "35%" : "8%",
     },
     inputContainer: {
       width: "100%",
+      gap: 12,
     },
     errorText: {
       color: colors.danger.button,
       fontWeight: "500",
-      fontSize: 12,
-      textTransform: "uppercase",
+      fontSize: Typography.size.xs,
+      marginTop: 6,
     },
     titleContainer: {
       alignSelf: "flex-start",
-      marginBottom: 50,
+      marginBottom: 24,
     },
     titleText: {
-      color: colors.background.text,
-      fontSize: 50,
-      fontWeight: "bold",
+      color: colors.textPrimary,
+      fontSize: Typography.size.xxl,
+      fontWeight: Typography.weight.bold as any,
     },
     descriptionText: {
-      color: colors.background.text,
-      fontSize: 20,
-      fontWeight: "400",
+      color: colors.textSecondary,
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.medium as any,
+    },
+    authCard: {
+      width: "100%",
+      gap: 12,
     },
     buttonContainer: {
       width: "100%",
       gap: 16,
-      margin: 16,
+      marginTop: 16,
       display: "flex",
       alignItems: "center",
+    },
+    nextStepContainer: {
+      marginTop: 12,
+      gap: 4,
+    },
+    nextStepHint: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      textAlign: "center",
+    },
+    nextStepText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      textAlign: "center",
     },
     orContainer: {
       flexDirection: "row",
       alignItems: "center",
+      marginTop: 16,
     },
     orLines: {
       flex: 1,
       height: 1,
-      backgroundColor: colors.background.text,
+      backgroundColor: colors.shadowDark,
       width: 100,
     },
     orText: {
       width: 50,
       textAlign: "center",
-      color: colors.background.text,
+      color: colors.textSecondary,
     },
     providerContainer: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-evenly",
-      width: "40%",
+      width: "100%",
     },
   });

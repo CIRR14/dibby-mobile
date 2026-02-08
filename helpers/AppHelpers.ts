@@ -1,5 +1,11 @@
 import { Item } from "react-native-picker-select";
-import { DibbyParticipant, DibbySplits, DibbyTrip, DibbyUser } from "../constants/DibbyTypes";
+import {
+  DibbyParticipant,
+  DibbySplits,
+  DibbyTrip,
+  DibbyUser,
+} from "../constants/DibbyTypes";
+import { resolveParticipantColor } from "./GenerateColor";
 
 export const getInitials = (name?: string | null): string => {
     if (name) {
@@ -25,7 +31,7 @@ export const getItemFormatFromTravelerIds = (tripInfo: DibbyTrip): Item[] => {
         label: t.name || '',
         value: t.uid,
         key: t.uid,
-        color: t.color,
+        color: resolveParticipantColor(t.color, t.uid || t.username || t.name || ""),
         inputLabel: t.name || ''
     }))
 }
@@ -42,7 +48,10 @@ export const getInfoFromTravelerId = (tripInfo: DibbyTrip, id: string): {
         label: traveler?.name || '',
         value: traveler?.uid || '',
         key: traveler?.uid || '',
-        color: traveler?.color || '',
+        color: resolveParticipantColor(
+          traveler?.color,
+          traveler?.uid || traveler?.username || traveler?.name || ""
+        ),
         inputLabel: traveler?.name || ''
     }
 }
@@ -71,4 +80,23 @@ export const numberWithCommas = (value?: string, decimal = 2) => {
         useGrouping: true,
       }
     ) : value
+};
+
+export const normalizePhotoURL = (
+  url?: string | null,
+  size = 200
+): string | null => {
+  if (!url || typeof url !== "string") {
+    return null;
+  }
+  if (!/^https?:\/\//i.test(url)) {
+    return null;
+  }
+  if (url.includes("googleusercontent.com")) {
+    if (url.includes("=s")) {
+      return url.replace(/=s\d+-c.*$/, `=s${size}-c`);
+    }
+    return `${url}=s${size}-c`;
+  }
+  return url;
 };

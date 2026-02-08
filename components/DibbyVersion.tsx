@@ -1,11 +1,10 @@
 import React from "react";
 import { View, Text, Platform } from "react-native";
 import { REACT_APP_VERSION } from "@env";
-import { useTheme } from "@react-navigation/native";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
+import useAppTheme from "../hooks/useAppTheme";
 
 const DibbyVersion: React.FC<{ bottom?: number }> = ({ bottom = 0 }) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   return (
     <View
       style={{
@@ -19,7 +18,8 @@ const DibbyVersion: React.FC<{ bottom?: number }> = ({ bottom = 0 }) => {
       <Text
         style={{
           fontSize: 10,
-          color: colors.background.text,
+          color: colors.accent,
+          opacity: 0.8,
         }}
       >
         {Platform.OS === "web"

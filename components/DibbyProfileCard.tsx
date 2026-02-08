@@ -1,13 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { DibbyParticipant, DibbyUser } from "../constants/DibbyTypes";
-import { useTheme } from "@react-navigation/native";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { ThemeColors } from "../constants/Colors";
 import { DibbyAvatar } from "./DibbyAvatars";
 import { Divider } from "@rneui/themed";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faAt, faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import DibbyButton from "./DibbyButton";
+import NeumoSurface from "./NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
 
 export interface IDibbyProfileCardProps {
   title: string;
@@ -28,18 +31,20 @@ export const DibbyProfileCard: React.FC<IDibbyProfileCardProps> = ({
   actionNeeded,
   actionTaken = () => {},
 }) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   return (
-    <View
+    <NeumoSurface
+      variant={pending ? "inset" : "raised"}
+      tone="surface"
+      radius={NeumoTokens.radius.lg}
       style={{
         ...styles.card,
         justifyContent: "space-around",
-        backgroundColor: pending ? colors.disabled.button : "transparent",
       }}
     >
-      <View style={{ gap: 8, alignItems: "center" }}>
+      <View style={{ gap: 8, alignItems: "center", flex: 1 }}>
         {pending && !actionNeeded && (
           <View
             style={
@@ -64,15 +69,21 @@ export const DibbyProfileCard: React.FC<IDibbyProfileCardProps> = ({
             item={dibbyUser}
           />
         )}
-        <Text style={{ color: colors.background.text }}>{title}</Text>
+        <Text
+          style={{
+            color: colors.textPrimary,
+            fontSize: Typography.size.md,
+            fontWeight: Typography.weight.semibold as any,
+          }}
+        >
+          {title}
+        </Text>
 
         {subtitle
           ?.filter((t) => t)
           .map((s, i) => (
             <View key={i}>
-              <Text
-                style={{ color: colors.background.text, fontWeight: "200" }}
-              >
+              <Text style={{ color: colors.textSecondary, fontWeight: "300" }}>
                 {s}
               </Text>
             </View>
@@ -108,44 +119,46 @@ export const DibbyProfileCard: React.FC<IDibbyProfileCardProps> = ({
           <Divider
             orientation="vertical"
             width={1}
-            color={colors.background.text}
+            style={{ marginHorizontal: 16 }}
+            color={colors.shadowDark}
           />
           <View style={{ gap: 8 }}>
             <Text
               style={{
-                color: colors.background.text,
+                color: colors.textSecondary,
                 ...styles.container,
                 fontWeight: "300",
               }}
             >
               <FontAwesomeIcon
                 icon={faAt}
-                color={colors.background.text}
+                color={colors.textSecondary}
                 size={16}
-                style={{ marginRight: 16 }}
+                style={{ marginRight: 8 }}
               />
               {dibbyUser?.username}
             </Text>
             <View style={{ height: 8 }} />
             <Text
               style={{
-                color: colors.background.text,
+                color: colors.textSecondary,
                 ...styles.container,
                 fontWeight: "300",
+                justifyContent: "center",
               }}
             >
               <FontAwesomeIcon
                 icon={faEnvelope}
-                color={colors.background.text}
+                color={colors.textSecondary}
                 size={16}
-                style={{ marginRight: 16 }}
+                style={{ marginRight: 8 }}
               />
               {(dibbyUser as DibbyUser)?.email}
             </Text>
           </View>
         </>
       )}
-    </View>
+    </NeumoSurface>
   );
 };
 
@@ -158,14 +171,10 @@ const makeStyles = (colors: ThemeColors) =>
       margin: 16,
     },
     card: {
-      borderColor: colors.dark.background,
-      borderWidth: 1,
-      borderLeftWidth: 4,
-      borderBottomWidth: 4,
       alignItems: "center",
       paddingVertical: 40,
       paddingHorizontal: 24,
-      borderRadius: 32,
+      borderRadius: NeumoTokens.radius.lg,
       flexDirection: "row",
       marginBottom: 24,
     },

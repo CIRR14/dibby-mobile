@@ -18,30 +18,19 @@ declare global {
 
 export type RootStackParamList = {
   Root: NavigatorScreenParams<RootTabParamList> | undefined;
-  Modal: undefined;
   NotFound: undefined;
-  Home: undefined;
   Login: undefined;
   CreateProfile: undefined;
   VerifyEmail: undefined;
-  PrintPDF: { tripId: string };
-  ViewTrip: { tripName: string; tripId: string };
-  ViewTravelers: { tripName: string; tripId: string };
-  CreateTrip: undefined;
-  Profile: undefined;
-  ViewExpense: {
-    tripName: string;
-    tripId: string;
-    expenseId: string;
-  };
 };
 
 export type RootStackScreenProps<Screen extends keyof RootStackParamList> =
   NativeStackScreenProps<RootStackParamList, Screen>;
 
 export type RootTabParamList = {
-  TabOne: undefined;
-  TabTwo: undefined;
+  TripsTab: NavigatorScreenParams<TripsStackParamList> | undefined;
+  AddAction: undefined;
+  ProfileTab: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 
 export type RootTabScreenProps<Screen extends keyof RootTabParamList> =
@@ -49,3 +38,36 @@ export type RootTabScreenProps<Screen extends keyof RootTabParamList> =
     BottomTabScreenProps<RootTabParamList, Screen>,
     NativeStackScreenProps<RootStackParamList>
   >;
+
+export type TripsStackParamList = {
+  Home: undefined;
+  ViewTrip: {
+    tripName: string;
+    tripId: string;
+    openAddExpense?: boolean | number | string;
+  };
+  ViewExpense: {
+    tripName: string;
+    tripId: string;
+    expenseId: string;
+  };
+  CreateTrip: undefined;
+  PrintPDF: { tripId: string };
+};
+
+export type ProfileStackParamList = {
+  Profile: undefined;
+};
+
+export type TripsStackScreenProps<Screen extends keyof TripsStackParamList> =
+  CompositeScreenProps<
+    NativeStackScreenProps<TripsStackParamList, Screen>,
+    NativeStackScreenProps<RootStackParamList>
+  >;
+
+export type ProfileStackScreenProps<
+  Screen extends keyof ProfileStackParamList
+> = CompositeScreenProps<
+  NativeStackScreenProps<ProfileStackParamList, Screen>,
+  NativeStackScreenProps<RootStackParamList>
+>;

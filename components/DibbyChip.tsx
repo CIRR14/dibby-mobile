@@ -1,11 +1,11 @@
-import { faCircleXmark, faRemove } from "@fortawesome/free-solid-svg-icons";
+import { faCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { useTheme } from "@react-navigation/native";
-import { Chip } from "@rneui/themed";
 import React from "react";
-import { TAutocompleteDropdownItem } from "react-native-autocomplete-dropdown";
-import { ColorTheme } from "../constants/Colors";
 import { DibbyParticipant } from "../constants/DibbyTypes";
+import NeumoPressable from "./NeumoPressable";
+import { NeumoTokens } from "../constants/Neumo";
+import { StyleSheet, Text, View } from "react-native";
+import useAppTheme from "../hooks/useAppTheme";
 
 interface IDibbyChipProps {
   item: DibbyParticipant;
@@ -18,43 +18,66 @@ export const DibbyChip: React.FC<IDibbyChipProps> = ({
   onRemove,
   disabled,
 }) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
+  const styles = makeStyles(colors);
+  const isGuest = Boolean((item as any).createdUser);
 
   return (
-    <Chip
-      type={(item as any).createdUser ? "solid" : "outline"}
+    <NeumoPressable
       onPress={() => onRemove(item)}
-      titleStyle={{
-        color: colors.background.text,
-      }}
-      buttonStyle={{
-        borderColor: (item as any).createdUser
-          ? colors.success.button
-          : colors.background.text,
-        backgroundColor: (item as any).createdUser
-          ? colors.success.button
-          : "transparent",
-      }}
-      disabledTitleStyle={{ color: colors.background.text }}
-      disabledStyle={{ borderColor: colors.background.text }}
-      iconRight
-      title={`${!item.createdUser ? "@" : ""} ${
-        item.createdUser ? item.name : item.username
-      }`}
-      icon={
-        disabled ? (
-          <></>
-        ) : (
+      disabled={disabled}
+      variant={isGuest ? "raised" : "inset"}
+      tone={isGuest ? "success" : "surface"}
+      radius={NeumoTokens.radius.pill}
+      padding={NeumoTokens.spacing.sm}
+      style={{ paddingHorizontal: NeumoTokens.spacing.md }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Text
+          style={[
+            styles.label,
+            { color: isGuest ? colors.success.text : colors.textPrimary },
+          ]}
+        >
+          {`${!item.createdUser ? "@" : ""} ${
+            item.createdUser ? item.name : item.username
+          }`}
+        </Text>
+        {isGuest && (
+          <View style={styles.guestBadge}>
+            <Text style={styles.guestBadgeText}>Guest</Text>
+          </View>
+        )}
+        {!disabled && (
           <FontAwesomeIcon
             icon={faCircleXmark}
             style={{
               color: colors.danger.button,
-              marginLeft: 8,
             }}
           />
-        )
-      }
-      disabled={disabled}
-    />
+        )}
+      </View>
+    </NeumoPressable>
   );
 };
+
+const makeStyles = (colors: any) =>
+  StyleSheet.create({
+    label: {
+      fontWeight: "500",
+      fontSize: 13,
+    },
+    guestBadge: {
+      backgroundColor: colors.success.background,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 999,
+    },
+    guestBadgeText: {
+      color: colors.success.text,
+      fontSize: 10,
+      fontWeight: "600",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+  });

@@ -2,33 +2,31 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
-import { useNavigation, useTheme } from "@react-navigation/native";
-import { ColorTheme, ThemeColors } from "../constants/Colors";
+import { useNavigation } from "@react-navigation/native";
+import { ThemeColors } from "../constants/Colors";
 import { useUser } from "../hooks/useUser";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import DibbyButton from "../components/DibbyButton";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { DibbyParticipant, DibbyTrip } from "../constants/DibbyTypes";
 import { addDibbyParticipant } from "../helpers/FirebaseHelpers";
 import { DibbySearchUsername } from "../components/DibbySearchUsername";
-import { changeOpacity } from "../helpers/GenerateColor";
-import {
-  linearGradientEnd,
-  linearGradientStart,
-} from "../constants/DeviceWidth";
+import NeumoSurface from "../components/NeumoSurface";
+import { NeumoTokens } from "../constants/Neumo";
+import { Typography } from "../constants/Typography";
+import useAppTheme from "../hooks/useAppTheme";
 
 const ViewTravelers = ({ route }: any) => {
-  const { colors } = useTheme() as unknown as ColorTheme;
+  const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId } = route.params;
   const { dibbyUser } = useUser();
   const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
-    []
+    [],
   );
 
   useEffect(() => {
@@ -56,10 +54,7 @@ const ViewTravelers = ({ route }: any) => {
   };
 
   return (
-    <LinearGradient
-      style={styles.topContainer}
-      colors={[...colors.background.gradient]}
-    >
+    <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
           title={`${currentTrip?.title}`}
@@ -73,55 +68,45 @@ const ViewTravelers = ({ route }: any) => {
                 <FontAwesomeIcon
                   icon={faChevronLeft}
                   size={24}
-                  color={colors.background.text}
+                  color={colors.textPrimary}
                 />
               }
             />
           }
         />
 
-        <View
-          style={{
-            marginTop: 16,
-            flexDirection: "row",
-            justifyContent: "flex-start",
-            alignItems: "center",
-            padding: 10,
-            borderRadius: 10,
-            flexWrap: "wrap",
-          }}
+        <NeumoSurface
+          variant="raised"
+          tone="surface"
+          radius={NeumoTokens.radius.lg}
+          style={styles.sectionCard}
         >
-          {currentTrip?.participants.map((t) => {
-            return (
-              <LinearGradient
-                key={t.uid}
-                style={{
-                  margin: 8,
-                  borderRadius: 20,
-                  backgroundColor: colors.background.default,
-                  padding: 10,
-                  alignItems: "flex-start",
-                  flexDirection: "column",
-                  minWidth: 120,
-                }}
-                colors={[changeOpacity(t.color, 0.7), t.color]}
-                start={linearGradientStart}
-                end={linearGradientEnd}
-              >
-                <Text
-                  style={{
-                    color: colors.background.text,
-                    fontSize: 16,
-                  }}
+          <Text style={styles.sectionTitle}>Travelers</Text>
+          <View style={styles.travelerList}>
+            {currentTrip?.participants.map((t) => {
+              return (
+                <NeumoSurface
+                  key={t.uid}
+                  variant="raised"
+                  tone="surface"
+                  radius={NeumoTokens.radius.pill}
+                  padding={NeumoTokens.spacing.sm}
+                  style={styles.travelerChip}
                 >
-                  {t.name}
-                </Text>
-              </LinearGradient>
-            );
-          })}
-        </View>
+                  <Text style={styles.travelerName}>{t.name}</Text>
+                </NeumoSurface>
+              );
+            })}
+          </View>
+        </NeumoSurface>
 
-        <View style={styles.formContainer}>
+        <NeumoSurface
+          variant="raised"
+          tone="surface"
+          radius={NeumoTokens.radius.lg}
+          style={styles.sectionCard}
+        >
+          <Text style={styles.sectionTitle}>Add traveler</Text>
           <DibbySearchUsername
             results={(res) => setSelectedResults(res)}
             currentTrip={currentTrip}
@@ -131,10 +116,11 @@ const ViewTravelers = ({ route }: any) => {
             disabled={selectedResults.length < 1}
             title={`Add traveler to ${currentTrip?.title}`}
             onPress={onSubmit}
+            fullWidth
           />
-        </View>
+        </NeumoSurface>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -144,26 +130,28 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     topContainer: {
       flex: 1,
+      backgroundColor: colors.background.default,
     },
-    title: {
-      fontSize: 20,
-      color: colors.background.text,
-      textTransform: "capitalize",
-    },
-    input: {
-      backgroundColor: colors.disabled?.button,
-      color: colors.disabled?.text,
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 12,
-      marginBottom: 16,
-      marginHorizontal: 8,
-    },
-    errorText: {
-      color: colors.danger.background,
-      marginTop: 8,
-    },
-    formContainer: {
+    sectionCard: {
       marginHorizontal: 16,
+      marginTop: 16,
+      gap: 12,
+    },
+    sectionTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    travelerList: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+    },
+    travelerChip: {
+      backgroundColor: colors.surfaceAlt,
+    },
+    travelerName: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.sm,
     },
   });
