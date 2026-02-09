@@ -8,6 +8,7 @@ interface DibbyDoc {
     dateCreated: Timestamp;
     dateUpdated: Timestamp;
     perPersonAverage: number;
+    emoji?: string | null;
 }
 
 interface DibbyDocWithID extends DibbyDoc {

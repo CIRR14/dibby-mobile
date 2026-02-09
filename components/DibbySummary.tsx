@@ -37,7 +37,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
   const sortedBalances = [...currentTrip.participants].sort(
     (a, b) => Math.abs(b.owed) - Math.abs(a.owed),
   );
-  const transactions = calculatedTrip.transactions.slice(0, 4);
+  const transactions = calculatedTrip.transactions;
   const expenseCount = currentTrip.expenses.length;
   const openBalances = currentTrip.participants.filter(
     (t) => !inRange(t.owed, -0.01, 0.01),

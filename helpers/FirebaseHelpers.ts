@@ -7,6 +7,106 @@ import { assignUniqueParticipantColors } from "./GenerateColor";
 import { CreateExpenseForm } from "../components/CreateExpense";
 import { v4 } from "uuid";
 
+const chunkArray = <T>(items: T[], size = 10): T[][] => {
+  if (!items.length) {
+    return [];
+  }
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+};
+
+const anonymizeParticipant = (
+  participant: DibbyParticipant,
+  label = "Deleted user"
+): DibbyParticipant => ({
+  ...participant,
+  name: label,
+  username: null,
+  photoURL: null,
+  createdUser: true,
+});
+
+const anonymizeSplits = (
+  splits: DibbySplits[],
+  userId: string,
+  label = "Deleted user"
+): DibbySplits[] =>
+  splits.map((split) =>
+    split.uid === userId ? { ...split, name: label } : split
+  );
+
+const resolveNewTripOwner = (trip: DibbyTrip, userId: string) => {
+  if (trip.createdBy !== userId) {
+    return trip.createdBy;
+  }
+  const replacement = trip.participants.find(
+    (p) => p.uid !== userId && !p.createdUser
+  );
+  return replacement?.uid || trip.createdBy;
+};
+
+export const deleteDibbyUserData = async (
+  dibbyUser: DibbyUser
+): Promise<void> => {
+  const userId = dibbyUser.uid;
+
+  if (dibbyUser.trips?.length) {
+    const tripChunks = chunkArray(dibbyUser.trips);
+    for (const chunk of tripChunks) {
+      const tripQuery = query(
+        collection(db, "trips"),
+        where(documentId(), "in", chunk)
+      );
+      const tripSnapshot = await getDocs(tripQuery);
+      const updates = tripSnapshot.docs.map(async (tripDoc) => {
+        const trip = tripDoc.data() as DibbyTrip;
+        const updatedParticipants = trip.participants.map((participant) =>
+          participant.uid === userId
+            ? anonymizeParticipant(participant)
+            : participant
+        );
+        const updatedExpenses = trip.expenses.map((expense) => ({
+          ...expense,
+          peopleInExpense: anonymizeSplits(expense.peopleInExpense, userId),
+        }));
+        const updatedTrip = {
+          ...trip,
+          participants: updatedParticipants,
+          expenses: updatedExpenses,
+          createdBy: resolveNewTripOwner(trip, userId),
+          dateUpdated: Timestamp.now(),
+        };
+        await updateDoc(tripDoc.ref, updatedTrip);
+      });
+      await Promise.all(updates);
+    }
+  }
+
+  if (dibbyUser.friends?.length) {
+    const friendChunks = chunkArray(dibbyUser.friends.map((f) => f.uid));
+    for (const chunk of friendChunks) {
+      const friendQuery = query(
+        collection(db, "users"),
+        where(documentId(), "in", chunk)
+      );
+      const friendSnapshot = await getDocs(friendQuery);
+      const updates = friendSnapshot.docs.map(async (friendDoc) => {
+        const friend = friendDoc.data() as DibbyUser;
+        const updatedFriends = friend.friends.filter(
+          (f) => f.uid !== userId
+        );
+        await updateDoc(friendDoc.ref, { friends: updatedFriends });
+      });
+      await Promise.all(updates);
+    }
+  }
+
+  await deleteDoc(doc(db, "users", userId));
+};
+
   export const createDibbyUser = async (user: User, username: string, displayName: string, photoURL: string | null, userColor: string): Promise<void> => {
     const { uid, email } = user;
     const dibbyUser: DibbyUser = {
@@ -120,6 +220,7 @@ import { v4 } from "uuid";
       paidBy: formData.paidBy,
       splitMethod: formData.splitMethod,
       peopleInExpense,
+      emoji: formData.emoji || null,
     }
     const newTripData = {
       ...trip,

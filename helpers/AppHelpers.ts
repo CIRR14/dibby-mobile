@@ -100,3 +100,18 @@ export const normalizePhotoURL = (
   }
   return url;
 };
+
+export const formatTitleWithEmoji = (
+  title?: string | null,
+  emoji?: string | null
+): string => {
+  const safeTitle = title?.trim() || "";
+  const safeEmoji = emoji?.trim() || "";
+  if (!safeEmoji) {
+    return safeTitle;
+  }
+  if (!safeTitle) {
+    return safeEmoji;
+  }
+  return `${safeEmoji} ${safeTitle}`;
+};

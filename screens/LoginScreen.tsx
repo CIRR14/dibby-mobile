@@ -308,7 +308,6 @@ const LoginScreen = () => {
             onPress={handleForgotPassword}
           />
         </View>
-        <DibbyVersion bottom={30} />
       </KeyboardAvoidingView>
       {loading && <DibbyLoading />}
     </View>

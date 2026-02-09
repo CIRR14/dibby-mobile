@@ -27,7 +27,11 @@ import {
   getDibbySplitMethodString,
   timestampToString,
 } from "../helpers/TypeHelpers";
-import { getTravelerFromId, numberWithCommas } from "../helpers/AppHelpers";
+import {
+  formatTitleWithEmoji,
+  getTravelerFromId,
+  numberWithCommas,
+} from "../helpers/AppHelpers";
 import DibbyAvatars from "./DibbyAvatars";
 import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
@@ -65,10 +69,14 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
   );
   const [actionsOpen, setActionsOpen] = useState<boolean>(false);
   const hasActions = Boolean(onDeleteItem || onCompleteItem || trip || expense);
+  const displayTitle = formatTitleWithEmoji(
+    (expense || trip)?.title,
+    (expense || trip)?.emoji,
+  );
 
   const handleShare = async () => {
     try {
-      const title = trip?.title || expense?.title || "Dibby";
+      const title = displayTitle || "Dibby";
       const detail = trip
         ? `Trip total: $${numberWithCommas(trip.amount?.toString() || "0")}`
         : expense
@@ -127,17 +135,17 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
     >
       <TouchableOpacity style={styles.card} onPress={onPress}>
         <View style={styles.cardContent}>
-          <View style={styles.cardTextContainer}>
-            <View style={styles.headerRow}>
-              <Text style={[styles.text, styles.caption]}>
-                {timestampToString((expense || trip)?.dateCreated)}
-              </Text>
+          <View style={styles.headerRow}>
+            <Text style={[styles.text, styles.caption]}>
+              {timestampToString((expense || trip)?.dateCreated)}
+            </Text>
+            <View style={styles.headerActions}>
               {completed && (
                 <NeumoSurface
-                  variant="inset"
+                  variant="flat"
                   tone="surface"
                   radius={NeumoTokens.radius.pill}
-                  padding={0}
+                  padding={2}
                   style={styles.statusPill}
                 >
                   <View style={styles.statusContent}>
@@ -150,85 +158,85 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
                   </View>
                 </NeumoSurface>
               )}
+              {hasActions && (
+                <NeumoPressable
+                  onPress={() => setActionsOpen((prev) => !prev)}
+                  variant="flat"
+                  tone="base"
+                  radius={NeumoTokens.radius.pill}
+                  padding={6}
+                  style={styles.moreButtonInner}
+                >
+                  <FontAwesomeIcon
+                    icon={faEllipsis}
+                    size={14}
+                    color={colors.textSecondary}
+                  />
+                </NeumoPressable>
+              )}
             </View>
-
-            <Text style={[styles.text, styles.title]}>
-              {(expense || trip)?.title}
-            </Text>
-            <Text
-              style={[
-                styles.text,
-                styles.subtitle,
-                {
-                  color:
-                    trip ||
-                    (expense && ((expense || trip)?.amount as number) > 0)
-                      ? colors.info.background
-                      : colors.danger.card,
-                },
-              ]}
-            >
-              {expense && trip && (expense.amount as number) > 0
-                ? `Total Cost: $${numberWithCommas(expense?.amount.toString())}`
-                : !expense && trip && trip.amount > 0
-                  ? `Total Cost: $${numberWithCommas(trip?.amount.toString())}`
-                  : expense && trip
-                    ? "No cost yet!"
-                    : `No expenses yet!`}
-            </Text>
           </View>
 
-          {trip &&
-            (expense ? (
-              <View
-                style={{
-                  justifyContent: "space-between",
-                  alignItems: "flex-end",
-                  marginBottom: 12,
-                }}
+          <View style={styles.bodyRow}>
+            <View style={styles.cardTextContainer}>
+              <Text style={[styles.text, styles.title]}>
+                {displayTitle}
+              </Text>
+              <Text
+                style={[
+                  styles.text,
+                  styles.subtitle,
+                  {
+                    color:
+                      trip ||
+                      (expense && ((expense || trip)?.amount as number) > 0)
+                        ? colors.info.background
+                        : colors.danger.card,
+                  },
+                ]}
               >
-                <DibbyAvatars
-                  expense={expense}
-                  onPress={onPress}
-                  travelers={getAvatarArray(
-                    expense.peopleInExpense,
-                    expense.paidBy,
-                  )}
-                />
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <Text
-                    style={{
-                      color: colors.textSecondary,
-                      fontSize: Typography.size.sm,
-                    }}
-                  >
-                    {getDibbySplitMethodString(expense.splitMethod)}
-                  </Text>
+                {expense && trip && (expense.amount as number) > 0
+                  ? `Total Cost: $${numberWithCommas(
+                      expense?.amount.toString(),
+                    )}`
+                  : !expense && trip && trip.amount > 0
+                    ? `Total Cost: $${numberWithCommas(
+                        trip?.amount.toString(),
+                      )}`
+                    : expense && trip
+                      ? "No cost yet!"
+                      : `No expenses yet!`}
+              </Text>
+            </View>
+
+            {trip &&
+              (expense ? (
+                <View style={styles.cardRight}>
+                  <DibbyAvatars
+                    expense={expense}
+                    onPress={onPress}
+                    travelers={getAvatarArray(
+                      expense.peopleInExpense,
+                      expense.paidBy,
+                    )}
+                  />
+                  <View style={styles.splitRow}>
+                    <Text style={styles.splitText}>
+                      {getDibbySplitMethodString(expense.splitMethod)}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ) : (
-              <DibbyAvatars onPress={onPress} travelers={trip.participants} />
-            ))}
+              ) : (
+                <View style={styles.cardRight}>
+                  <DibbyAvatars
+                    onPress={onPress}
+                    travelers={trip.participants}
+                  />
+                </View>
+              ))}
+          </View>
         </View>
       </TouchableOpacity>
-      {hasActions && (
-        <View style={styles.moreButton}>
-          <NeumoPressable
-            onPress={() => setActionsOpen((prev) => !prev)}
-            variant="flat"
-            tone="base"
-            radius={NeumoTokens.radius.pill}
-            padding={6}
-            style={styles.moreButtonInner}
-          >
-            <FontAwesomeIcon
-              icon={faEllipsis}
-              size={14}
-              color={colors.textSecondary}
-            />
-          </NeumoPressable>
-        </View>
-      )}
       {actionsOpen && hasActions && (
         <View style={styles.actionRow}>
           {trip && !expense && onCompleteItem && (
@@ -323,8 +331,14 @@ const makeStyles = (
     },
     cardContent: {
       display: "flex",
-      justifyContent: "space-between",
+      flexDirection: "column",
+      gap: 8,
+    },
+    bodyRow: {
+      display: "flex",
       flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
     },
     cardTextContainer: {
       maxWidth: "70%",
@@ -337,17 +351,29 @@ const makeStyles = (
       justifyContent: "space-between",
       gap: 8,
     },
-    moreButton: {
-      position: "absolute",
-      top: 10,
-      right: 10,
-      zIndex: 10,
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
     },
     moreButtonInner: {
       minWidth: 28,
       minHeight: 28,
       alignItems: "center",
       justifyContent: "center",
+    },
+    cardRight: {
+      alignItems: "flex-end",
+      gap: 8,
+      marginBottom: 6,
+    },
+    splitRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    splitText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
     },
     text: {
       color: colors.textPrimary,

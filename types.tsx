@@ -22,6 +22,8 @@ export type RootStackParamList = {
   Login: undefined;
   CreateProfile: undefined;
   VerifyEmail: undefined;
+  PrivacyPolicy: undefined;
+  AccountDeletion: undefined;
 };
 
 export type RootStackScreenProps<Screen extends keyof RootStackParamList> =

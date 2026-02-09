@@ -6,6 +6,8 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  Modal,
+  Platform,
 } from "react-native";
 import { ThemeColors } from "../constants/Colors";
 import TopBar from "../components/TopBar";
@@ -30,6 +32,12 @@ import {
   DibbyUser,
 } from "../constants/DibbyTypes";
 import { db } from "../firebase";
+import {
+  appleProvider,
+  auth,
+  facebookProvider,
+  googleProvider,
+} from "../firebase";
 import DibbyLoading from "../components/DibbyLoading";
 import { numberWithCommas } from "../helpers/AppHelpers";
 import { DibbyProfileCard } from "../components/DibbyProfileCard";
@@ -37,19 +45,32 @@ import { timestampToString } from "../helpers/TypeHelpers";
 import { DibbySearchUsername } from "../components/DibbySearchUsername";
 import {
   addDibbyFriends,
+  deleteDibbyUserData,
   onAcceptDibbyFriend,
   onRejectDibbyFriend,
 } from "../helpers/FirebaseHelpers";
 import NeumoSurface from "../components/NeumoSurface";
+import NeumoPressable from "../components/NeumoPressable";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import StatsSection from "../components/StatsSection";
 import { buildProfileStats, pickStats } from "../helpers/StatsHelpers";
+import { useNavigation } from "@react-navigation/native";
+import DibbyInput from "../components/DibbyInput";
+import { useTheme } from "../context/ThemeContext";
+import {
+  deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+} from "firebase/auth";
 
 export const Profile = () => {
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
+  const navigation = useNavigation<any>();
+  const { themeMode, setThemeMode } = useTheme();
   const { dibbyUser } = useUser();
   const [tripsInvolvedIn, setTripsInvolvedIn] = useState<DibbyTrip[]>();
   const [currentFriends, setCurrentFriends] = useState<DibbyUser[]>();
@@ -58,6 +79,9 @@ export const Profile = () => {
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
     [],
   );
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const profileStats = useMemo(
     () =>
       buildProfileStats(
@@ -77,6 +101,93 @@ export const Profile = () => {
       ]),
     [profileStats],
   );
+  const hasPasswordProvider = Boolean(
+    auth.currentUser?.providerData?.some((p) => p.providerId === "password"),
+  );
+
+  const resetDeleteState = () => {
+    setDeleteError(null);
+    setDeletePassword("");
+  };
+
+  const openDeleteModal = () => {
+    resetDeleteState();
+    setDeleteModalVisible(true);
+  };
+
+  const reauthenticateUser = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("No authenticated user.");
+    }
+    if (hasPasswordProvider) {
+      if (!deletePassword || !user.email) {
+        setDeleteError("Enter your password to continue.");
+        return false;
+      }
+      const credential = EmailAuthProvider.credential(
+        user.email,
+        deletePassword,
+      );
+      await reauthenticateWithCredential(user, credential);
+      return true;
+    }
+
+    if (Platform.OS === "web") {
+      const providerId =
+        user.providerData.find((p) => p.providerId !== "password")
+          ?.providerId || "";
+      const provider =
+        providerId === "google.com"
+          ? googleProvider
+          : providerId === "facebook.com"
+            ? facebookProvider
+            : providerId === "apple.com"
+              ? appleProvider
+              : null;
+
+      if (provider) {
+        await reauthenticateWithPopup(user, provider);
+        return true;
+      }
+    }
+
+    setDeleteError("Please log out and log back in, then try deleting again.");
+    return false;
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!dibbyUser || !auth.currentUser) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const reauthed = await reauthenticateUser();
+      if (!reauthed) {
+        setLoading(false);
+        return;
+      }
+      await deleteDibbyUserData(dibbyUser);
+      await deleteUser(auth.currentUser);
+      setDeleteModalVisible(false);
+      resetDeleteState();
+      setLoading(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    } catch (err: any) {
+      setLoading(false);
+      if (err?.code === "auth/requires-recent-login") {
+        setDeleteError(
+          "Please log out and log back in, then try deleting again.",
+        );
+        return;
+      }
+      setDeleteError("Unable to delete account right now. Try again later.");
+      console.log(err);
+    }
+  };
 
   useEffect(() => {
     const tripsExist = dibbyUser?.trips.length && dibbyUser?.trips.length > 0;
@@ -263,37 +374,6 @@ export const Profile = () => {
                 radius={NeumoTokens.radius.lg}
                 style={styles.sectionCard}
               >
-                <Text style={styles.sectionTitle}>Trips involved in</Text>
-                <ScrollView
-                  horizontal
-                  contentContainerStyle={{
-                    gap: 16,
-                    width: "100%",
-                  }}
-                >
-                  {tripsInvolvedIn?.map((t) => {
-                    return (
-                      <DibbyProfileCard
-                        key={t.id}
-                        title={t.title}
-                        subtitle={[
-                          `Total: $${t.amount.toString()}`,
-                          `Paid: $${t.expenses.reduce((acc, e) => {
-                            const usersSpent = e.peopleInExpense.find(
-                              (ue) => ue.uid === dibbyUser.uid,
-                            )?.amount;
-                            return acc + +(usersSpent || 0);
-                          }, 0)}`,
-                          t.description,
-                          timestampToString(t.dateCreated),
-                          `Per person Avg: $${numberWithCommas(
-                            t.perPersonAverage.toString(),
-                          )}`,
-                        ]}
-                      />
-                    );
-                  })}
-                </ScrollView>
                 <View style={styles.statsWrap}>
                   <StatsSection
                     title="Your stats"
@@ -304,8 +384,126 @@ export const Profile = () => {
                   />
                 </View>
               </NeumoSurface>
+
+              <NeumoSurface
+                variant="raised"
+                tone="surface"
+                radius={NeumoTokens.radius.lg}
+                style={styles.sectionCard}
+              >
+                <Text style={styles.sectionTitle}>Account</Text>
+                <View style={styles.themeBlock}>
+                  <Text style={styles.sectionSubtitle}>Theme</Text>
+                  <NeumoSurface
+                    variant="inset"
+                    tone="surface"
+                    radius={NeumoTokens.radius.pill}
+                    padding={6}
+                    style={styles.themeToggle}
+                  >
+                    <View style={styles.themeToggleRow}>
+                      <NeumoPressable
+                        variant={themeMode === "light" ? "raised" : "flat"}
+                        tone="surface"
+                        onPress={() => setThemeMode("light")}
+                        radius={NeumoTokens.radius.pill}
+                        padding={8}
+                        containerStyle={styles.themeToggleButton}
+                        style={styles.themeToggleButtonSurface}
+                      >
+                        <Text
+                          style={[
+                            styles.themeToggleText,
+                            themeMode === "light" &&
+                              styles.themeToggleTextActive,
+                          ]}
+                        >
+                          Light
+                        </Text>
+                      </NeumoPressable>
+                      <NeumoPressable
+                        variant={themeMode === "dark" ? "raised" : "flat"}
+                        tone="surface"
+                        onPress={() => setThemeMode("dark")}
+                        radius={NeumoTokens.radius.pill}
+                        padding={8}
+                        containerStyle={styles.themeToggleButton}
+                        style={styles.themeToggleButtonSurface}
+                      >
+                        <Text
+                          style={[
+                            styles.themeToggleText,
+                            themeMode === "dark" && styles.themeToggleTextActive,
+                          ]}
+                        >
+                          Dark
+                        </Text>
+                      </NeumoPressable>
+                    </View>
+                  </NeumoSurface>
+                </View>
+                <DibbyButton
+                  title="Privacy policy"
+                  type="clear"
+                  onPress={() => navigation.navigate("PrivacyPolicy")}
+                />
+                <DibbyButton
+                  title="Account deletion info"
+                  type="clear"
+                  onPress={() => navigation.navigate("AccountDeletion")}
+                />
+                <DibbyButton
+                  type={"danger"}
+                  title="Delete account"
+                  onPress={openDeleteModal}
+                />
+              </NeumoSurface>
             </View>
           )}
+          <Modal
+            transparent
+            visible={deleteModalVisible}
+            animationType="fade"
+            onRequestClose={() => setDeleteModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <NeumoSurface
+                variant="raised"
+                tone="surface"
+                radius={NeumoTokens.radius.lg}
+                style={styles.modalCard}
+              >
+                <Text style={styles.modalTitle}>Delete your account?</Text>
+                <Text style={styles.modalText}>
+                  This permanently removes your profile data and anonymizes your
+                  participation in shared trips. This action cannot be undone.
+                </Text>
+                {hasPasswordProvider && (
+                  <DibbyInput
+                    placeholder="Password"
+                    secureTextEntry
+                    value={deletePassword}
+                    onChangeText={setDeletePassword}
+                  />
+                )}
+                {deleteError && (
+                  <Text style={styles.modalError}>{deleteError}</Text>
+                )}
+                <View style={styles.modalActions}>
+                  <DibbyButton
+                    title="Cancel"
+                    type="clear"
+                    onPress={() => setDeleteModalVisible(false)}
+                  />
+                  <DibbyButton
+                    title="Delete account"
+                    onPress={confirmDeleteAccount}
+                    type="danger"
+                  />
+                </View>
+              </NeumoSurface>
+            </View>
+          </Modal>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -338,7 +536,69 @@ const makeStyles = (colors: ThemeColors) =>
       fontSize: Typography.size.md,
       fontWeight: Typography.weight.semibold as any,
     },
+    sectionSubtitle: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.medium as any,
+    },
     statsWrap: {
       marginTop: 8,
+    },
+    themeBlock: {
+      gap: 8,
+    },
+    themeToggle: {
+      width: "100%",
+    },
+    themeToggleRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    themeToggleButton: {
+      flex: 1,
+    },
+    themeToggleButtonSurface: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    themeToggleText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    themeToggleTextActive: {
+      color: colors.textPrimary,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.35)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    },
+    modalCard: {
+      width: "100%",
+      maxWidth: 420,
+      gap: 12,
+      ...(Platform.OS === "web" ? { boxShadow: "none" } : {}),
+    },
+    modalTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.lg,
+      fontWeight: Typography.weight.bold as any,
+    },
+    modalText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      lineHeight: 20,
+    },
+    modalError: {
+      color: colors.danger.button,
+      fontSize: Typography.size.sm,
+    },
+    modalActions: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 12,
     },
   });

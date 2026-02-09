@@ -1,5 +1,5 @@
 import { ColorSchemeName } from "react-native";
-import useColorScheme from "./useColorScheme";
+import { useTheme } from "../context/ThemeContext";
 import {
   blushDarkTheme,
   blushLightTheme,
@@ -33,7 +33,7 @@ export const getAppTheme = (
 };
 
 const useAppTheme = (variant: AppThemeVariant = "default"): ThemeColors => {
-  const scheme = useColorScheme();
+  const { scheme } = useTheme();
   return getAppTheme(scheme, variant);
 };
 

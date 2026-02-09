@@ -15,6 +15,7 @@ interface IButtonProps {
   disabled?: boolean;
   add?: boolean;
   fullWidth?: boolean;
+  size?: "sm" | "md" | "lg";
 }
 
 const DibbyButton: React.FC<IButtonProps> = ({
@@ -24,9 +25,34 @@ const DibbyButton: React.FC<IButtonProps> = ({
   disabled,
   add,
   fullWidth = false,
+  size = "md",
 }) => {
   const colors = useAppTheme();
-  const styles = makeStyles(colors as unknown as ThemeColors, type, fullWidth);
+  const sizeConfig = {
+    sm: {
+      padding: NeumoTokens.spacing.xs,
+      minHeight: 24,
+      fontSize: Typography.size.sm,
+    },
+    md: {
+      padding: NeumoTokens.spacing.sm,
+      minHeight: 24,
+      fontSize: Typography.size.md,
+    },
+    lg: {
+      padding: NeumoTokens.spacing.md,
+      minHeight: 28,
+      fontSize: Typography.size.md,
+    },
+  } as const;
+  const resolvedSize = sizeConfig[size];
+  const styles = makeStyles(
+    colors as unknown as ThemeColors,
+    type,
+    fullWidth,
+    resolvedSize.minHeight,
+    resolvedSize.fontSize,
+  );
   const tone =
     type === "danger"
       ? "danger"
@@ -57,7 +83,7 @@ const DibbyButton: React.FC<IButtonProps> = ({
       gradient={useGradient}
       gradientColors={gradientColors}
       radius={add ? NeumoTokens.radius.lg : NeumoTokens.radius.md}
-      padding={add ? NeumoTokens.spacing.sm : NeumoTokens.spacing.md}
+      padding={add ? NeumoTokens.spacing.sm : resolvedSize.padding}
       style={[
         add ? styles.addButton : styles.button,
         disabled ? styles.buttonDisabled : null,
@@ -95,6 +121,8 @@ const makeStyles = (
   colors: ThemeColors,
   type: "solid" | "clear" | "outline" | "danger",
   fullWidth?: boolean,
+  minHeight = 40,
+  fontSize = Typography.size.md,
 ) =>
   StyleSheet.create({
     buttonContainer: {
@@ -108,21 +136,17 @@ const makeStyles = (
       zIndex: 2000,
       paddingHorizontal: 16,
     },
-    addButton: {
-      backgroundColor: colors.surface,
-    },
-    button: {
-      backgroundColor: type === "clear" ? "transparent" : colors.surface,
-    },
+    addButton: {},
+    button: {},
     content: {
       alignItems: "center",
       justifyContent: "center",
-      minHeight: 44,
+      minHeight,
     },
     buttonText: {
       color: type === "clear" ? colors.accent : colors.textPrimary,
       fontWeight: Typography.weight.semibold as any,
-      fontSize: Typography.size.md,
+      fontSize,
       textTransform: "uppercase",
     },
     buttonDisabled: {

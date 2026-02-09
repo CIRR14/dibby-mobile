@@ -17,6 +17,7 @@ import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
+import { formatTitleWithEmoji } from "../helpers/AppHelpers";
 
 const ViewTravelers = ({ route }: any) => {
   const colors = useAppTheme();
@@ -25,6 +26,10 @@ const ViewTravelers = ({ route }: any) => {
   const { tripName, tripId } = route.params;
   const { dibbyUser } = useUser();
   const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
+  const tripTitle = formatTitleWithEmoji(
+    currentTrip?.title || tripName,
+    currentTrip?.emoji,
+  );
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
     [],
   );
@@ -57,7 +62,7 @@ const ViewTravelers = ({ route }: any) => {
     <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
-          title={`${currentTrip?.title}`}
+          title={tripTitle}
           leftButton={
             <DibbyButton
               type="clear"
@@ -114,7 +119,7 @@ const ViewTravelers = ({ route }: any) => {
 
           <DibbyButton
             disabled={selectedResults.length < 1}
-            title={`Add traveler to ${currentTrip?.title}`}
+            title={`Add traveler to ${tripTitle}`}
             onPress={onSubmit}
             fullWidth
           />

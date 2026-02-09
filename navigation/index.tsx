@@ -12,7 +12,7 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as React from "react";
-import { ColorSchemeName, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { CustomDarkTheme, CustomLightTheme } from "../constants/Colors";
 import CreateProfile from "../screens/CreateProfile";
@@ -41,16 +41,16 @@ import NeumoSurface from "../components/NeumoSurface";
 import { useUser } from "../hooks/useUser";
 import DibbyLoading from "../components/DibbyLoading";
 import DibbyVersion from "../components/DibbyVersion";
+import PrivacyPolicy from "../screens/PrivacyPolicy";
+import AccountDeletion from "../screens/AccountDeletion";
+import { useTheme } from "../context/ThemeContext";
 
-export default function Navigation({
-  colorScheme,
-}: {
-  colorScheme: ColorSchemeName;
-}) {
+export default function Navigation() {
+  const { scheme } = useTheme();
   return (
     <NavigationContainer
       linking={LinkingConfiguration}
-      theme={colorScheme === "dark" ? CustomDarkTheme : CustomLightTheme}
+      theme={scheme === "dark" ? CustomDarkTheme : CustomLightTheme}
       fallback={<Text>Loading...</Text>}
     >
       <RootNavigator />
@@ -139,6 +139,16 @@ function RootNavigator() {
           />
         </>
       )}
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicy}
+        options={{ headerShown: false, title: "Privacy Policy" }}
+      />
+      <Stack.Screen
+        name="AccountDeletion"
+        component={AccountDeletion}
+        options={{ headerShown: false, title: "Delete Account" }}
+      />
     </Stack.Navigator>
   );
 }

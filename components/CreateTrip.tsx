@@ -35,11 +35,13 @@ import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import { assignUniqueParticipantColors } from "../helpers/GenerateColor";
+import EmojiSelector from "./EmojiSelector";
 
 export interface DibbyTripFormValues {
   title: string;
   description: string;
   participants: DibbyParticipant[];
+  emoji?: string | null;
 }
 
 const CreateTrip = () => {
@@ -57,13 +59,15 @@ const CreateTrip = () => {
     title: "",
     description: "",
     participants: [],
+    emoji: "",
   };
 
-  const { handleSubmit, formState, control, reset } = useForm({
+  const { handleSubmit, formState, control, reset, setValue, watch } = useForm({
     mode: "onBlur",
     reValidateMode: "onChange",
     defaultValues: initialValues,
   });
+  const selectedEmoji = watch("emoji");
 
   const onSubmit = async (data: DibbyTripFormValues) => {
     if (dibbyUser) {
@@ -84,6 +88,7 @@ const CreateTrip = () => {
         dateUpdated: Timestamp.now(),
         participants: participantsWithColors,
         createdBy: dibbyUser.uid,
+        emoji: data.emoji || null,
       };
 
       const usersToAddTripTo = participantsWithColors.filter(
@@ -136,22 +141,32 @@ const CreateTrip = () => {
               style={styles.sectionCard}
             >
               <Text style={styles.sectionTitle}>Trip details</Text>
-              <Controller
-                control={control}
-                name="title"
-                rules={{
-                  required: true,
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <DibbyInput
-                    placeholder="Name of Trip"
-                    onBlur={onBlur}
-                    onChangeText={onChange}
-                    value={value}
-                    clearButtonMode="always"
+              <View style={styles.titleRow}>
+                <EmojiSelector
+                  value={selectedEmoji}
+                  onChange={(emoji) => setValue("emoji", emoji || "")}
+                  label="Trip emoji"
+                  size={46}
+                />
+                <View style={styles.titleInput}>
+                  <Controller
+                    control={control}
+                    name="title"
+                    rules={{
+                      required: true,
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <DibbyInput
+                        placeholder="Name of Trip"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                        clearButtonMode="always"
+                      />
+                    )}
                   />
-                )}
-              />
+                </View>
+              </View>
               <Text style={styles.helperText}>
                 Trip name helps everyone recognize it.
               </Text>
@@ -221,6 +236,14 @@ const makeStyles = (colors: ThemeColors) =>
     sectionCard: {
       marginBottom: 16,
       gap: 12,
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    titleInput: {
+      flex: 1,
     },
     sectionTitle: {
       color: colors.textPrimary,

@@ -72,11 +72,15 @@ const SortFilterBar: React.FC<SortFilterBarProps> = ({
         >
           <View style={styles.selectorContent}>
             <Text style={styles.selectorLabel}>
-              <FontAwesomeIcon icon={faFilterCircleXmark} />
+              <FontAwesomeIcon
+                icon={faFilterCircleXmark}
+                color={colors.textSecondary}
+              />
             </Text>
             <Text style={styles.selectorValue}>{selectedFilterLabel}</Text>
             <Text style={styles.selectorChevron}>
               <FontAwesomeIcon
+                color={colors.textSecondary}
                 icon={openMenu === "filter" ? faCaretUp : faCaretDown}
               />
             </Text>
@@ -95,12 +99,13 @@ const SortFilterBar: React.FC<SortFilterBarProps> = ({
         >
           <View style={styles.selectorContent}>
             <Text style={styles.selectorLabel}>
-              <FontAwesomeIcon icon={faSort} />
+              <FontAwesomeIcon icon={faSort} color={colors.textSecondary} />
             </Text>
             <Text style={styles.selectorValue}>{selectedSortLabel}</Text>
             <Text style={styles.selectorChevron}>
               <FontAwesomeIcon
                 icon={openMenu === "sort" ? faCaretUp : faCaretDown}
+                color={colors.textSecondary}
               />
             </Text>
           </View>

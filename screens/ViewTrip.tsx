@@ -23,7 +23,7 @@ import {
 import { db } from "../firebase";
 import { DibbyCard } from "../components/DibbyCard";
 import CreateExpense from "../components/CreateExpense";
-import { numberWithCommas } from "../helpers/AppHelpers";
+import { formatTitleWithEmoji, numberWithCommas } from "../helpers/AppHelpers";
 import {
   changeOpacity,
   resolveParticipantColor,
@@ -97,6 +97,11 @@ const ViewTrip = ({ route }: any) => {
 
   const [loadingIndicator, setLoadingIndicator] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const tripTitle = useMemo(
+    () =>
+      formatTitleWithEmoji(currentTrip?.title || tripName, currentTrip?.emoji),
+    [currentTrip?.title, currentTrip?.emoji, tripName],
+  );
   const tripStats = useMemo(
     () => (currentTrip ? buildTripStats(currentTrip, dibbyUser?.uid) : []),
     [currentTrip, dibbyUser?.uid],
@@ -105,9 +110,9 @@ const ViewTrip = ({ route }: any) => {
     () =>
       pickStats(tripStats, [
         "trip-total",
-        "trip-open",
+        "trip-avg-expense",
+        "trip-user-spent",
         "trip-expenses",
-        "trip-your-balance",
       ]),
     [tripStats],
   );
@@ -285,7 +290,7 @@ const ViewTrip = ({ route }: any) => {
       >
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.tripTitle}>{currentTrip?.title}</Text>
+            <Text style={styles.tripTitle}>{tripTitle}</Text>
             <Text style={styles.tripMeta}>
               ${numberWithCommas(currentTrip?.amount.toString() || "0")} •{" "}
               {currentTrip?.participants.length || 0} travelers
@@ -404,7 +409,7 @@ const ViewTrip = ({ route }: any) => {
     <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
-          title={`${tripName}`}
+          title={tripTitle}
           leftButton={
             <DibbyButton
               type="clear"
@@ -549,7 +554,7 @@ const ViewTrip = ({ route }: any) => {
                   />
                   <DibbyButton
                     disabled={selectedResults.length < 1}
-                    title={`Add to ${currentTrip?.title}`}
+                    title={`Add to ${tripTitle}`}
                     onPress={addTravelers}
                     fullWidth
                   />

@@ -193,9 +193,9 @@ const HomeScreen = () => {
     () =>
       pickStats(homeStats, [
         "home-trips",
-        "home-active",
-        "home-total",
-        "home-net",
+        "home-total-cost",
+        "home-avg-trip",
+        "home-user-spent",
       ]),
     [homeStats],
   );

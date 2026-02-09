@@ -21,6 +21,7 @@ import "react-native-get-random-values";
 import {
   getInfoFromTravelerId,
   getItemFormatFromTravelerIds,
+  formatTitleWithEmoji,
   numberWithCommas,
 } from "../helpers/AppHelpers";
 import MultiSelect from "react-native-multiple-select";
@@ -37,6 +38,7 @@ import NeumoPressable from "./NeumoPressable";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
+import EmojiSelector from "./EmojiSelector";
 
 interface ICreateExpenseProps {
   currentUser: DibbyUser;
@@ -54,6 +56,7 @@ export interface CreateExpenseForm {
   splitMethod: DibbySplitMethod;
   perPersonAverage: number;
   peopleSplits: DibbySplits[];
+  emoji?: string | null;
 }
 
 const windowWidth = Dimensions.get("window").width;
@@ -83,6 +86,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     createdBy: currentUser.uid,
     splitMethod: DibbySplitMethod.EQUAL_PARTS,
     perPersonAverage: 0,
+    emoji: "",
     peopleSplits: tripInfo
       ? tripInfo.participants.map((t) => ({
           amount: 0,
@@ -114,6 +118,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const peopleInExpense = watch("peopleInExpense");
   const peopleSplits = watch("peopleSplits");
   const paidBy = watch("paidBy");
+  const selectedEmoji = watch("emoji");
   const payerName = tripInfo
     ? getInfoFromTravelerId(tripInfo, paidBy)?.label
     : currentUser.displayName || currentUser.username || "You";
@@ -121,8 +126,8 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     splitMethod === DibbySplitMethod.EQUAL_PARTS
       ? "Everyone pays the same."
       : splitMethod === DibbySplitMethod.PERCENTAGE
-      ? "Split by percentages."
-      : "Split by exact amounts.";
+        ? "Split by percentages."
+        : "Split by exact amounts.";
 
   const getExpenseSplitAmount = useCallback(
     (amount: number): number => {
@@ -138,7 +143,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
         return amount;
       }
     },
-    [splitMethod, expenseAmount, peopleInExpense]
+    [splitMethod, expenseAmount, peopleInExpense],
   );
 
   // const getInputLabel = useCallback(
@@ -152,7 +157,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   useEffect(() => {
     // Checks validity of the form
     const noZeroTravelers: boolean = !peopleSplits.find(
-      (p) => p.amount === 0 || Number.isNaN(p.amount)
+      (p) => p.amount === 0 || Number.isNaN(p.amount),
     );
 
     const getValidityFromSplitMethod = (): boolean => {
@@ -171,7 +176,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
 
           if (!noZeroTravelers) {
             setErrorMessage(
-              `Remove traveler if they are not included in this expense!`
+              `Remove traveler if they are not included in this expense!`,
             );
             return false;
           }
@@ -195,7 +200,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
 
           if (!noZeroTravelers) {
             setErrorMessage(
-              `Remove traveler if they are not included in this expense!`
+              `Remove traveler if they are not included in this expense!`,
             );
             return false;
           }
@@ -210,7 +215,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             return false;
           } else {
             setErrorMessage(
-              `Percentage amounts do not add up to $${+expenseAmount}`
+              `Percentage amounts do not add up to $${+expenseAmount}`,
             );
             return false;
           }
@@ -279,11 +284,11 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
 
   const getSelectText = (
     currentlySelected: string[],
-    key: "label" | "value" | "key" | "color" | "inputLabel"
+    key: "label" | "value" | "key" | "color" | "inputLabel",
   ): string => {
     if (tripInfo) {
       const allLabels = currentlySelected.map(
-        (v) => getInfoFromTravelerId(tripInfo, v)[key]
+        (v) => getInfoFromTravelerId(tripInfo, v)[key],
       );
       return allLabels.join(", ");
     } else {
@@ -300,7 +305,10 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   return (
     <SafeAreaView style={styles.topContainer}>
       <TopBar
-        title={`Add Expense to ${tripInfo?.title}`}
+        title={`Add Expense to ${formatTitleWithEmoji(
+          tripInfo?.title,
+          tripInfo?.emoji,
+        )}`}
         leftButton={
           <DibbyButton
             type="clear"
@@ -325,28 +333,37 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             style={styles.sectionCard}
           >
             <Text style={styles.sectionTitle}>Expense details</Text>
-            <Controller
-              control={control}
-              name="title"
-              rules={{
-                required: true,
-                validate: (value) =>
-                  tripInfo?.expenses.every(
-                    (exp) =>
-                      exp.title.toUpperCase().trim() !==
-                      value.toUpperCase().trim()
-                  ),
-              }}
-              render={({ field: { onChange, onBlur, value } }) => (
-                <DibbyInput
-                  label="Name of Expense"
-                  placeholder="Name of Expense"
-                  onBlur={onBlur}
-                  onChangeText={(val) => onChange(val as string)}
-                  value={value}
+            <View style={styles.titleRow}>
+              <EmojiSelector
+                value={selectedEmoji}
+                onChange={(emoji) => setValue("emoji", emoji || "")}
+                label="Expense emoji"
+                size={46}
+              />
+              <View style={styles.titleInput}>
+                <Controller
+                  control={control}
+                  name="title"
+                  rules={{
+                    required: true,
+                    validate: (value) =>
+                      tripInfo?.expenses.every(
+                        (exp) =>
+                          exp.title.toUpperCase().trim() !==
+                          value.toUpperCase().trim(),
+                      ),
+                  }}
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <DibbyInput
+                      placeholder="Name of Expense"
+                      onBlur={onBlur}
+                      onChangeText={(val) => onChange(val as string)}
+                      value={value}
+                    />
+                  )}
                 />
-              )}
-            />
+              </View>
+            </View>
             {formState.errors.title && (
               <Text style={styles.errorText}>Expense must have a name.</Text>
             )}
@@ -461,10 +478,19 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                 render={({ field: { onChange, onBlur, value } }) => (
                   <MultiSelect
                     items={tripInfo ? tripInfo.participants : []}
+                    styleDropdownMenu={styles.multiSelectDropdown}
                     styleDropdownMenuSubsection={styles.multiSelectSubsection}
-                    textColor={colors.textPrimary}
+                    styleSelectorContainer={styles.multiSelectSelector}
+                    styleTextDropdown={styles.multiSelectText}
+                    styleTextDropdownSelected={styles.multiSelectTextSelected}
+                    styleInputGroup={styles.multiSelectInputGroup}
+                    styleIndicator={styles.multiSelectIndicator}
+                    styleItemsContainer={styles.multiSelectItemsContainer}
                     styleListContainer={styles.multiSelectList}
+                    styleRowList={styles.multiSelectRow}
+                    textColor={colors.textPrimary}
                     searchInputStyle={styles.multiSelectSearch}
+                    searchInputPlaceholderText="Search travelers"
                     uniqueKey={"uid"}
                     onSelectedItemsChange={onChange}
                     onAddItem={onChange}
@@ -472,7 +498,6 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                     selectedItems={value}
                     selectText={getSelectText(value, "label")}
                     displayKey="name"
-                    submitButtonText="Done"
                     selectedItemTextColor={colors.accent}
                     selectedItemIconColor={colors.accent}
                     itemTextColor={colors.textPrimary}
@@ -480,8 +505,12 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                     tagRemoveIconColor={colors.danger.background}
                     tagBorderColor={colors.accent}
                     tagTextColor={colors.accent}
+                    submitButtonText="Add"
                     styleMainWrapper={{
                       marginTop: 8,
+                    }}
+                    textInputProps={{
+                      placeholderTextColor: colors.textSecondary,
                     }}
                   />
                 )}
@@ -725,6 +754,14 @@ const makeStyles = (colors: ThemeColors) =>
     sectionCard: {
       gap: 12,
     },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    titleInput: {
+      flex: 1,
+    },
     sectionTitle: {
       color: colors.textPrimary,
       fontSize: Typography.size.md,
@@ -749,7 +786,8 @@ const makeStyles = (colors: ThemeColors) =>
       marginTop: 8,
     },
     pickerContainer: {
-      backgroundColor: "transparent",
+      backgroundColor: colors.input.background,
+
       paddingHorizontal: 8,
       paddingVertical: 6,
       minWidth: "90%",
@@ -762,18 +800,55 @@ const makeStyles = (colors: ThemeColors) =>
     pickerPlaceholder: {
       color: colors.textSecondary,
     },
+    multiSelectDropdown: {
+      backgroundColor: colors.input.background,
+    },
+    multiSelectSelector: {
+      backgroundColor: colors.input.background,
+    },
     multiSelectSubsection: {
-      paddingLeft: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       borderRadius: NeumoTokens.radius.md,
-      backgroundColor: colors.surfaceAlt,
+      backgroundColor: colors.input.background,
+      minHeight: 44,
+    },
+    multiSelectInputGroup: {
+      paddingLeft: 0,
+      backgroundColor: colors.input.background,
+    },
+    multiSelectIndicator: {
+      backgroundColor: colors.input.background,
+    },
+    multiSelectText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+    },
+    multiSelectTextSelected: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    multiSelectItemsContainer: {
+      backgroundColor: colors.input.background,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
     },
     multiSelectList: {
       backgroundColor: colors.surfaceAlt,
-      borderRadius: NeumoTokens.radius.md,
+      paddingVertical: 6,
+      paddingHorizontal: 8,
+      marginTop: 8,
+    },
+    multiSelectRow: {
+      paddingVertical: 8,
+      borderBottomWidth: 0,
     },
     multiSelectSearch: {
-      backgroundColor: colors.surfaceAlt,
+      backgroundColor: colors.input.background,
       color: colors.textPrimary,
+      fontSize: Typography.size.sm,
+      paddingVertical: 6,
     },
     segmentRow: {
       flexDirection: "row",

@@ -34,6 +34,8 @@ const linking: LinkingOptions<RootStackParamList> = {
       Login: "login",
       CreateProfile: "createProfile",
       VerifyEmail: "verifyEmail",
+      PrivacyPolicy: "privacy",
+      AccountDeletion: "account-delete",
       NotFound: "*",
     },
   },
