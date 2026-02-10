@@ -51,7 +51,7 @@ interface IDibbyCardProps {
   completed?: boolean;
 }
 
-export const DibbyCard: React.FC<IDibbyCardProps> = ({
+const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
   trip,
   expense,
   onPress,
@@ -145,7 +145,7 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
                   variant="flat"
                   tone="surface"
                   radius={NeumoTokens.radius.pill}
-                  padding={2}
+                  padding={NeumoTokens.control.pill.padding}
                   style={styles.statusPill}
                 >
                   <View style={styles.statusContent}>
@@ -164,7 +164,7 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
                   variant="flat"
                   tone="base"
                   radius={NeumoTokens.radius.pill}
-                  padding={6}
+                  padding={NeumoTokens.control.pill.padding}
                   style={styles.moreButtonInner}
                 >
                   <FontAwesomeIcon
@@ -315,6 +315,8 @@ export const DibbyCard: React.FC<IDibbyCardProps> = ({
   );
 };
 
+export const DibbyCard = React.memo(DibbyCardComponent);
+
 const makeStyles = (
   colors: ThemeColors,
   wideScreen: boolean,
@@ -324,7 +326,7 @@ const makeStyles = (
     card: {
       minWidth: wideScreen ? cardWidth : 0,
       backgroundColor: "transparent",
-      padding: 16,
+      padding: 14,
       borderRadius: NeumoTokens.radius.lg,
       display: "flex",
       justifyContent: "center",
@@ -332,7 +334,7 @@ const makeStyles = (
     cardContent: {
       display: "flex",
       flexDirection: "column",
-      gap: 8,
+      gap: 6,
     },
     bodyRow: {
       display: "flex",
@@ -357,8 +359,8 @@ const makeStyles = (
       gap: 8,
     },
     moreButtonInner: {
-      minWidth: 28,
-      minHeight: 28,
+      minWidth: NeumoTokens.control.pill.minHeight,
+      minHeight: NeumoTokens.control.pill.minHeight,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -377,7 +379,7 @@ const makeStyles = (
     },
     text: {
       color: colors.textPrimary,
-      paddingVertical: 4,
+      paddingVertical: 2,
     },
     avatarContainer: {
       display: "flex",
@@ -399,14 +401,15 @@ const makeStyles = (
       textTransform: "uppercase",
     },
     statusPill: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
+      paddingHorizontal: NeumoTokens.control.pill.paddingHorizontal,
+      paddingVertical: 2,
+      minHeight: NeumoTokens.control.pill.minHeight,
     },
     statusContent: {
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
-      margin: 4,
+      margin: 2,
     },
     statusText: {
       color: colors.success.background,

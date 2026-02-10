@@ -36,10 +36,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { Avatar } from "@rneui/themed";
 import { getInitials } from "../helpers/AppHelpers";
 import DibbyVersion from "../components/DibbyVersion";
-import DibbyLoading from "../components/DibbyLoading";
 import { deleteDibbyTrip } from "../helpers/FirebaseHelpers";
 import NeumoSurface from "../components/NeumoSurface";
-import { NeumoTokens } from "../constants/Neumo";
+import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import { resolveParticipantColor } from "../helpers/GenerateColor";
@@ -48,6 +47,7 @@ import SortFilterBar, { SortFilterOption } from "../components/SortFilterBar";
 import { useAvatarUrl } from "../hooks/useAvatarUrl";
 import StatsSection from "../components/StatsSection";
 import { buildHomeStats, pickStats } from "../helpers/StatsHelpers";
+import ScreenState from "../components/ScreenState";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -116,6 +116,7 @@ const HomeScreen = () => {
           trips.push(doc.data() as DibbyTrip);
         });
         setCurrentTrips(trips);
+        setLoading(false);
       });
 
       return () => unsubscribe();
@@ -125,10 +126,13 @@ const HomeScreen = () => {
     }
   }, [dibbyUser]);
 
-  const completeTrip = async (trip: DibbyTrip, complete: boolean) => {
-    const tripRef = doc(db, "trips", trip.id);
-    await updateDoc(tripRef, { completed: complete });
-  };
+  const completeTrip = useCallback(
+    async (trip: DibbyTrip, complete: boolean) => {
+      const tripRef = doc(db, "trips", trip.id);
+      await updateDoc(tripRef, { completed: complete });
+    },
+    [],
+  );
 
   const handleSignOut = () => {
     signOut(auth)
@@ -143,47 +147,50 @@ const HomeScreen = () => {
       });
   };
 
-  const deleteAlert = (item: DibbyTrip) => {
-    const tripOwner = dibbyUser?.uid === item.createdBy;
-    const title = tripOwner
-      ? `Are you sure you want to delete ${item.title}?`
-      : "Only the owner can delete this trip!";
-    const message = tripOwner ? "This will be permanently deleted." : "";
-    const options: {
-      text: string;
-      onPress?: (value?: string) => void;
-      style?: "cancel" | "default" | "destructive" | undefined;
-    }[] = [
-      {
-        text: tripOwner ? "Cancel" : "Close",
-        onPress: () => console.log("Cancel Pressed"),
-        style: "cancel",
-      },
-    ];
+  const deleteAlert = useCallback(
+    (item: DibbyTrip) => {
+      const tripOwner = dibbyUser?.uid === item.createdBy;
+      const title = tripOwner
+        ? `Are you sure you want to delete ${item.title}?`
+        : "Only the owner can delete this trip!";
+      const message = tripOwner ? "This will be permanently deleted." : "";
+      const options: {
+        text: string;
+        onPress?: (value?: string) => void;
+        style?: "cancel" | "default" | "destructive" | undefined;
+      }[] = [
+        {
+          text: tripOwner ? "Cancel" : "Close",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+      ];
 
-    tripOwner &&
-      options.push({
-        text: "Delete",
-        onPress: async () => await deleteDibbyTrip(item),
-        style: "destructive",
-      });
+      tripOwner &&
+        options.push({
+          text: "Delete",
+          onPress: async () => await deleteDibbyTrip(item),
+          style: "destructive",
+        });
 
-    if (Platform.OS === "web") {
-      const result = window.confirm(
-        [title, message].filter(Boolean).join("\n"),
-      );
+      if (Platform.OS === "web") {
+        const result = window.confirm(
+          [title, message].filter(Boolean).join("\n"),
+        );
 
-      if (result) {
-        const confirmOption = options.find(({ style }) => style !== "cancel");
-        confirmOption && confirmOption.onPress && confirmOption.onPress();
+        if (result) {
+          const confirmOption = options.find(({ style }) => style !== "cancel");
+          confirmOption && confirmOption.onPress && confirmOption.onPress();
+        } else {
+          const cancelOption = options.find(({ style }) => style === "cancel");
+          cancelOption && cancelOption.onPress && cancelOption.onPress();
+        }
       } else {
-        const cancelOption = options.find(({ style }) => style === "cancel");
-        cancelOption && cancelOption.onPress && cancelOption.onPress();
+        Alert.alert(title, message, options);
       }
-    } else {
-      Alert.alert(title, message, options);
-    }
-  };
+    },
+    [dibbyUser],
+  );
 
   const homeStats = useMemo(
     () => buildHomeStats(currentTrips, dibbyUser?.uid),
@@ -193,9 +200,9 @@ const HomeScreen = () => {
     () =>
       pickStats(homeStats, [
         "home-trips",
-        "home-total-cost",
-        "home-avg-trip",
         "home-user-spent",
+        // "home-total-cost",
+        // "home-avg-trip",
       ]),
     [homeStats],
   );
@@ -249,6 +256,26 @@ const HomeScreen = () => {
       }
     });
   }, [currentTrips, tripFilter, tripSort]);
+
+  const renderTripItem = useCallback(
+    ({ item }: { item: DibbyTrip }) => (
+      <DibbyCard
+        wideScreen={wideScreen}
+        cardWidth={cardWidth}
+        trip={item}
+        completed={item.completed}
+        onDeleteItem={() => deleteAlert(item)}
+        onCompleteItem={(complete) => completeTrip(item, complete)}
+        onPress={() =>
+          navigation.navigate("ViewTrip", {
+            tripName: item.title,
+            tripId: item.id,
+          })
+        }
+      />
+    ),
+    [navigation, deleteAlert, completeTrip, wideScreen],
+  );
 
   return (
     <View style={styles.topContainer}>
@@ -314,9 +341,7 @@ const HomeScreen = () => {
         />
         {dibbyUser && (
           <View style={styles.grid}>
-            {loading ? (
-              <DibbyLoading />
-            ) : (
+            <ScreenState status={loading ? "loading" : "ready"}>
               <FlatList
                 removeClippedSubviews={false}
                 refreshControl={
@@ -325,12 +350,16 @@ const HomeScreen = () => {
                     onRefresh={onRefresh}
                   />
                 }
-                style={{ paddingBottom: 30 }}
+                style={styles.list}
                 contentContainerStyle={styles.listContent}
                 key={numColumns}
                 data={visibleTrips}
                 keyExtractor={(trip) => trip.id}
                 numColumns={numColumns}
+                initialNumToRender={6}
+                maxToRenderPerBatch={8}
+                windowSize={7}
+                updateCellsBatchingPeriod={50}
                 ListHeaderComponent={
                   <View style={styles.listHeader}>
                     <NeumoSurface
@@ -405,7 +434,7 @@ const HomeScreen = () => {
                       </Text>
                       <DibbyButton
                         title="Create Trip"
-                        onPress={() => navigation.navigate("CreateTrip")}
+                        onPress={() => navigation.navigate("TripWizard")}
                         fullWidth
                       />
                       <NeumoPressable
@@ -421,24 +450,9 @@ const HomeScreen = () => {
                     </NeumoSurface>
                   )
                 }
-                renderItem={({ item }) => (
-                  <DibbyCard
-                    wideScreen={wideScreen}
-                    cardWidth={cardWidth}
-                    trip={item}
-                    completed={item.completed}
-                    onDeleteItem={() => deleteAlert(item)}
-                    onCompleteItem={(complete) => completeTrip(item, complete)}
-                    onPress={() =>
-                      navigation.navigate("ViewTrip", {
-                        tripName: item.title,
-                        tripId: item.id,
-                      })
-                    }
-                  />
-                )}
+                renderItem={renderTripItem}
               />
-            )}
+            </ScreenState>
           </View>
         )}
       </SafeAreaView>
@@ -488,12 +502,16 @@ const makeStyles = (colors: ThemeColors) =>
     grid: {
       flex: 1,
       display: "flex",
-      margin: 16,
+      paddingHorizontal: 16,
+    },
+    list: {
+      overflow: "visible",
     },
     listContent: {
       paddingHorizontal: NeumoTokens.spacing.xs,
       paddingTop: NeumoTokens.spacing.xs,
-      paddingBottom: NeumoTokens.spacing.xxl,
+      paddingBottom: FloatingTabBar.spacer,
+      overflow: "visible",
     },
     listHeader: {
       gap: 12,

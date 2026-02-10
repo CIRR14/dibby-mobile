@@ -36,6 +36,7 @@ import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import { assignUniqueParticipantColors } from "../helpers/GenerateColor";
 import EmojiSelector from "./EmojiSelector";
+import { track } from "../helpers/track";
 
 export interface DibbyTripFormValues {
   title: string;
@@ -97,6 +98,12 @@ const CreateTrip = () => {
 
       try {
         await createDibbyTrip(newTripData, newTripRef, usersToAddTripTo);
+        track("trip_create", {
+          source: "create_trip",
+          tripId: newTripRef.id,
+          participantCount: participantsWithColors.length,
+          hasEmoji: Boolean(data.emoji),
+        });
         setIsLoading(false);
         reset();
         navigation.navigate("Home");

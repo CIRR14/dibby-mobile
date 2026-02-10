@@ -29,8 +29,8 @@ export const DibbyChip: React.FC<IDibbyChipProps> = ({
       variant={isGuest ? "raised" : "inset"}
       tone={isGuest ? "success" : "surface"}
       radius={NeumoTokens.radius.pill}
-      padding={NeumoTokens.spacing.sm}
-      style={{ paddingHorizontal: NeumoTokens.spacing.md }}
+      padding={NeumoTokens.control.pill.padding}
+      style={{ paddingHorizontal: NeumoTokens.control.pill.paddingHorizontal }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Text

@@ -113,13 +113,13 @@ export const lightTheme: ThemeColors = {
 };
 
 export const darkTheme: ThemeColors = {
-  surface: "#242A33",
-  surfaceAlt: "#1D232B",
-  textPrimary: "#F7F9FC",
-  textSecondary: "#B8C0CC",
+  surface: "#20262F",
+  surfaceAlt: "#2B323C",
+  textPrimary: "#F8FAFC",
+  textSecondary: "#C5CED8",
   accent: accentColor,
-  shadowLight: "#303742",
-  shadowDark: "#0F1216",
+  shadowLight: "#2B333D",
+  shadowDark: "#0A0D11",
   primary: {
     background: accentColor,
     text: "#1E2329",
@@ -152,35 +152,35 @@ export const darkTheme: ThemeColors = {
     card: "#2F5FB5",
   },
   light: {
-    background: "#2A3038",
+    background: "#262C35",
     text: "#F7F9FC",
-    button: "#323842",
+    button: "#2E343E",
   },
   dark: {
-    background: "#12161B",
+    background: "#0E1115",
     text: "#F7F9FC",
-    button: "#1B2026",
+    button: "#171C22",
   },
   background: {
-    default: "#171B20",
-    text: "#F7F9FC",
-    paper: "#171B20",
-    gradient: ["#1B2026", "#171B20", "#14181D"],
+    default: "#12161B",
+    text: "#F8FAFC",
+    paper: "#12161B",
+    gradient: ["#171C22", "#12161B", "#0E1115"],
   },
   disabled: {
-    background: "#343A42",
-    text: "#7F8896",
-    button: "#2C3138",
+    background: "#2E343C",
+    text: "#8893A2",
+    button: "#252B33",
   },
   input: {
-    background: "#1F252C",
-    text: "#F7F9FC",
-    button: "#252B33",
+    background: "#1B2129",
+    text: "#F8FAFC",
+    button: "#212730",
   },
   gradient: [accentColor, accentColorComplimentary],
   transparent: "transparent",
   outlinedButtonText: accentColor,
-  card: ["#242A33", "#1F252C", "#1C2229"],
+  card: ["#20262F", "#1C2229", "#191F25"],
 };
 
 export const blushLightTheme: ThemeColors = {

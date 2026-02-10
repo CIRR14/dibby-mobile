@@ -27,6 +27,24 @@ export const NeumoTokens = {
     xl: 32,
     xxl: 40,
   },
+  control: {
+    button: {
+      sm: { padding: 8, minHeight: 32 },
+      md: { padding: 10, minHeight: 38 },
+      lg: { padding: 12, minHeight: 44 },
+    },
+    pill: {
+      padding: 6,
+      minHeight: 28,
+      paddingHorizontal: 12,
+    },
+  },
+};
+
+export const FloatingTabBar = {
+  height: 72,
+  inset: NeumoTokens.spacing.md,
+  spacer: 72 + NeumoTokens.spacing.md + NeumoTokens.spacing.md,
 };
 
 export const getSurfaceColor = (colors: ThemeColors, tone: NeumoTone) => {

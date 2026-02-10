@@ -30,19 +30,19 @@ const DibbyButton: React.FC<IButtonProps> = ({
   const colors = useAppTheme();
   const sizeConfig = {
     sm: {
-      padding: NeumoTokens.spacing.xs,
-      minHeight: 24,
+      padding: NeumoTokens.control.button.sm.padding,
+      minHeight: NeumoTokens.control.button.sm.minHeight,
       fontSize: Typography.size.sm,
     },
     md: {
-      padding: NeumoTokens.spacing.sm,
-      minHeight: 24,
+      padding: NeumoTokens.control.button.md.padding,
+      minHeight: NeumoTokens.control.button.md.minHeight,
       fontSize: Typography.size.md,
     },
     lg: {
-      padding: NeumoTokens.spacing.md,
-      minHeight: 28,
-      fontSize: Typography.size.md,
+      padding: NeumoTokens.control.button.lg.padding,
+      minHeight: NeumoTokens.control.button.lg.minHeight,
+      fontSize: Typography.size.lg,
     },
   } as const;
   const resolvedSize = sizeConfig[size];

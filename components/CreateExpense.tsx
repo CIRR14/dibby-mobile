@@ -23,6 +23,7 @@ import {
   getItemFormatFromTravelerIds,
   formatTitleWithEmoji,
   numberWithCommas,
+  inRange,
 } from "../helpers/AppHelpers";
 import MultiSelect from "react-native-multiple-select";
 import RNPickerSelect from "react-native-picker-select";
@@ -39,11 +40,14 @@ import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import EmojiSelector from "./EmojiSelector";
+import { track } from "../helpers/track";
 
 interface ICreateExpenseProps {
   currentUser: DibbyUser;
   tripInfo?: DibbyTrip;
   onPressBack: () => void;
+  embedded?: boolean;
+  onSuccess?: () => void;
 }
 
 export interface CreateExpenseForm {
@@ -67,6 +71,8 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   currentUser,
   onPressBack,
   tripInfo,
+  embedded = false,
+  onSuccess,
 }) => {
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
@@ -119,6 +125,11 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const peopleSplits = watch("peopleSplits");
   const paidBy = watch("paidBy");
   const selectedEmoji = watch("emoji");
+  const totalExpenseValue = Number(expenseAmount) || 0;
+  const unallocatedAmount = totalExpenseValue - splitTotal;
+  const isAllocationBalanced = inRange(unallocatedAmount, -0.01, 0.01);
+  const allocationLabel =
+    unallocatedAmount < -0.01 ? "Over by" : "Unallocated";
   const payerName = tripInfo
     ? getInfoFromTravelerId(tripInfo, paidBy)?.label
     : currentUser.displayName || currentUser.username || "You";
@@ -274,8 +285,19 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     if (tripInfo) {
       try {
         await createDibbyExpense(finalFormValue, tripInfo);
+        track("expense_create", {
+          tripId: tripInfo.id,
+          amount: Number(formVal.amount) || 0,
+          splitMethod: formVal.splitMethod,
+          participants: formVal.peopleInExpense.length,
+          hasEmoji: Boolean(formVal.emoji),
+        });
         reset();
-        onPressBack();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          onPressBack();
+        }
       } catch (e) {
         console.error("Error updating trip: ", e);
       }
@@ -302,30 +324,9 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     { label: "Amount", value: DibbySplitMethod.AMOUNT },
   ];
 
-  return (
-    <SafeAreaView style={styles.topContainer}>
-      <TopBar
-        title={`Add Expense to ${formatTitleWithEmoji(
-          tripInfo?.title,
-          tripInfo?.emoji,
-        )}`}
-        leftButton={
-          <DibbyButton
-            type="clear"
-            onPress={onPressBack}
-            title={
-              <FontAwesomeIcon
-                icon={faClose}
-                size={24}
-                color={colors.textPrimary}
-              />
-            }
-          />
-        }
-      />
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <KeyboardAvoidingView style={styles.content}>
+  const formContent = (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView style={styles.content}>
           <NeumoSurface
             variant="raised"
             tone="surface"
@@ -552,7 +553,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                         variant={isActive ? "raised" : "flat"}
                         tone="surface"
                         radius={NeumoTokens.radius.pill}
-                        padding={NeumoTokens.spacing.sm}
+                        padding={NeumoTokens.control.pill.padding}
                         style={[
                           styles.segmentButton,
                           isActive && styles.segmentButtonActive,
@@ -607,6 +608,22 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                   ${numberWithCommas(splitTotal.toString()) || 0} / $
                   {numberWithCommas(expenseAmount) || 0}
                 </Text>
+
+                {expenseAmount && (
+                  <Text
+                    style={[
+                      styles.summaryText,
+                      isAllocationBalanced
+                        ? styles.summaryOk
+                        : styles.summaryWarning,
+                    ]}
+                  >
+                    {isAllocationBalanced
+                      ? "Allocated"
+                      : allocationLabel}{" "}
+                    ${numberWithCommas(Math.abs(unallocatedAmount).toString())}
+                  </Text>
+                )}
               </View>
             </NeumoSurface>
 
@@ -709,9 +726,37 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             title={"Add Expense"}
             fullWidth
           />
-          <View style={{ paddingBottom: 200 }} />
-        </KeyboardAvoidingView>
-      </ScrollView>
+        <View style={{ paddingBottom: 200 }} />
+      </KeyboardAvoidingView>
+    </ScrollView>
+  );
+
+  if (embedded) {
+    return <View style={styles.embeddedContainer}>{formContent}</View>;
+  }
+
+  return (
+    <SafeAreaView style={styles.topContainer}>
+      <TopBar
+        title={`Add Expense to ${formatTitleWithEmoji(
+          tripInfo?.title,
+          tripInfo?.emoji,
+        )}`}
+        leftButton={
+          <DibbyButton
+            type="clear"
+            onPress={onPressBack}
+            title={
+              <FontAwesomeIcon
+                icon={faClose}
+                size={24}
+                color={colors.textPrimary}
+              />
+            }
+          />
+        }
+      />
+      {formContent}
     </SafeAreaView>
   );
 };
@@ -723,6 +768,10 @@ const makeStyles = (colors: ThemeColors) =>
     topContainer: {
       backgroundColor: colors.background.default,
       flex: 1,
+    },
+    embeddedContainer: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     scrollContent: {
       paddingBottom: 32,
@@ -863,7 +912,7 @@ const makeStyles = (colors: ThemeColors) =>
     segmentButton: {
       alignItems: "center",
       justifyContent: "center",
-      minHeight: 40,
+      minHeight: NeumoTokens.control.pill.minHeight,
     },
     segmentButtonActive: {
       backgroundColor: colors.surfaceAlt,

@@ -54,6 +54,7 @@ export type TripsStackParamList = {
     expenseId: string;
   };
   CreateTrip: undefined;
+  TripWizard: undefined;
   PrintPDF: { tripId: string };
 };
 

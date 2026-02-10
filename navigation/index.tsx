@@ -35,7 +35,7 @@ import { Profile } from "../screens/Profile";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faPlus, faSuitcase, faUser } from "@fortawesome/free-solid-svg-icons";
 import NeumoPressable from "../components/NeumoPressable";
-import { NeumoTokens } from "../constants/Neumo";
+import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import useAppTheme from "../hooks/useAppTheme";
 import NeumoSurface from "../components/NeumoSurface";
 import { useUser } from "../hooks/useUser";
@@ -44,6 +44,7 @@ import DibbyVersion from "../components/DibbyVersion";
 import PrivacyPolicy from "../screens/PrivacyPolicy";
 import AccountDeletion from "../screens/AccountDeletion";
 import { useTheme } from "../context/ThemeContext";
+import TripWizard from "../screens/TripWizard";
 
 export default function Navigation() {
   const { scheme } = useTheme();
@@ -54,7 +55,6 @@ export default function Navigation() {
       fallback={<Text>Loading...</Text>}
     >
       <RootNavigator />
-      <DibbyVersion bottom={2} />
     </NavigationContainer>
   );
 }
@@ -248,6 +248,7 @@ function TripsStackNavigator() {
       <TripsStack.Screen name="ViewTrip" component={ViewTrip} />
       <TripsStack.Screen name="ViewExpense" component={ViewExpense} />
       <TripsStack.Screen name="CreateTrip" component={CreateTrip} />
+      <TripsStack.Screen name="TripWizard" component={TripWizard} />
       <TripsStack.Screen name="PrintPDF" component={PdfScreen} />
     </TripsStack.Navigator>
   );
@@ -283,11 +284,13 @@ function BottomTabNavigator() {
         tabBarStyle: {
           backgroundColor: "transparent",
           borderTopWidth: 0,
-          height: 72,
+          height: FloatingTabBar.height,
           paddingBottom: NeumoTokens.spacing.sm,
           paddingTop: NeumoTokens.spacing.sm,
-          marginHorizontal: NeumoTokens.spacing.md,
-          marginBottom: NeumoTokens.spacing.md,
+          position: "absolute",
+          left: FloatingTabBar.inset,
+          right: FloatingTabBar.inset,
+          bottom: FloatingTabBar.inset,
           borderRadius: NeumoTokens.radius.xl,
         },
         tabBarBackground: () => (

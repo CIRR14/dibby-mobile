@@ -161,7 +161,7 @@ export const buildHomeStats = (
     { id: "home-trips", label: "Trips", value: `${totalTrips}` },
     {
       id: "home-total-cost",
-      label: "Total trip cost",
+      label: "Total trips' cost",
       value: formatMoney(totalSpent),
     },
     {
@@ -234,7 +234,7 @@ export const buildTripStats = (
     },
     {
       id: "trip-user-spent",
-      label: "User spent",
+      label: "Spent this trip",
       value: formatMoney(userSpent),
     },
     { id: "trip-expenses", label: "Expenses", value: `${expensesCount}` },
@@ -279,8 +279,7 @@ export const buildExpenseStats = (
     trip?.participants.find((p) => p.uid === expense.paidBy)?.name || "—";
   const userSplit = expense.peopleInExpense.find((p) => p.uid === userId);
   const youPaid = expense.paidBy === userId ? safeNumber(expense.amount) : 0;
-  const youOwe =
-    expense.paidBy === userId ? 0 : safeNumber(userSplit?.amount);
+  const youOwe = expense.paidBy === userId ? 0 : safeNumber(userSplit?.amount);
 
   return [
     {

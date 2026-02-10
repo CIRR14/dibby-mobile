@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { ScrollView, View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
 import { useNavigation } from "@react-navigation/native";
@@ -27,7 +27,7 @@ import {
 } from "../helpers/GenerateColor";
 import { deleteDibbyExpense } from "../helpers/FirebaseHelpers";
 import NeumoSurface from "../components/NeumoSurface";
-import { NeumoTokens } from "../constants/Neumo";
+import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import StatsSection from "../components/StatsSection";
@@ -35,6 +35,7 @@ import { buildExpenseStats, pickStats } from "../helpers/StatsHelpers";
 import { useUser } from "../hooks/useUser";
 import { wideScreen } from "../constants/DeviceWidth";
 import { getDibbySplitMethodString } from "../helpers/TypeHelpers";
+import ScreenState, { ScreenStateStatus } from "../components/ScreenState";
 
 const ViewExpense = ({ route }: any) => {
   const colors = useAppTheme();
@@ -110,6 +111,15 @@ const ViewExpense = ({ route }: any) => {
     currentExpense?.emoji,
   );
   const tripTitle = formatTitleWithEmoji(tripName, currentTrip?.emoji);
+  const expenseScreenStatus: ScreenStateStatus = useMemo(() => {
+    if (!currentTrip) {
+      return "loading";
+    }
+    if (!currentExpense) {
+      return "empty";
+    }
+    return "ready";
+  }, [currentTrip, currentExpense]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "trips", tripId), (doc) => {
@@ -163,121 +173,136 @@ const ViewExpense = ({ route }: any) => {
           }
         />
 
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>{expenseTitle}</Text>
-            <Text style={styles.title}>${currentExpense?.amount}</Text>
-          </View>
-          <Text style={styles.metaText}>Trip: {tripTitle}</Text>
-
-          {currentExpense && (
-            <NeumoSurface
-              variant="raised"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
-              style={styles.statsCard}
-            >
-              <StatsSection
-                title="Expense stats"
-                compactItems={expenseCompactStats}
-                fullItems={expenseStats}
-                compactColumns={2}
-                expandedColumns={statsColumns}
-              />
-            </NeumoSurface>
-          )}
-
-          {currentExpense && (
-            <NeumoSurface
-              variant="raised"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
-              style={styles.breakdownCard}
-            >
-              <View style={styles.breakdownHeader}>
-                <Text style={styles.breakdownTitle}>Breakdown</Text>
-                <Text style={styles.breakdownMeta}>Split: {splitLabel}</Text>
+        <ScreenState
+          status={expenseScreenStatus}
+          title="Expense not found"
+          description="This expense may have been deleted."
+          actionLabel="Back to trip"
+          onAction={() => navigation.navigate("ViewTrip", { tripName, tripId })}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.content}>
+              <View style={styles.headerRow}>
+                <Text style={styles.title}>{expenseTitle}</Text>
+                <Text style={styles.title}>${currentExpense?.amount}</Text>
               </View>
-              <View style={styles.breakdownList}>
-                {expenseBreakdown.map((item) => (
-                  <NeumoSurface
-                    key={item.uid}
-                    variant="flat"
-                    tone="surface"
-                    radius={NeumoTokens.radius.md}
-                    style={[
-                      styles.breakdownRow,
-                      {
-                        backgroundColor: changeOpacity(item.color, 0.85),
-                      },
-                    ]}
-                  >
-                    <View style={styles.breakdownLeft}>
-                      <Text style={styles.breakdownName}>{item.name}</Text>
-                      {item.paidBy && (
-                        <Text style={styles.breakdownBadge}>Paid</Text>
-                      )}
-                    </View>
-                    <View style={styles.breakdownRight}>
-                      {currentExpense.splitMethod ===
-                        DibbySplitMethod.PERCENTAGE && (
-                        <Text style={styles.breakdownPercent}>
-                          {item.percent.toFixed(0)}%
+              <Text style={styles.metaText}>Trip: {tripTitle}</Text>
+
+              {currentExpense && (
+                <NeumoSurface
+                  variant="raised"
+                  tone="surface"
+                  radius={NeumoTokens.radius.lg}
+                  style={styles.statsCard}
+                >
+                  <StatsSection
+                    title="Expense stats"
+                    compactItems={expenseCompactStats}
+                    fullItems={expenseStats}
+                    compactColumns={2}
+                    expandedColumns={statsColumns}
+                  />
+                </NeumoSurface>
+              )}
+
+              {currentExpense && (
+                <NeumoSurface
+                  variant="raised"
+                  tone="surface"
+                  radius={NeumoTokens.radius.lg}
+                  style={styles.breakdownCard}
+                >
+                  <View style={styles.breakdownHeader}>
+                    <Text style={styles.breakdownTitle}>Breakdown</Text>
+                    <Text style={styles.breakdownMeta}>Split: {splitLabel}</Text>
+                  </View>
+                  <View style={styles.breakdownList}>
+                    {expenseBreakdown.map((item) => (
+                      <NeumoSurface
+                        key={item.uid}
+                        variant="flat"
+                        tone="surface"
+                        radius={NeumoTokens.radius.md}
+                        style={[
+                          styles.breakdownRow,
+                          {
+                            backgroundColor: changeOpacity(item.color, 0.85),
+                          },
+                        ]}
+                      >
+                        <View style={styles.breakdownLeft}>
+                          <Text style={styles.breakdownName}>{item.name}</Text>
+                          {item.paidBy && (
+                            <Text style={styles.breakdownBadge}>Paid</Text>
+                          )}
+                        </View>
+                        <View style={styles.breakdownRight}>
+                          {currentExpense.splitMethod ===
+                            DibbySplitMethod.PERCENTAGE && (
+                            <Text style={styles.breakdownPercent}>
+                              {item.percent.toFixed(0)}%
+                            </Text>
+                          )}
+                          <Text style={styles.breakdownAmount}>
+                            ${numberWithCommas(item.amount.toString())}
+                          </Text>
+                        </View>
+                      </NeumoSurface>
+                    ))}
+                  </View>
+                  {(hasDuplicateParticipants ||
+                    !paidByIncluded ||
+                    !isBalanced) && (
+                    <View style={styles.breakdownWarning}>
+                      {!paidByIncluded && (
+                        <Text style={styles.warningText}>
+                          Paid-by person isn’t included in this expense.
                         </Text>
                       )}
-                      <Text style={styles.breakdownAmount}>
-                        ${numberWithCommas(item.amount.toString())}
-                      </Text>
+                      {hasDuplicateParticipants && (
+                        <Text style={styles.warningText}>
+                          Duplicate participants detected in the split.
+                        </Text>
+                      )}
+                      {!isBalanced && (
+                        <Text style={styles.warningText}>
+                          Split amounts don’t add up to the expense total.
+                        </Text>
+                      )}
                     </View>
-                  </NeumoSurface>
-                ))}
-              </View>
-              {(hasDuplicateParticipants || !paidByIncluded || !isBalanced) && (
-                <View style={styles.breakdownWarning}>
-                  {!paidByIncluded && (
-                    <Text style={styles.warningText}>
-                      Paid-by person isn’t included in this expense.
-                    </Text>
                   )}
-                  {hasDuplicateParticipants && (
-                    <Text style={styles.warningText}>
-                      Duplicate participants detected in the split.
-                    </Text>
-                  )}
-                  {!isBalanced && (
-                    <Text style={styles.warningText}>
-                      Split amounts don’t add up to the expense total.
-                    </Text>
-                  )}
-                </View>
+                </NeumoSurface>
               )}
-            </NeumoSurface>
-          )}
-          <Divider
-            color={colors.shadowDark}
-            style={{
-              marginBottom: 16,
-            }}
-          />
+              <Divider
+                color={colors.shadowDark}
+                style={{
+                  marginBottom: 16,
+                }}
+              />
 
-          <View style={styles.totalRow}>
-            <Text style={styles.remainderLabel}>
-              {isBalanced ? "Balanced" : "Unallocated"}
-            </Text>
-            <Text
-              style={[
-                styles.remainderValue,
-                {
-                  color: isBalanced
-                    ? colors.success.background
-                    : colors.danger.button,
-                },
-              ]}
-            >
-              ${numberWithCommas((isBalanced ? 0 : remainder).toString())}
-            </Text>
-          </View>
-        </View>
+              <View style={styles.totalRow}>
+                <Text style={styles.remainderLabel}>
+                  {isBalanced ? "Balanced" : "Unallocated"}
+                </Text>
+                <Text
+                  style={[
+                    styles.remainderValue,
+                    {
+                      color: isBalanced
+                        ? colors.success.background
+                        : colors.danger.button,
+                    },
+                  ]}
+                >
+                  ${numberWithCommas((isBalanced ? 0 : remainder).toString())}
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </ScreenState>
       </SafeAreaView>
     </View>
   );
@@ -291,8 +316,12 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background.default,
     },
+    scrollContent: {
+      padding: 16,
+      paddingBottom: FloatingTabBar.spacer,
+    },
     content: {
-      margin: 16,
+      gap: 16,
     },
     headerRow: {
       flexDirection: "row",

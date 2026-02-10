@@ -30,8 +30,7 @@ const resolveToneColor = (colors: ThemeColors, tone?: StatTone) => {
 const StatsGrid: React.FC<StatsGridProps> = ({ items, columns = 2 }) => {
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
-  const basis =
-    columns <= 1 ? "100%" : `${Math.max(44, 100 / columns - 2)}%`;
+  const basis = columns <= 1 ? "100%" : `${Math.max(44, 100 / columns - 2)}%`;
 
   return (
     <View style={styles.grid}>
@@ -53,7 +52,9 @@ const StatsGrid: React.FC<StatsGridProps> = ({ items, columns = 2 }) => {
           >
             {item.value}
           </Text>
-          {item.helper ? <Text style={styles.helper}>{item.helper}</Text> : null}
+          {item.helper ? (
+            <Text style={styles.helper}>{item.helper}</Text>
+          ) : null}
         </NeumoSurface>
       ))}
     </View>

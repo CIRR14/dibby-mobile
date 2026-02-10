@@ -1,6 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { numberWithCommas, inRange, sumOfValues } from "../helpers/AppHelpers";
+import { Alert, Platform, Share, View, Text, StyleSheet } from "react-native";
+import {
+  formatTitleWithEmoji,
+  numberWithCommas,
+  inRange,
+  sumOfValues,
+} from "../helpers/AppHelpers";
 import { ITransactionResponse } from "../helpers/DibbyLogic";
 import { ThemeColors } from "../constants/Colors";
 import { DibbyTrip } from "../constants/DibbyTypes";
@@ -12,6 +17,10 @@ import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
+import NeumoPressable from "./NeumoPressable";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faShareNodes } from "@fortawesome/free-solid-svg-icons";
+import { track } from "../helpers/track";
 
 interface DibbySummary {
   currentTrip: DibbyTrip;
@@ -42,6 +51,45 @@ const DibbySummary: React.FC<DibbySummary> = ({
   const openBalances = currentTrip.participants.filter(
     (t) => !inRange(t.owed, -0.01, 0.01),
   ).length;
+  const shareTitle = formatTitleWithEmoji(
+    currentTrip.title,
+    currentTrip.emoji,
+  );
+
+  const buildShareMessage = () => {
+    if (!transactions.length) {
+      return `All balances are settled for ${shareTitle}.`;
+    }
+    const header = `Settle up for ${shareTitle}`;
+    const lines = transactions.map(
+      (t) =>
+        `${t.owee.name} → ${t.owed.name}: $${numberWithCommas(
+          t.amount.toString(),
+        )}`,
+    );
+    return [header, ...lines].join("\n");
+  };
+
+  const handleShare = async () => {
+    const message = buildShareMessage();
+    track("settle_share", {
+      tripId: currentTrip.id,
+      transactionCount: transactions.length,
+    });
+    if (Platform.OS === "web") {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message);
+        Alert.alert("Copied", "Suggested payments copied to clipboard.");
+        return;
+      }
+      Alert.alert("Share", message);
+      return;
+    }
+    await Share.share({
+      title: shareTitle,
+      message,
+    });
+  };
 
   return (
     <NeumoSurface
@@ -61,23 +109,41 @@ const DibbySummary: React.FC<DibbySummary> = ({
                 : `${calculatedTrip.finalNumberOfTransactions} suggested payments`}
             </Text>
           </View>
-          <NeumoSurface
-            variant="raised"
-            tone="surface"
-            radius={NeumoTokens.radius.md}
-            padding={NeumoTokens.spacing.sm}
-          >
-            <Text
-              style={[
-                styles.statusPill,
-                {
-                  color: isSettled ? colors.success.background : colors.accent,
-                },
-              ]}
+          <View style={styles.headerActions}>
+            {transactions.length > 0 && (
+              <NeumoPressable
+                variant="flat"
+                tone="base"
+                radius={NeumoTokens.radius.pill}
+                padding={NeumoTokens.control.pill.padding}
+                onPress={handleShare}
+                style={styles.shareButton}
+              >
+                <FontAwesomeIcon
+                  icon={faShareNodes}
+                  size={14}
+                  color={colors.textSecondary}
+                />
+              </NeumoPressable>
+            )}
+            <NeumoSurface
+              variant="raised"
+              tone="surface"
+              radius={NeumoTokens.radius.md}
+              padding={NeumoTokens.control.pill.padding}
             >
-              {isSettled ? "Settled" : "Open"}
-            </Text>
-          </NeumoSurface>
+              <Text
+                style={[
+                  styles.statusPill,
+                  {
+                    color: isSettled ? colors.success.background : colors.accent,
+                  },
+                ]}
+              >
+                {isSettled ? "Settled" : "Open"}
+              </Text>
+            </NeumoSurface>
+          </View>
         </View>
 
         <View style={styles.statsGrid}>
@@ -185,7 +251,19 @@ const DibbySummary: React.FC<DibbySummary> = ({
 
         {transactions.length > 0 && (
           <View style={styles.transactions}>
-            <Text style={styles.sectionTitle}>Suggested payments</Text>
+            <View style={styles.transactionsHeader}>
+              <Text style={styles.sectionTitle}>Suggested payments</Text>
+              <NeumoPressable
+                variant="flat"
+                tone="base"
+                radius={NeumoTokens.radius.pill}
+                padding={6}
+                onPress={handleShare}
+                style={styles.shareTextButton}
+              >
+                <Text style={styles.shareText}>Share</Text>
+              </NeumoPressable>
+            </View>
             {transactions.map((t, index) => (
               <View
                 key={`${t.owee.uid}-${index}`}
@@ -226,6 +304,17 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+    },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    shareButton: {
+      minWidth: NeumoTokens.control.pill.minHeight,
+      minHeight: NeumoTokens.control.pill.minHeight,
+      alignItems: "center",
+      justifyContent: "center",
     },
     title: {
       fontSize: Typography.size.lg,
@@ -304,6 +393,21 @@ const makeStyles = (colors: ThemeColors) =>
       fontWeight: Typography.weight.semibold as any,
       color: colors.textPrimary,
       marginBottom: 4,
+    },
+    transactionsHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    shareTextButton: {
+      paddingHorizontal: 8,
+    },
+    shareText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      fontWeight: Typography.weight.semibold as any,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
     },
     transactionRow: {
       flexDirection: "row",

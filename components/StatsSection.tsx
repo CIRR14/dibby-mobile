@@ -17,6 +17,7 @@ interface StatsSectionProps {
   compactColumns?: number;
   expandedColumns?: number;
   defaultExpanded?: boolean;
+  maxExpandedItems?: number;
 }
 
 const StatsSection: React.FC<StatsSectionProps> = ({
@@ -26,6 +27,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
   compactColumns = 2,
   expandedColumns = 2,
   defaultExpanded = false,
+  maxExpandedItems = 2,
 }) => {
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
@@ -37,6 +39,13 @@ const StatsSection: React.FC<StatsSectionProps> = ({
     (item) => !item.id || !compactIds.has(item.id),
   );
   const hasMore = extraItems.length > 0;
+  const effectiveMax = maxExpandedItems > 0 ? maxExpandedItems : extraItems.length;
+  const visibleExtraItems = expanded
+    ? extraItems.slice(0, effectiveMax)
+    : [];
+  const remainingCount = expanded
+    ? Math.max(extraItems.length - visibleExtraItems.length, 0)
+    : 0;
 
   return (
     <View style={styles.container}>
@@ -47,7 +56,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
           variant="flat"
           tone="base"
           radius={NeumoTokens.radius.pill}
-          padding={NeumoTokens.spacing.xs}
+          padding={NeumoTokens.control.pill.padding}
           onPress={() => setExpanded((prev) => !prev)}
           containerStyle={styles.toggleContainer}
           style={styles.toggleButton}
@@ -66,7 +75,12 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       )}
       {expanded && (
         <View style={styles.expanded}>
-          <StatsGrid items={extraItems} columns={expandedColumns} />
+          <StatsGrid items={visibleExtraItems} columns={expandedColumns} />
+          {remainingCount > 0 && (
+            <Text style={styles.moreText}>
+              +{remainingCount} more insights
+            </Text>
+          )}
         </View>
       )}
     </View>
@@ -89,7 +103,8 @@ const makeStyles = (colors: ThemeColors) =>
       alignSelf: "center",
     },
     toggleButton: {
-      paddingHorizontal: NeumoTokens.spacing.sm,
+      paddingHorizontal: NeumoTokens.control.pill.paddingHorizontal,
+      minHeight: NeumoTokens.control.pill.minHeight,
     },
     toggleRow: {
       flexDirection: "row",
@@ -105,5 +120,11 @@ const makeStyles = (colors: ThemeColors) =>
     },
     expanded: {
       marginTop: 4,
+      gap: 8,
+    },
+    moreText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      textAlign: "center",
     },
   });
