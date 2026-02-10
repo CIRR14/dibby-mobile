@@ -516,9 +516,9 @@ export const Profile = () => {
                 </NeumoSurface>
               </View>
             </Modal>
-            <DibbyVersion bottom={12} />
           </ScrollView>
         </ScreenState>
+        <DibbyVersion bottom={2} />
       </SafeAreaView>
     </View>
   );

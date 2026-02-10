@@ -52,6 +52,16 @@ export default function Navigation() {
     <NavigationContainer
       linking={LinkingConfiguration}
       theme={scheme === "dark" ? CustomDarkTheme : CustomLightTheme}
+      documentTitle={{
+        enabled: true,
+        formatter: (options, route) => {
+          const title = options?.title || route?.name;
+          if (!title || title === "Root" || title === "TripsTab") {
+            return "Dibby";
+          }
+          return title;
+        },
+      }}
       fallback={<Text>Loading...</Text>}
     >
       <RootNavigator />

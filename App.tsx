@@ -12,7 +12,7 @@ export default function App() {
   const isLoadingComplete = useCachedResources();
 
   if (!isLoadingComplete) {
-    return <Text>Not yet loaded</Text>;
+    return <Text></Text>;
   } else {
     return (
       <ThemeProvider>

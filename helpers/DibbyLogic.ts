@@ -1,164 +1,251 @@
-import { DibbyExpense, DibbyParticipant, DibbySplitMethod, DibbyTrip } from "../constants/DibbyTypes";
+import {
+  DibbyExpense,
+  DibbyParticipant,
+  DibbySplitMethod,
+  DibbyTrip,
+} from "../constants/DibbyTypes";
 import { numberWithCommas } from "./AppHelpers";
 
 export interface ITransaction {
-    owed: DibbyParticipant, 
-    owee: DibbyParticipant, 
-    amount: number
+  owed: DibbyParticipant;
+  owee: DibbyParticipant;
+  amount: number;
 }
 
 export interface ITransactionResponse {
-    transactions: ITransaction[],
-    finalNumberOfTransactions: number
+  transactions: ITransaction[];
+  finalNumberOfTransactions: number;
 }
 
-const maxNumberOfTransactions = 100;
+const maxNumberOfTransactions = 200;
+const centsPrecision = 100;
 
-
-const inRange = (x: number, min: number, max: number): boolean => {
-  return (x - min) * (x - max) <= 0;
+const toCents = (value?: number | string | null): number => {
+  const numeric = Number(value) || 0;
+  return Math.round(numeric * centsPrecision);
 };
 
-const roundToDecimal = (number: number, decimals = 2): number => {
-  return parseFloat(numberWithCommas(number.toString()) || number.toString()) || number
+const fromCents = (cents: number): number =>
+  Math.round(cents) / centsPrecision;
+
+const roundMoney = (value: number): number =>
+  Number(fromCents(Math.round(value * centsPrecision)).toFixed(2));
+
+const isZeroCents = (value: number) => Math.abs(value) < 1;
+
+const buildParticipantMap = (trip: DibbyTrip) =>
+  new Map(trip.participants.map((p) => [p.uid, p]));
+
+const normalizeSplits = (
+  expense: DibbyExpense,
+  participantIds: string[],
+): { uid: string; amountCents: number }[] => {
+  const totalCents = toCents(expense.amount);
+  const splits =
+    expense.peopleInExpense && expense.peopleInExpense.length > 0
+      ? expense.peopleInExpense.map((s) => ({
+          uid: s.uid,
+          amountCents: toCents(s.amount),
+        }))
+      : participantIds.map((uid) => ({
+          uid,
+          amountCents: 0,
+        }));
+
+  if (!splits.length || totalCents === 0) {
+    return [];
+  }
+
+  if (expense.splitMethod === DibbySplitMethod.EQUAL_PARTS) {
+    const base = Math.floor(totalCents / splits.length);
+    const remainder = totalCents - base * splits.length;
+    return splits.map((split, index) => ({
+      uid: split.uid,
+      amountCents: base + (index === 0 ? remainder : 0),
+    }));
+  }
+
+  const sumCents = splits.reduce((acc, s) => acc + s.amountCents, 0);
+  const remainder = totalCents - sumCents;
+  if (remainder !== 0) {
+    return splits.map((split, index) => ({
+      uid: split.uid,
+      amountCents: split.amountCents + (index === 0 ? remainder : 0),
+    }));
+  }
+
+  return splits;
 };
 
-export const calculateTrip = (
-  trip: DibbyTrip
-): ITransactionResponse => {
-  let numberOfTransactions = 0;
-  let returnThis: ITransactionResponse = {
-    transactions: [],
-    finalNumberOfTransactions: 0,
-  };
+const buildBalancesFromExpenses = (
+  trip: DibbyTrip,
+): Map<string, number> => {
+  const participantIds = trip.participants.map((p) => p.uid);
+  const balances = new Map<string, number>();
 
-  const findPersonByID = (id: string): DibbyParticipant | undefined => {
-    return trip.participants.find((p) => p.uid === id);
-  };
+  participantIds.forEach((uid) => balances.set(uid, 0));
 
-  const calculatePerTotal = (expenseAmounts: number[]): void => {
-    const expenseTripTotal = expenseAmounts.reduce((partialSum, a) => partialSum + a, 0);
-    trip.perPersonAverage = expenseTripTotal / trip.participants.length;
-  };
-
-  const calculatePerPersonPerExpense = (expense: DibbyExpense): void => {
-    if (expense.splitMethod === DibbySplitMethod.EQUAL_PARTS) {
-      expense.perPersonAverage = (expense.amount as number) / trip.participants.length;
-    } else {
-      console.log("expenses are not equal");
-    }
-  };
-
-  const calculateTotalPaidByPerson = (expense: DibbyExpense) => {
-    const personWhoPaid = findPersonByID(expense.paidBy);
-    if (personWhoPaid) {
-      personWhoPaid.amountPaid = personWhoPaid?.amountPaid + (expense?.amount as number);
-    }
-  };
-
-  const calculateOwedPerPerson = (person: DibbyExpense) => {
-    const tripPerson = findPersonByID(person.id);
-    if (tripPerson) {
-      tripPerson.owed = tripPerson.amountPaid - trip.perPersonAverage;
-    }
-  };
-
-  const zeroOut = (loop: number) => {
-    const getOwedArray = trip.participants?.map((p) => roundToDecimal(p.owed));
-    const didEveryonePay = getOwedArray?.every((item) => {
-      return inRange(item, -0.01, 0.01);
-    });
-
-    if (didEveryonePay || loop > maxNumberOfTransactions) {
+  trip.expenses.forEach((expense) => {
+    const totalCents = toCents(expense.amount);
+    if (!totalCents) {
       return;
     }
-
-    const getHighestOrLowestOwed = (amount: number): DibbyParticipant => {
-      return trip.participants[getOwedArray.indexOf(amount)];
-    };
-
-    const highestAmount: number = Math.max(...getOwedArray);
-    const lowestAmount: number = Math.min(...getOwedArray);
-
-    const highestOwed: DibbyParticipant = getHighestOrLowestOwed(highestAmount);
-    const lowestOwed: DibbyParticipant = getHighestOrLowestOwed(lowestAmount);
-
-    updateOwedColumn(highestOwed, lowestOwed);
-    loop += 1;
-    zeroOut(loop);
-  };
-
-  const updateOwedColumn = (owed: DibbyParticipant, owee: DibbyParticipant) => {
-    // memoization for efficiecy
-    let newOwedValue = 0;
-    let newOweeValue = 0;
-    let transactionAmount = 0;
-    if (owed.owed >= Math.abs(owee.owed)) {
-      // make owee 0 and owed the subtraction
-      transactionAmount = Math.abs(owee.owed);
-      newOwedValue = roundToDecimal(owed.owed - Math.abs(owee.owed));
-      findPersonByID(owee.uid)!.amountPaid = roundToDecimal(owee.amountPaid - owee.owed);
-      findPersonByID(owed.uid)!.amountPaid = roundToDecimal(owed.amountPaid + owee.owed);
-    } else if (owed.owed < Math.abs(owee.owed)) {
-      // make owed 0 and owee the addition
-      transactionAmount = owed.owed;
-      newOweeValue = owee.owed + owed.owed;
-      findPersonByID(owee.uid)!.amountPaid = roundToDecimal(owee.amountPaid + owed.owed);
-      findPersonByID(owed.uid)!.amountPaid = roundToDecimal(owed.amountPaid - owed.owed);
-    } else {
-      console.log("anomaly");
+    if (balances.has(expense.paidBy)) {
+      balances.set(
+        expense.paidBy,
+        (balances.get(expense.paidBy) || 0) + totalCents,
+      );
     }
-    findPersonByID(owed.uid)!.owed = roundToDecimal(newOwedValue);
-    findPersonByID(owee.uid)!.owed = roundToDecimal(newOweeValue);
 
-    logTransactions(owed, owee, transactionAmount);
+    const splits = normalizeSplits(expense, participantIds);
+    splits.forEach((split) => {
+      if (!balances.has(split.uid)) {
+        return;
+      }
+      balances.set(
+        split.uid,
+        (balances.get(split.uid) || 0) - split.amountCents,
+      );
+    });
+  });
+
+  return balances;
+};
+
+const buildBalancesFromParticipants = (
+  trip: DibbyTrip,
+): Map<string, number> => {
+  const balances = new Map<string, number>();
+  trip.participants.forEach((p) => {
+    balances.set(p.uid, toCents(p.owed));
+  });
+  return balances;
+};
+
+const minimizeTransactions = (
+  trip: DibbyTrip,
+  balances: Map<string, number>,
+): ITransaction[] => {
+  const participantsById = buildParticipantMap(trip);
+  const creditors = [] as { uid: string; amountCents: number }[];
+  const debtors = [] as { uid: string; amountCents: number }[];
+
+  balances.forEach((amountCents, uid) => {
+    if (isZeroCents(amountCents)) {
+      return;
+    }
+    if (amountCents > 0) {
+      creditors.push({ uid, amountCents });
+    } else {
+      debtors.push({ uid, amountCents });
+    }
+  });
+
+  creditors.sort((a, b) => b.amountCents - a.amountCents);
+  debtors.sort((a, b) => a.amountCents - b.amountCents);
+
+  const transactions: ITransaction[] = [];
+  let creditorIndex = 0;
+  let debtorIndex = 0;
+
+  while (
+    creditorIndex < creditors.length &&
+    debtorIndex < debtors.length &&
+    transactions.length < maxNumberOfTransactions
+  ) {
+    const creditor = creditors[creditorIndex];
+    const debtor = debtors[debtorIndex];
+    const amount = Math.min(creditor.amountCents, -debtor.amountCents);
+
+    if (amount <= 0) {
+      break;
+    }
+
+    const owed = participantsById.get(creditor.uid);
+    const owee = participantsById.get(debtor.uid);
+
+    if (owed && owee) {
+      transactions.push({
+        owed,
+        owee,
+        amount: roundMoney(fromCents(amount)),
+      });
+    }
+
+    creditor.amountCents -= amount;
+    debtor.amountCents += amount;
+
+    if (isZeroCents(creditor.amountCents)) {
+      creditorIndex += 1;
+    }
+    if (isZeroCents(debtor.amountCents)) {
+      debtorIndex += 1;
+    }
+  }
+
+  return transactions;
+};
+
+export const calculateTrip = (trip: DibbyTrip): ITransactionResponse => {
+  const expenseBalances = buildBalancesFromExpenses(trip);
+  const expenseBalanceTotal = Array.from(expenseBalances.values()).reduce(
+    (acc, value) => acc + value,
+    0,
+  );
+  const balances = isZeroCents(expenseBalanceTotal)
+    ? expenseBalances
+    : buildBalancesFromParticipants(trip);
+
+  if (!isZeroCents(expenseBalanceTotal)) {
+    const remainder = Array.from(balances.values()).reduce(
+      (acc, value) => acc + value,
+      0,
+    );
+    if (!isZeroCents(remainder)) {
+      const firstParticipant = trip.participants[0];
+      if (firstParticipant) {
+        balances.set(
+          firstParticipant.uid,
+          (balances.get(firstParticipant.uid) || 0) - remainder,
+        );
+      }
+    }
+  }
+
+  const transactions = minimizeTransactions(trip, balances);
+
+  return {
+    transactions,
+    finalNumberOfTransactions: transactions.length,
   };
-
-  const logTransactions = (owed: DibbyParticipant, owee: DibbyParticipant, amount: number) => {
-    const roundedAmount = roundToDecimal(amount);
-    const string = `💰 ${owee.name} owes ${owed.name}: $${roundedAmount} 💰`;
-    returnThis.transactions.push({ owee, owed, amount: roundedAmount });
-    numberOfTransactions = numberOfTransactions + 1;
-  };
-
-  //   const expenseAmounts = trip.expenses.map((exp) => {
-  //     calculatePerPersonPerExpense(exp);
-  //     calculateTotalPaidByPerson(exp);
-  //     return exp.amount;
-  //   });
-
-  //   calculatePerTotal(expenseAmounts);
-  //   trip.travelers.map((person) => {
-  //       return calculateOwedPerPerson(person);
-  //   });
-  zeroOut(0);
-  const finalString = `
-   💰 This trip's expenses were paid for in ${numberOfTransactions} transactions 👍
-    `;
-  returnThis.finalNumberOfTransactions = numberOfTransactions;
-  return returnThis;
 };
 
 export const getTransactionString = (transaction: ITransaction): string => {
-    return `💰 ${transaction.owee.name} owes ${transaction.owed.name}: $${numberWithCommas(transaction.amount.toString())}`
-}
+  return `💰 ${transaction.owee.name} owes ${transaction.owed.name}: $${numberWithCommas(
+    transaction.amount.toString(),
+  )}`;
+};
 
-export const getAmountOfTransactionsString = (numberOfTransactions: number): string => {
-return ` Number of transactions: ${numberOfTransactions}`
-}
+export const getAmountOfTransactionsString = (
+  numberOfTransactions: number,
+): string => {
+  return ` Number of transactions: ${numberOfTransactions}`;
+};
 
 
-export const checkResults = (ogTrip: DibbyTrip, finalTransactions: ITransaction[]): boolean => {
-    finalTransactions.forEach((t) => {
-        //
-    })
+export const checkResults = (
+  ogTrip: DibbyTrip,
+  finalTransactions: ITransaction[],
+): boolean => {
+  finalTransactions.forEach((t) => {
+    //
+  });
 
-    
-    ogTrip.expenses.forEach((e) => {
-        // each expense -> go through each traveler in the expense 
-        // if payer -> 
-        // if not payer -> 
-        // each traveler in the expense should 
-    }) 
-    return true;
-}   
+  ogTrip.expenses.forEach((e) => {
+    // each expense -> go through each traveler in the expense
+    // if payer ->
+    // if not payer ->
+    // each traveler in the expense should
+  });
+  return true;
+};
