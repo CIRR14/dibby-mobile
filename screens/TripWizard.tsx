@@ -28,6 +28,7 @@ import { DibbySearchUsername } from "../components/DibbySearchUsername";
 import DibbyLoading from "../components/DibbyLoading";
 import CreateExpense from "../components/CreateExpense";
 import { track } from "../helpers/track";
+import ScreenLayout from "../components/ScreenLayout";
 
 const TripWizard = () => {
   const colors = useAppTheme();
@@ -124,7 +125,7 @@ const TripWizard = () => {
 
   const renderStepHeader = () => (
     <NeumoSurface
-      variant="raised"
+      variant="glass"
       tone="surface"
       radius={NeumoTokens.radius.lg}
       padding={NeumoTokens.spacing.md}
@@ -150,7 +151,7 @@ const TripWizard = () => {
     <View style={styles.stepContent}>
       {renderStepHeader()}
       <NeumoSurface
-        variant="raised"
+        variant="glass"
         tone="surface"
         radius={NeumoTokens.radius.lg}
         style={styles.sectionCard}
@@ -190,7 +191,7 @@ const TripWizard = () => {
     <View style={styles.stepContent}>
       {renderStepHeader()}
       <NeumoSurface
-        variant="raised"
+        variant="glass"
         tone="surface"
         radius={NeumoTokens.radius.lg}
         style={styles.sectionCard}
@@ -268,13 +269,15 @@ const TripWizard = () => {
             />
           }
         />
-        {step === 3 ? (
-          renderStep3()
-        ) : (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {step === 1 ? renderStep1() : renderStep2()}
-          </ScrollView>
-        )}
+        <ScreenLayout contentStyle={styles.layoutContent}>
+          {step === 3 ? (
+            renderStep3()
+          ) : (
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+              {step === 1 ? renderStep1() : renderStep2()}
+            </ScrollView>
+          )}
+        </ScreenLayout>
       </SafeAreaView>
     </View>
   );
@@ -285,6 +288,9 @@ const makeStyles = (colors: ThemeColors) =>
     topContainer: {
       flex: 1,
       backgroundColor: colors.background.default,
+    },
+    layoutContent: {
+      flex: 1,
     },
     scrollContent: {
       padding: 16,

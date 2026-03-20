@@ -18,10 +18,10 @@ const TopBar: React.FC<ITopBarProps> = ({ title, leftButton, rightButton }) => {
 
   return (
     <NeumoSurface
-      variant="flat"
+      variant="solid"
       tone="base"
       radius={NeumoTokens.radius.lg}
-      padding={NeumoTokens.spacing.md}
+      padding={NeumoTokens.spacing.sm}
       style={styles.container}
     >
       <View style={[styles.innerContainer, styles.leftContainer]}>
@@ -46,6 +46,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       minHeight: 64,
       justifyContent: "space-between",
+      gap: 8,
     },
     title: {
       color: colors.textPrimary,
@@ -57,16 +58,20 @@ const makeStyles = (colors: ThemeColors) =>
       overflow: "hidden",
     },
     innerContainer: {
-      width: "25%",
+      minHeight: 36,
+      justifyContent: "center",
     },
     leftContainer: {
       alignItems: "flex-start",
+      minWidth: 56,
     },
     middleContainer: {
       alignItems: "center",
-      width: "50%",
+      flex: 1,
+      paddingHorizontal: 8,
     },
     rightContainer: {
       alignItems: "flex-end",
+      minWidth: 56,
     },
   });

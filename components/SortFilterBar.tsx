@@ -1,5 +1,12 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useRef, useState } from "react";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { ThemeColors } from "../constants/Colors";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
@@ -11,7 +18,6 @@ import {
   faCaretDown,
   faCaretUp,
   faFilter,
-  faFilterCircleXmark,
   faSort,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -31,6 +37,43 @@ interface SortFilterBarProps {
   onSortChange: (value: string) => void;
 }
 
+const Selector: React.FC<{
+  icon: any;
+  label: string;
+  valueLabel?: string;
+  open: boolean;
+  onPress: () => void;
+  triggerRef: React.RefObject<View>;
+}> = ({ icon, label, valueLabel, open, onPress, triggerRef }) => {
+  const colors = useAppTheme();
+  const styles = makeStyles(colors as unknown as ThemeColors);
+
+  return (
+    <View ref={triggerRef} collapsable={false}>
+      <NeumoPressable
+        onPress={onPress}
+        variant={open ? "glass-strong" : "glass"}
+        tone="surface"
+        radius={NeumoTokens.radius.pill}
+        padding={NeumoTokens.control.pill.padding}
+        containerStyle={styles.selectorContainer}
+        style={styles.selectorButton}
+      >
+        <View style={styles.selectorRow}>
+          <FontAwesomeIcon icon={icon} size={12} color={colors.textSecondary} />
+          <Text style={styles.selectorLabel}>{label}</Text>
+          <Text style={styles.selectorValue}>{valueLabel}</Text>
+          <FontAwesomeIcon
+            icon={open ? faCaretUp : faCaretDown}
+            size={12}
+            color={colors.textSecondary}
+          />
+        </View>
+      </NeumoPressable>
+    </View>
+  );
+};
+
 const SortFilterBar: React.FC<SortFilterBarProps> = ({
   filterLabel = "Filter",
   sortLabel = "Sort",
@@ -43,120 +86,149 @@ const SortFilterBar: React.FC<SortFilterBarProps> = ({
 }) => {
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [openMenu, setOpenMenu] = useState<"filter" | "sort" | null>(null);
-  const selectedFilterLabel =
-    filterOptions.find((option) => option.value === selectedFilter)?.label ??
-    filterOptions[0]?.label;
-  const selectedSortLabel =
-    sortOptions.find((option) => option.value === selectedSort)?.label ??
-    sortOptions[0]?.label;
+  const [anchor, setAnchor] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const filterRef = useRef<View>(null);
+  const sortRef = useRef<View>(null);
+
+  const selectedFilterLabel = useMemo(
+    () =>
+      filterOptions.find((option) => option.value === selectedFilter)?.label ??
+      filterOptions[0]?.label,
+    [filterOptions, selectedFilter],
+  );
+  const selectedSortLabel = useMemo(
+    () =>
+      sortOptions.find((option) => option.value === selectedSort)?.label ??
+      sortOptions[0]?.label,
+    [sortOptions, selectedSort],
+  );
+
+  const activeOptions = openMenu === "filter" ? filterOptions : sortOptions;
+  const openSelector = (menu: "filter" | "sort") => {
+    const node = menu === "filter" ? filterRef.current : sortRef.current;
+    if (!node) {
+      setAnchor(null);
+      setOpenMenu(menu);
+      return;
+    }
+    node.measureInWindow((x, y, width, height) => {
+      setAnchor({ x, y, width, height });
+      setOpenMenu(menu);
+    });
+  };
+
+  const closeSelector = () => {
+    setOpenMenu(null);
+  };
+
+  const MENU_WIDTH = 196;
+  const EDGE_GUTTER = 12;
+  const top = anchor
+    ? Math.max(
+        EDGE_GUTTER,
+        Math.min(anchor.y + anchor.height + 6, windowHeight - EDGE_GUTTER - 280),
+      )
+    : EDGE_GUTTER + 54;
+  const left = anchor
+    ? Math.max(
+        EDGE_GUTTER,
+        Math.min(anchor.x + anchor.width - MENU_WIDTH, windowWidth - MENU_WIDTH - EDGE_GUTTER),
+      )
+    : Math.max(EDGE_GUTTER, windowWidth - MENU_WIDTH - EDGE_GUTTER);
 
   return (
-    <NeumoSurface
-      variant="flat"
-      tone="surface"
-      radius={NeumoTokens.radius.lg}
-      padding={NeumoTokens.spacing.sm}
-      style={styles.container}
-    >
+    <View style={styles.wrapper}>
       <View style={styles.row}>
-        <NeumoPressable
+        <Selector
+          icon={faFilter}
+          label={filterLabel}
+          valueLabel={selectedFilterLabel}
+          open={openMenu === "filter"}
           onPress={() =>
-            setOpenMenu((prev) => (prev === "filter" ? null : "filter"))
+            openMenu === "filter" ? closeSelector() : openSelector("filter")
           }
-          variant="raised"
-          tone="surface"
-          radius={NeumoTokens.radius.md}
-          padding={NeumoTokens.spacing.xs}
-          style={styles.selector}
-        >
-          <View style={styles.selectorContent}>
-            <Text style={styles.selectorLabel}>
-              <FontAwesomeIcon
-                icon={faFilterCircleXmark}
-                color={colors.textSecondary}
-              />
-            </Text>
-            <Text style={styles.selectorValue}>{selectedFilterLabel}</Text>
-            <Text style={styles.selectorChevron}>
-              <FontAwesomeIcon
-                color={colors.textSecondary}
-                icon={openMenu === "filter" ? faCaretUp : faCaretDown}
-              />
-            </Text>
-          </View>
-        </NeumoPressable>
-
-        <NeumoPressable
+          triggerRef={filterRef}
+        />
+        <Selector
+          icon={faSort}
+          label={sortLabel}
+          valueLabel={selectedSortLabel}
+          open={openMenu === "sort"}
           onPress={() =>
-            setOpenMenu((prev) => (prev === "sort" ? null : "sort"))
+            openMenu === "sort" ? closeSelector() : openSelector("sort")
           }
-          variant="raised"
-          tone="surface"
-          radius={NeumoTokens.radius.md}
-          padding={NeumoTokens.spacing.xs}
-          style={styles.selector}
-        >
-          <View style={styles.selectorContent}>
-            <Text style={styles.selectorLabel}>
-              <FontAwesomeIcon icon={faSort} color={colors.textSecondary} />
-            </Text>
-            <Text style={styles.selectorValue}>{selectedSortLabel}</Text>
-            <Text style={styles.selectorChevron}>
-              <FontAwesomeIcon
-                icon={openMenu === "sort" ? faCaretUp : faCaretDown}
-                color={colors.textSecondary}
-              />
-            </Text>
-          </View>
-        </NeumoPressable>
+          triggerRef={sortRef}
+        />
       </View>
+
       {openMenu && (
-        <NeumoSurface
-          variant="raised"
-          tone="surface"
-          radius={NeumoTokens.radius.md}
-          padding={NeumoTokens.spacing.sm}
-          style={styles.dropdown}
+        <Modal
+          transparent
+          visible
+          animationType="fade"
+          onRequestClose={closeSelector}
         >
-          {(openMenu === "filter" ? filterOptions : sortOptions).map(
-            (option) => {
-              const isActive =
-                openMenu === "filter"
-                  ? option.value === selectedFilter
-                  : option.value === selectedSort;
-              return (
-                <NeumoPressable
-                  key={option.value}
-                  onPress={() => {
-                    if (openMenu === "filter") {
-                      onFilterChange(option.value);
-                    } else {
-                      onSortChange(option.value);
-                    }
-                    setOpenMenu(null);
-                  }}
-                  variant={isActive ? "raised" : "flat"}
-                  tone="surface"
-                  radius={NeumoTokens.radius.md}
-                  padding={NeumoTokens.spacing.sm}
-                  style={styles.dropdownItem}
-                >
-                  <Text
-                    style={[
-                      styles.dropdownText,
-                      isActive && styles.dropdownTextActive,
-                    ]}
+          <Pressable style={styles.backdrop} onPress={closeSelector} />
+          <View style={styles.modalLayer} pointerEvents="box-none">
+            <NeumoSurface
+              variant="glass-strong"
+              tone="surface"
+              radius={NeumoTokens.radius.md}
+              padding={NeumoTokens.spacing.xs}
+              style={[
+                styles.dropdown,
+                {
+                  top,
+                  left,
+                  width: MENU_WIDTH,
+                },
+              ]}
+            >
+              {activeOptions.map((option) => {
+                const isActive =
+                  openMenu === "filter"
+                    ? option.value === selectedFilter
+                    : option.value === selectedSort;
+                return (
+                  <NeumoPressable
+                    key={option.value}
+                    onPress={() => {
+                      if (openMenu === "filter") {
+                        onFilterChange(option.value);
+                      } else {
+                        onSortChange(option.value);
+                      }
+                      closeSelector();
+                    }}
+                    variant={isActive ? "glass-strong" : "solid"}
+                    tone="surface"
+                    radius={NeumoTokens.radius.sm}
+                    padding={NeumoTokens.spacing.xs}
+                    style={styles.dropdownItem}
                   >
-                    {option.label}
-                  </Text>
-                </NeumoPressable>
-              );
-            },
-          )}
-        </NeumoSurface>
+                    <Text
+                      style={[
+                        styles.dropdownText,
+                        isActive && styles.dropdownTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </NeumoPressable>
+                );
+              })}
+            </NeumoSurface>
+          </View>
+        </Modal>
       )}
-    </NeumoSurface>
+    </View>
   );
 };
 
@@ -164,55 +236,64 @@ export default SortFilterBar;
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      gap: NeumoTokens.spacing.sm,
+    wrapper: {
+      gap: NeumoTokens.spacing.xs,
     },
     row: {
       flexDirection: "row",
-      alignItems: "center",
       justifyContent: "flex-end",
-      gap: NeumoTokens.spacing.sm,
+      alignItems: "center",
+      gap: NeumoTokens.spacing.xs,
     },
-    selector: {
-      flex: 1,
+    selectorContainer: {
+      minWidth: 124,
+      maxWidth: 180,
     },
-    selectorContent: {
+    selectorButton: {
+      minHeight: NeumoTokens.touch.minTarget,
+      paddingHorizontal: NeumoTokens.spacing.sm,
+    },
+    selectorRow: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
+      gap: 6,
     },
     selectorLabel: {
       color: colors.textSecondary,
       fontSize: Typography.size.xs,
       textTransform: "uppercase",
-      letterSpacing: 0.6,
+      letterSpacing: Typography.tracking.normal,
     },
     selectorValue: {
       color: colors.textPrimary,
       fontSize: Typography.size.sm,
       fontWeight: Typography.weight.semibold as any,
-      flex: 1,
-      textAlign: "center",
-    },
-    selectorChevron: {
-      color: colors.textSecondary,
-      fontSize: Typography.size.sm,
-      marginLeft: 4,
+      marginRight: 2,
     },
     dropdown: {
-      marginTop: 8,
-      gap: 6,
+      position: "absolute",
+      zIndex: 1000,
+      elevation: 30,
+      gap: 4,
     },
     dropdownItem: {
       minHeight: 36,
+      justifyContent: "center",
     },
     dropdownText: {
       color: colors.textSecondary,
       fontSize: Typography.size.sm,
-      fontWeight: Typography.weight.semibold as any,
+      fontWeight: Typography.weight.medium as any,
     },
     dropdownTextActive: {
       color: colors.textPrimary,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    modalLayer: {
+      flex: 1,
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "transparent",
     },
   });

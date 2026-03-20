@@ -296,7 +296,7 @@ function BottomTabNavigator() {
           borderTopWidth: 0,
           height: FloatingTabBar.height,
           paddingBottom: NeumoTokens.spacing.sm,
-          paddingTop: NeumoTokens.spacing.sm,
+          paddingTop: NeumoTokens.spacing.xs,
           position: "absolute",
           left: FloatingTabBar.inset,
           right: FloatingTabBar.inset,
@@ -305,7 +305,7 @@ function BottomTabNavigator() {
         },
         tabBarBackground: () => (
           <NeumoSurface
-            variant="raised"
+            variant="glass-strong"
             tone="surface"
             radius={NeumoTokens.radius.xl}
             padding={0}

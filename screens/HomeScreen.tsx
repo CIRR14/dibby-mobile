@@ -29,7 +29,6 @@ import {
 } from "firebase/firestore";
 import { DibbyTrip } from "../constants/DibbyTypes";
 import { Platform } from "react-native";
-import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 import DibbyButton from "../components/DibbyButton";
 import { faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
@@ -48,9 +47,10 @@ import { useAvatarUrl } from "../hooks/useAvatarUrl";
 import StatsSection from "../components/StatsSection";
 import { buildHomeStats, pickStats } from "../helpers/StatsHelpers";
 import ScreenState from "../components/ScreenState";
+import ScreenLayout from "../components/ScreenLayout";
+import useResponsiveLayout from "../hooks/useResponsiveLayout";
 
 const cardWidth = 500;
-const numColumns = Math.floor(windowWidth / cardWidth);
 
 const HomeScreen = () => {
   const [currentTrips, setCurrentTrips] = useState<DibbyTrip[]>([]);
@@ -65,13 +65,14 @@ const HomeScreen = () => {
   >("recent");
 
   const navigation = useNavigation();
-  const { dibbyUser, loggedInUser } = useUser();
+  const { dibbyUser, loggedInUser, authReady, profileReady } = useUser();
   const { uri: avatarUrl, imageProps } = useAvatarUrl(
     dibbyUser?.photoURL || loggedInUser?.photoURL,
     96,
   );
 
   const colors = useAppTheme();
+  const responsive = useResponsiveLayout();
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   const fetchTrips = useCallback(async () => {
@@ -99,11 +100,25 @@ const HomeScreen = () => {
       setCurrentTrips(trips);
       setRefreshing(false);
     }
-  }, [dibbyUser]);
+  }, [dibbyUser?.uid, fetchTrips]);
 
   useEffect(() => {
-    const tripsExist = dibbyUser?.trips.length && dibbyUser?.trips.length > 0;
-    if (dibbyUser?.uid && tripsExist) {
+    if (!authReady || !profileReady) {
+      setLoading(true);
+      return;
+    }
+
+    if (!dibbyUser?.uid) {
+      setCurrentTrips([]);
+      setLoading(false);
+      return;
+    }
+
+    const tripsExist =
+      Array.isArray(dibbyUser.trips) && dibbyUser.trips.length > 0;
+
+    if (tripsExist) {
+      setLoading(true);
       const q = query(
         collection(db, "trips"),
         where(documentId(), "in", dibbyUser.trips),
@@ -121,10 +136,11 @@ const HomeScreen = () => {
 
       return () => unsubscribe();
     }
-    if (!tripsExist) {
-      setLoading(false);
-    }
-  }, [dibbyUser]);
+    setCurrentTrips([]);
+    setLoading(false);
+  }, [authReady, profileReady, dibbyUser?.uid, dibbyUser?.trips]);
+
+  const screenStatus = loading || !authReady || !profileReady ? "loading" : "ready";
 
   const completeTrip = useCallback(
     async (trip: DibbyTrip, complete: boolean) => {
@@ -206,7 +222,7 @@ const HomeScreen = () => {
       ]),
     [homeStats],
   );
-  const statsColumns = wideScreen ? 3 : 2;
+  const statsColumns = responsive.isDesktop ? 2 : 2;
 
   const tripFilterOptions: SortFilterOption[] = [
     { label: "All", value: "all" },
@@ -260,7 +276,7 @@ const HomeScreen = () => {
   const renderTripItem = useCallback(
     ({ item }: { item: DibbyTrip }) => (
       <DibbyCard
-        wideScreen={wideScreen}
+        wideScreen={responsive.isDesktop}
         cardWidth={cardWidth}
         trip={item}
         completed={item.completed}
@@ -274,8 +290,89 @@ const HomeScreen = () => {
         }
       />
     ),
-    [navigation, deleteAlert, completeTrip, wideScreen],
+    [navigation, deleteAlert, completeTrip, responsive.isDesktop],
   );
+
+  const renderHeroCard = () => (
+    <NeumoSurface
+      variant="glass"
+      tone="surface"
+      radius={NeumoTokens.radius.lg}
+      style={styles.hero}
+    >
+      <Text style={styles.heroTitle}>Your trips</Text>
+      <View style={styles.heroStats}>
+        <StatsSection
+          compactItems={homeCompactStats}
+          fullItems={homeStats}
+          compactColumns={2}
+          expandedColumns={statsColumns}
+        />
+      </View>
+    </NeumoSurface>
+  );
+
+  const renderSortFilter = () =>
+    currentTrips.length > 0 ? (
+      <SortFilterBar
+        filterOptions={tripFilterOptions}
+        sortOptions={tripSortOptions}
+        selectedFilter={tripFilter}
+        selectedSort={tripSort}
+        onFilterChange={(value) =>
+          setTripFilter(value as "all" | "open" | "completed")
+        }
+        onSortChange={(value) =>
+          setTripSort(value as "recent" | "oldest" | "amount" | "name")
+        }
+      />
+    ) : null;
+
+  const renderEmptyState = () =>
+    currentTrips.length > 0 ? (
+      <NeumoSurface
+        variant="inset"
+        tone="surface"
+        radius={NeumoTokens.radius.lg}
+        style={styles.emptyState}
+      >
+        <Text style={styles.emptyTitle}>No trips match this filter</Text>
+        <Text style={styles.emptyText}>Try changing the filter or sort.</Text>
+        <DibbyButton
+          title="Clear filters"
+          onPress={() => {
+            setTripFilter("all");
+            setTripSort("recent");
+          }}
+          fullWidth
+        />
+      </NeumoSurface>
+    ) : (
+      <NeumoSurface
+        variant="glass"
+        tone="surface"
+        radius={NeumoTokens.radius.lg}
+        style={styles.emptyState}
+      >
+        <Text style={styles.emptyTitle}>Create your first trip</Text>
+        <Text style={styles.emptyText}>
+          Add friends and split expenses in minutes.
+        </Text>
+        <DibbyButton
+          title="Create Trip"
+          onPress={() => navigation.navigate("TripWizard")}
+          fullWidth
+        />
+        <NeumoPressable
+          variant="solid"
+          tone="base"
+          onPress={() => setShowHowItWorks(true)}
+          style={styles.howItWorksButton}
+        >
+          <Text style={styles.howItWorksText}>How it works (30 sec)</Text>
+        </NeumoPressable>
+      </NeumoSurface>
+    );
 
   return (
     <View style={styles.topContainer}>
@@ -339,9 +436,39 @@ const HomeScreen = () => {
             />
           }
         />
-        {dibbyUser && (
-          <View style={styles.grid}>
-            <ScreenState status={loading ? "loading" : "ready"}>
+        <ScreenLayout contentStyle={styles.layoutContent}>
+          <ScreenState status={screenStatus}>
+            {responsive.isDesktop ? (
+              <View style={styles.desktopShell}>
+                <View style={styles.desktopPrimary}>
+                  <View style={styles.desktopListHeader}>
+                    {renderSortFilter()}
+                  </View>
+                  <FlatList
+                    removeClippedSubviews={false}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                      />
+                    }
+                    style={styles.list}
+                    contentContainerStyle={styles.desktopListContent}
+                    key="home-desktop-list"
+                    data={visibleTrips}
+                    keyExtractor={(trip) => trip.id}
+                    numColumns={1}
+                    initialNumToRender={8}
+                    maxToRenderPerBatch={10}
+                    windowSize={9}
+                    updateCellsBatchingPeriod={50}
+                    ListEmptyComponent={renderEmptyState()}
+                    renderItem={renderTripItem}
+                  />
+                </View>
+                <View style={styles.desktopAside}>{renderHeroCard()}</View>
+              </View>
+            ) : (
               <FlatList
                 removeClippedSubviews={false}
                 refreshControl={
@@ -352,109 +479,26 @@ const HomeScreen = () => {
                 }
                 style={styles.list}
                 contentContainerStyle={styles.listContent}
-                key={numColumns}
+                key="home-mobile-list"
                 data={visibleTrips}
                 keyExtractor={(trip) => trip.id}
-                numColumns={numColumns}
+                numColumns={1}
                 initialNumToRender={6}
                 maxToRenderPerBatch={8}
                 windowSize={7}
                 updateCellsBatchingPeriod={50}
                 ListHeaderComponent={
                   <View style={styles.listHeader}>
-                    <NeumoSurface
-                      variant="raised"
-                      tone="surface"
-                      radius={NeumoTokens.radius.lg}
-                      style={styles.hero}
-                    >
-                      <Text style={styles.heroTitle}>Your trips</Text>
-                      <View style={styles.heroStats}>
-                        <StatsSection
-                          compactItems={homeCompactStats}
-                          fullItems={homeStats}
-                          compactColumns={2}
-                          expandedColumns={statsColumns}
-                        />
-                      </View>
-                    </NeumoSurface>
-                    {currentTrips.length > 0 && (
-                      <SortFilterBar
-                        filterOptions={tripFilterOptions}
-                        sortOptions={tripSortOptions}
-                        selectedFilter={tripFilter}
-                        selectedSort={tripSort}
-                        onFilterChange={(value) =>
-                          setTripFilter(value as "all" | "open" | "completed")
-                        }
-                        onSortChange={(value) =>
-                          setTripSort(
-                            value as "recent" | "oldest" | "amount" | "name",
-                          )
-                        }
-                      />
-                    )}
+                    {renderHeroCard()}
+                    {renderSortFilter()}
                   </View>
                 }
-                ListEmptyComponent={
-                  currentTrips.length > 0 ? (
-                    <NeumoSurface
-                      variant="inset"
-                      tone="surface"
-                      radius={NeumoTokens.radius.lg}
-                      style={styles.emptyState}
-                    >
-                      <Text style={styles.emptyTitle}>
-                        No trips match this filter
-                      </Text>
-                      <Text style={styles.emptyText}>
-                        Try changing the filter or sort.
-                      </Text>
-                      <DibbyButton
-                        title="Clear filters"
-                        onPress={() => {
-                          setTripFilter("all");
-                          setTripSort("recent");
-                        }}
-                        fullWidth
-                      />
-                    </NeumoSurface>
-                  ) : (
-                    <NeumoSurface
-                      variant="inset"
-                      tone="surface"
-                      radius={NeumoTokens.radius.lg}
-                      style={styles.emptyState}
-                    >
-                      <Text style={styles.emptyTitle}>
-                        Create your first trip
-                      </Text>
-                      <Text style={styles.emptyText}>
-                        Add friends and split expenses in minutes.
-                      </Text>
-                      <DibbyButton
-                        title="Create Trip"
-                        onPress={() => navigation.navigate("TripWizard")}
-                        fullWidth
-                      />
-                      <NeumoPressable
-                        variant="flat"
-                        tone="base"
-                        onPress={() => setShowHowItWorks(true)}
-                        style={styles.howItWorksButton}
-                      >
-                        <Text style={styles.howItWorksText}>
-                          How it works (30 sec)
-                        </Text>
-                      </NeumoPressable>
-                    </NeumoSurface>
-                  )
-                }
+                ListEmptyComponent={renderEmptyState()}
                 renderItem={renderTripItem}
               />
-            </ScreenState>
-          </View>
-        )}
+            )}
+          </ScreenState>
+        </ScreenLayout>
       </SafeAreaView>
       <Modal
         transparent
@@ -464,7 +508,7 @@ const HomeScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <NeumoSurface
-            variant="raised"
+            variant="glass-strong"
             tone="surface"
             radius={NeumoTokens.radius.lg}
             style={styles.modalCard}
@@ -499,38 +543,38 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background.default,
     },
-    grid: {
+    layoutContent: {
       flex: 1,
-      display: "flex",
-      paddingHorizontal: 16,
+      overflow: "visible",
     },
     list: {
       overflow: "visible",
+      flex: 1,
     },
     listContent: {
-      paddingHorizontal: NeumoTokens.spacing.xs,
+      paddingHorizontal: NeumoTokens.spacing.xxs,
       paddingTop: NeumoTokens.spacing.xs,
-      paddingBottom: FloatingTabBar.spacer,
+      paddingBottom: FloatingTabBar.spacer + NeumoTokens.spacing.xs,
       overflow: "visible",
     },
     listHeader: {
-      gap: 12,
-      marginBottom: 12,
+      gap: 10,
+      marginBottom: 10,
     },
     hero: {
-      marginBottom: 16,
+      marginBottom: 0,
     },
     heroTitle: {
       color: colors.textPrimary,
       fontSize: Typography.size.lg,
       fontWeight: Typography.weight.bold as any,
-      marginBottom: 8,
+      marginBottom: 6,
     },
     heroStats: {
       marginTop: 4,
     },
     emptyState: {
-      marginVertical: 24,
+      marginVertical: 16,
       gap: 12,
     },
     emptyTitle: {
@@ -564,7 +608,6 @@ const makeStyles = (colors: ThemeColors) =>
       width: "100%",
       maxWidth: 420,
       gap: 10,
-      ...(Platform.OS === "web" ? { boxShadow: "none" } : {}),
     },
     modalTitle: {
       color: colors.textPrimary,
@@ -574,5 +617,29 @@ const makeStyles = (colors: ThemeColors) =>
     modalText: {
       color: colors.textSecondary,
       fontSize: Typography.size.sm,
+    },
+    desktopShell: {
+      flex: 1,
+      flexDirection: "row",
+      gap: 20,
+      overflow: "visible",
+    },
+    desktopPrimary: {
+      flex: 1.3,
+      minWidth: 0,
+      overflow: "visible",
+    },
+    desktopAside: {
+      flex: 0.9,
+      minWidth: 0,
+      paddingTop: NeumoTokens.spacing.xs,
+      alignSelf: "flex-start",
+    },
+    desktopListHeader: {
+      marginBottom: 8,
+    },
+    desktopListContent: {
+      paddingBottom: FloatingTabBar.spacer + NeumoTokens.spacing.md,
+      overflow: "visible",
     },
   });

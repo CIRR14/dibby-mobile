@@ -17,6 +17,7 @@ import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import * as Linking from "expo-linking";
+import ScreenLayout from "../components/ScreenLayout";
 
 export const VerifyEmail = () => {
   const { loggedInUser } = useUser();
@@ -93,48 +94,51 @@ export const VerifyEmail = () => {
             />
           }
         />
-        <NeumoSurface
-          variant="raised"
-          tone="surface"
-          radius={NeumoTokens.radius.lg}
-          style={styles.cardContainer}
-        >
-          <Text style={styles.stepLabel}>Step 1 of 3</Text>
-          <Text style={styles.title}>Verify your email</Text>
-          <Text style={styles.subtitle}>
-            We sent an activation link to your email address.
-          </Text>
-          <FontAwesomeIcon
-            icon={faEnvelopeCircleCheck}
-            size={96}
-            color={colors.accent}
-            style={{
-              alignSelf: "center",
-              marginVertical: 20,
-            }}
-          />
-          <View style={styles.buttonRow}>
-            <View style={styles.buttonSlot}>
-              <DibbyButton
-                onPress={openEmailApp}
-                title="Open email app"
-                type="solid"
-                fullWidth
-              />
+        <ScreenLayout contentStyle={styles.layoutContent}>
+          <NeumoSurface
+            variant="glass"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.cardContainer}
+          >
+            <Text style={styles.stepLabel}>Step 1 of 3</Text>
+            <Text style={styles.title}>Verify your email</Text>
+            <Text style={styles.subtitle}>
+              We sent an activation link to your email address.
+            </Text>
+            <FontAwesomeIcon
+              icon={faEnvelopeCircleCheck}
+              size={96}
+              color={colors.accent}
+              style={{
+                alignSelf: "center",
+                marginVertical: 20,
+              }}
+            />
+            <View style={styles.buttonRow}>
+              <View style={styles.buttonSlot}>
+                <DibbyButton
+                  onPress={openEmailApp}
+                  title="Open email app"
+                  type="solid"
+                  fullWidth
+                />
+              </View>
+              <View style={styles.buttonSlot}>
+                <DibbyButton
+                  onPress={resendVerificationEmail}
+                  title="Resend link"
+                  type="outline"
+                  fullWidth
+                  size="sm"
+                />
+              </View>
             </View>
-            <View style={styles.buttonSlot}>
-              <DibbyButton
-                onPress={resendVerificationEmail}
-                title="Resend link"
-                type="outline"
-                fullWidth
-              />
-            </View>
-          </View>
-          <Text style={styles.helperText}>
-            Didn’t get it? Check spam or wait a minute, then resend.
-          </Text>
-        </NeumoSurface>
+            <Text style={styles.helperText}>
+              Didn’t get it? Check spam or wait a minute, then resend.
+            </Text>
+          </NeumoSurface>
+        </ScreenLayout>
       </SafeAreaView>
     </View>
   );
@@ -146,10 +150,14 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background.default,
     },
+    layoutContent: {
+      flex: 1,
+      justifyContent: "center",
+    },
     cardContainer: {
       borderRadius: NeumoTokens.radius.lg,
-      margin: 16,
       gap: 12,
+      padding: NeumoTokens.spacing.lg,
     },
     stepLabel: {
       color: colors.textSecondary,

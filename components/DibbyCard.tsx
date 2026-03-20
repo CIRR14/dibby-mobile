@@ -1,12 +1,11 @@
 import {
   faCheck,
-  faEllipsis,
   faShare,
   faTrash,
   faUnlock,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   Platform,
@@ -36,9 +35,9 @@ import DibbyAvatars from "./DibbyAvatars";
 import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
-import NeumoPressable from "./NeumoPressable";
 import { resolveParticipantColor } from "../helpers/GenerateColor";
 import useAppTheme from "../hooks/useAppTheme";
+import ActionMenu, { ActionMenuItem } from "./ActionMenu";
 
 interface IDibbyCardProps {
   trip?: DibbyTrip;
@@ -67,8 +66,7 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
     wideScreen,
     cardWidth,
   );
-  const [actionsOpen, setActionsOpen] = useState<boolean>(false);
-  const hasActions = Boolean(onDeleteItem || onCompleteItem || trip || expense);
+  const [menuOpen, setMenuOpen] = useState(false);
   const displayTitle = formatTitleWithEmoji(
     (expense || trip)?.title,
     (expense || trip)?.emoji,
@@ -126,191 +124,148 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
     return arr;
   };
 
+  const actionItems = useMemo<ActionMenuItem[]>(
+    () => [
+      ...(trip && !expense && onCompleteItem
+        ? [
+            {
+              key: "complete",
+              label: completed ? "Reopen" : "Complete",
+              icon: completed ? faUnlock : faCheck,
+              onPress: () => onCompleteItem(!completed),
+            },
+          ]
+        : []),
+      ...(trip || expense
+        ? [
+            {
+              key: "share",
+              label: "Share",
+              icon: faShare,
+              onPress: handleShare,
+            },
+          ]
+        : []),
+      ...(onDeleteItem && (expense || !completed)
+        ? [
+            {
+              key: "delete",
+              label: "Delete",
+              icon: faTrash,
+              destructive: true,
+              onPress: onDeleteItem,
+            },
+          ]
+        : []),
+    ],
+    [trip, expense, onCompleteItem, completed, onDeleteItem],
+  );
+
   return (
     <NeumoSurface
-      variant="raised"
+      variant="glass"
       radius={NeumoTokens.radius.lg}
       padding={0}
-      style={{ margin: 8 }}
+      clipContent={false}
+      style={{
+        margin: 8,
+        zIndex: menuOpen ? 100 : 1,
+        elevation: menuOpen ? 20 : 1,
+        position: "relative",
+      }}
     >
       <TouchableOpacity style={styles.card} onPress={onPress}>
         <View style={styles.cardContent}>
-          <View style={styles.headerRow}>
-            <Text style={[styles.text, styles.caption]}>
-              {timestampToString((expense || trip)?.dateCreated)}
-            </Text>
-            <View style={styles.headerActions}>
-              {completed && (
-                <NeumoSurface
-                  variant="flat"
-                  tone="surface"
-                  radius={NeumoTokens.radius.pill}
-                  padding={NeumoTokens.control.pill.padding}
-                  style={styles.statusPill}
-                >
-                  <View style={styles.statusContent}>
-                    <FontAwesomeIcon
-                      icon={faCheck}
-                      size={10}
-                      color={colors.success.background}
+          <View style={styles.mainRow}>
+            <View style={styles.textLane}>
+              <View style={styles.headerRow}>
+                <Text style={[styles.text, styles.caption]}>
+                  {timestampToString((expense || trip)?.dateCreated)}
+                </Text>
+                {completed && (
+                  <NeumoSurface
+                    variant="solid"
+                    tone="surface"
+                    radius={NeumoTokens.radius.pill}
+                    padding={NeumoTokens.control.pill.padding}
+                    style={styles.statusPill}
+                  >
+                    <View style={styles.statusContent}>
+                      <FontAwesomeIcon
+                        icon={faCheck}
+                        size={10}
+                        color={colors.success.background}
+                      />
+                      <Text style={styles.statusText}>Completed</Text>
+                    </View>
+                  </NeumoSurface>
+                )}
+              </View>
+
+              <View style={styles.bodyRow}>
+                <View style={styles.cardTextContainer}>
+                  <Text style={[styles.text, styles.title]}>{displayTitle}</Text>
+                  <Text
+                    style={[
+                      styles.text,
+                      styles.subtitle,
+                      {
+                        color:
+                          trip ||
+                          (expense && ((expense || trip)?.amount as number) > 0)
+                            ? colors.info.background
+                            : colors.danger.card,
+                      },
+                    ]}
+                  >
+                    {expense && trip && (expense.amount as number) > 0
+                      ? `Total Cost: $${numberWithCommas(
+                          expense?.amount.toString(),
+                        )}`
+                      : !expense && trip && trip.amount > 0
+                        ? `Total Cost: $${numberWithCommas(
+                            trip?.amount.toString(),
+                          )}`
+                        : expense && trip
+                          ? "No cost yet!"
+                          : `No expenses yet!`}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.visualLane}>
+              <ActionMenu
+                items={actionItems}
+                compact
+                onOpenChange={setMenuOpen}
+              />
+              {trip &&
+                (expense ? (
+                  <View style={styles.cardRight}>
+                    <DibbyAvatars
+                      expense={expense}
+                      onPress={onPress}
+                      travelers={getAvatarArray(
+                        expense.peopleInExpense,
+                        expense.paidBy,
+                      )}
                     />
-                    <Text style={styles.statusText}>Completed</Text>
+                    <View style={styles.splitRow}>
+                      <Text style={styles.splitText}>
+                        {getDibbySplitMethodString(expense.splitMethod)}
+                      </Text>
+                    </View>
                   </View>
-                </NeumoSurface>
-              )}
-              {hasActions && (
-                <NeumoPressable
-                  onPress={() => setActionsOpen((prev) => !prev)}
-                  variant="flat"
-                  tone="base"
-                  radius={NeumoTokens.radius.pill}
-                  padding={NeumoTokens.control.pill.padding}
-                  style={styles.moreButtonInner}
-                >
-                  <FontAwesomeIcon
-                    icon={faEllipsis}
-                    size={14}
-                    color={colors.textSecondary}
-                  />
-                </NeumoPressable>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.bodyRow}>
-            <View style={styles.cardTextContainer}>
-              <Text style={[styles.text, styles.title]}>
-                {displayTitle}
-              </Text>
-              <Text
-                style={[
-                  styles.text,
-                  styles.subtitle,
-                  {
-                    color:
-                      trip ||
-                      (expense && ((expense || trip)?.amount as number) > 0)
-                        ? colors.info.background
-                        : colors.danger.card,
-                  },
-                ]}
-              >
-                {expense && trip && (expense.amount as number) > 0
-                  ? `Total Cost: $${numberWithCommas(
-                      expense?.amount.toString(),
-                    )}`
-                  : !expense && trip && trip.amount > 0
-                    ? `Total Cost: $${numberWithCommas(
-                        trip?.amount.toString(),
-                      )}`
-                    : expense && trip
-                      ? "No cost yet!"
-                      : `No expenses yet!`}
-              </Text>
-            </View>
-
-            {trip &&
-              (expense ? (
-                <View style={styles.cardRight}>
-                  <DibbyAvatars
-                    expense={expense}
-                    onPress={onPress}
-                    travelers={getAvatarArray(
-                      expense.peopleInExpense,
-                      expense.paidBy,
-                    )}
-                  />
-                  <View style={styles.splitRow}>
-                    <Text style={styles.splitText}>
-                      {getDibbySplitMethodString(expense.splitMethod)}
-                    </Text>
+                ) : (
+                  <View style={styles.cardRight}>
+                    <DibbyAvatars onPress={onPress} travelers={trip.participants} />
                   </View>
-                </View>
-              ) : (
-                <View style={styles.cardRight}>
-                  <DibbyAvatars
-                    onPress={onPress}
-                    travelers={trip.participants}
-                  />
-                </View>
-              ))}
+                ))}
+            </View>
           </View>
         </View>
       </TouchableOpacity>
-      {actionsOpen && hasActions && (
-        <View style={styles.actionRow}>
-          {trip && !expense && onCompleteItem && (
-            <NeumoPressable
-              onPress={() => {
-                onCompleteItem(!!!completed);
-                setActionsOpen(false);
-              }}
-              variant="inset"
-              tone="surface"
-              radius={NeumoTokens.radius.md}
-              padding={NeumoTokens.spacing.sm}
-              style={styles.actionButton}
-            >
-              <View style={styles.actionContent}>
-                <FontAwesomeIcon
-                  icon={completed ? faUnlock : faCheck}
-                  size={14}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.actionText}>
-                  {completed ? "Reopen" : "Complete"}
-                </Text>
-              </View>
-            </NeumoPressable>
-          )}
-          {(trip || expense) && (
-            <NeumoPressable
-              onPress={async () => {
-                await handleShare();
-                setActionsOpen(false);
-              }}
-              variant="inset"
-              tone="surface"
-              radius={NeumoTokens.radius.md}
-              padding={NeumoTokens.spacing.sm}
-              style={styles.actionButton}
-            >
-              <View style={styles.actionContent}>
-                <FontAwesomeIcon
-                  icon={faShare}
-                  size={14}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.actionText}>Share</Text>
-              </View>
-            </NeumoPressable>
-          )}
-          {onDeleteItem && (expense || !completed) && (
-            <NeumoPressable
-              onPress={() => {
-                onDeleteItem();
-                setActionsOpen(false);
-              }}
-              variant="inset"
-              tone="surface"
-              radius={NeumoTokens.radius.md}
-              padding={NeumoTokens.spacing.sm}
-              style={styles.actionButton}
-            >
-              <View style={styles.actionContent}>
-                <FontAwesomeIcon
-                  icon={faTrash}
-                  size={14}
-                  color={colors.danger.background}
-                />
-                <Text style={[styles.actionText, styles.deleteText]}>
-                  Delete
-                </Text>
-              </View>
-            </NeumoPressable>
-          )}
-        </View>
-      )}
     </NeumoSurface>
   );
 };
@@ -326,7 +281,7 @@ const makeStyles = (
     card: {
       minWidth: wideScreen ? cardWidth : 0,
       backgroundColor: "transparent",
-      padding: 14,
+      padding: 12,
       borderRadius: NeumoTokens.radius.lg,
       display: "flex",
       justifyContent: "center",
@@ -334,7 +289,23 @@ const makeStyles = (
     cardContent: {
       display: "flex",
       flexDirection: "column",
-      gap: 6,
+      gap: 8,
+    },
+    mainRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 10,
+    },
+    textLane: {
+      flex: 1,
+      minWidth: 0,
+      gap: 4,
+    },
+    visualLane: {
+      width: 116,
+      alignItems: "flex-end",
+      gap: 8,
     },
     bodyRow: {
       display: "flex",
@@ -343,26 +314,15 @@ const makeStyles = (
       alignItems: "flex-start",
     },
     cardTextContainer: {
-      maxWidth: "70%",
+      maxWidth: "100%",
       display: "flex",
       justifyContent: "space-between",
     },
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
+      justifyContent: "flex-start",
       gap: 8,
-    },
-    headerActions: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    moreButtonInner: {
-      minWidth: NeumoTokens.control.pill.minHeight,
-      minHeight: NeumoTokens.control.pill.minHeight,
-      alignItems: "center",
-      justifyContent: "center",
     },
     cardRight: {
       alignItems: "flex-end",
@@ -392,6 +352,7 @@ const makeStyles = (
       fontWeight: Typography.weight.bold as any,
       textTransform: "capitalize",
       overflow: "hidden",
+      lineHeight: 30,
     },
     subtitle: {
       fontSize: Typography.size.sm,
@@ -417,30 +378,6 @@ const makeStyles = (
       fontWeight: Typography.weight.semibold as any,
       textTransform: "uppercase",
       letterSpacing: 0.4,
-    },
-    actionRow: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      gap: 10,
-      paddingHorizontal: 16,
-      paddingBottom: 14,
-    },
-    actionButton: {
-      minHeight: 36,
-    },
-    actionContent: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    actionText: {
-      color: colors.textSecondary,
-      fontSize: Typography.size.xs,
-      fontWeight: Typography.weight.semibold as any,
-      textTransform: "uppercase",
-    },
-    deleteText: {
-      color: colors.danger.background,
     },
     itemGrid: {
       display: "flex",

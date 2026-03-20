@@ -20,6 +20,7 @@ import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
+import ScreenLayout from "../components/ScreenLayout";
 
 const CreateProfile = () => {
   const { loggedInUser, dibbyUser } = useUser();
@@ -121,126 +122,127 @@ const CreateProfile = () => {
   return (
     <View style={styles.topContainer}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Text style={styles.stepLabel}>Step 2 of 3</Text>
-          <Text style={styles.title}>Complete Profile</Text>
-          <Text style={styles.subtitle}>
-            Add a display name and username so friends can find you.
-          </Text>
-        </View>
-        <NeumoSurface
-          variant="raised"
-          tone="surface"
-          radius={NeumoTokens.radius.lg}
-          style={styles.sectionContainer}
-        >
-          <View
-            style={[
-              styles.profilePictureContainer,
-              { backgroundColor: userColor },
-            ]}
-          >
-            <Avatar
-              rounded
-              source={
-                avatarUrl
-                  ? {
-                      uri: avatarUrl,
-                      cache: "force-cache",
-                    }
-                  : undefined
-              }
-              imageProps={imageProps}
-              title={getInitials(loggedInUser?.displayName)}
-              titleStyle={{ color: colors.textPrimary }}
-              containerStyle={{
-                backgroundColor: userColor,
-                borderWidth: 1,
-                borderColor: colors.background.default,
-              }}
-              icon={{
-                name: "user",
-                type: "font-awesome",
-                color: colors.textPrimary,
-              }}
-            />
+        <ScreenLayout contentStyle={styles.layoutContent}>
+          <View style={styles.header}>
+            <Text style={styles.stepLabel}>Step 2 of 3</Text>
+            <Text style={styles.title}>Complete Profile</Text>
+            <Text style={styles.subtitle}>
+              Add a display name and username so friends can find you.
+            </Text>
           </View>
-          <View style={styles.userNameEmailContainer}>
+
+          <NeumoSurface
+            variant="glass"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.sectionContainer}
+          >
             <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              style={[
+                styles.profilePictureContainer,
+                { backgroundColor: userColor },
+              ]}
             >
-              <FontAwesomeIcon
-                icon={faAt}
-                size={12}
-                color={colors.textSecondary}
+              <Avatar
+                rounded
+                source={
+                  avatarUrl
+                    ? {
+                        uri: avatarUrl,
+                        cache: "force-cache",
+                      }
+                    : undefined
+                }
+                imageProps={imageProps}
+                title={getInitials(loggedInUser?.displayName)}
+                titleStyle={{ color: colors.textPrimary }}
+                containerStyle={{
+                  backgroundColor: userColor,
+                  borderWidth: 1,
+                  borderColor: colors.background.default,
+                }}
+                icon={{
+                  name: "user",
+                  type: "font-awesome",
+                  color: colors.textPrimary,
+                }}
               />
-              <Text
-                style={{ fontWeight: "300", color: colors.textSecondary }}
+            </View>
+            <View style={styles.userNameEmailContainer}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
               >
-                {username || "username"}
+                <FontAwesomeIcon
+                  icon={faAt}
+                  size={12}
+                  color={colors.textSecondary}
+                />
+                <Text
+                  style={{ fontWeight: "300", color: colors.textSecondary }}
+                >
+                  {username || "username"}
+                </Text>
+              </View>
+              <Text style={{ fontWeight: "bold", color: colors.textPrimary }}>
+                {displayName || "Display Name"}
+              </Text>
+              <Text style={{ color: colors.textSecondary }}>
+                {loggedInUser?.email}
               </Text>
             </View>
-            <Text style={{ fontWeight: "bold", color: colors.textPrimary }}>
-              {displayName || "Display Name"}
-            </Text>
-            <Text style={{ color: colors.textSecondary }}>
-              {loggedInUser?.email}
-            </Text>
-          </View>
-        </NeumoSurface>
-        <NeumoSurface
-          variant="raised"
-          tone="surface"
-          radius={NeumoTokens.radius.lg}
-          style={styles.inputsCard}
-        >
-          <Text style={styles.sectionTitle}>Your details</Text>
-          <DibbyInput
-            label="Display name"
-            placeholder="Display name"
-            value={displayName || ""}
-            onChangeText={(txt) => setDisplayName(capitalizeName(txt))}
-            errorText={
-              validDisplayName === false
-                ? "Display name should be 1–20 letters or numbers."
-                : undefined
-            }
-          />
-          <DibbyInput
-            username
-            label="Username"
-            placeholder="username"
-            value={username || ""}
-            onChangeText={(text) => setUsername(text.toLowerCase().trim())}
-            errorText={
-              invalidReason === "pattern"
-                ? "Only lowercase letters, numbers, and underscores."
-                : invalidReason === "taken"
-                ? "Username is already taken!"
-                : undefined
-            }
-            valid={invalidReason === undefined}
-          />
-          <Text
-            style={[
-              styles.usernameHint,
-              invalidReason === undefined && username
-                ? styles.usernameHintOk
-                : null,
-              invalidReason === "pattern" ? styles.usernameHintError : null,
-            ]}
+          </NeumoSurface>
+
+          <NeumoSurface
+            variant="glass"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.inputsCard}
           >
-            Use lowercase letters, numbers, and underscores.
-          </Text>
-          <View style={styles.ctaContainer}>
-            <DibbyButton
-              fullWidth
-              disabled={!username || !displayName || !!invalidReason}
-              onPress={handleNext}
-              title="Next"
+            <Text style={styles.sectionTitle}>Your details</Text>
+            <DibbyInput
+              label="Display name"
+              placeholder="Display name"
+              value={displayName || ""}
+              onChangeText={(txt) => setDisplayName(capitalizeName(txt))}
+              autoCapitalize="words"
+              errorText={
+                validDisplayName === false
+                  ? "Display name should be 1–20 letters or numbers."
+                  : undefined
+              }
             />
-          </View>
-        </NeumoSurface>
+            <DibbyInput
+              username
+              label="Username"
+              placeholder="username"
+              value={username || ""}
+              onChangeText={(text) => setUsername(text.toLowerCase().trim())}
+              autoCapitalize="none"
+              helperText="Use lowercase letters, numbers, and underscores."
+              errorText={
+                invalidReason === "pattern"
+                  ? "Only lowercase letters, numbers, and underscores."
+                  : invalidReason === "taken"
+                    ? "Username is already taken!"
+                    : undefined
+              }
+              valid={invalidReason === undefined}
+            />
+            {invalidReason === undefined && Boolean(username) ? (
+              <Text style={[styles.usernameHint, styles.usernameHintOk]}>
+                Username is available.
+              </Text>
+            ) : null}
+            <View style={styles.ctaContainer}>
+              <DibbyButton
+                fullWidth
+                disabled={!username || !displayName || !!invalidReason}
+                onPress={handleNext}
+                title="Next"
+              />
+            </View>
+          </NeumoSurface>
+        </ScreenLayout>
       </SafeAreaView>
     </View>
   );
@@ -256,8 +258,10 @@ const makeStyles = (colors: ThemeColors) =>
     },
     safeArea: {
       flex: 1,
-      paddingHorizontal: 24,
-      paddingTop: 24,
+    },
+    layoutContent: {
+      flex: 1,
+      paddingTop: 16,
       alignItems: "center",
     },
     header: {
@@ -287,8 +291,8 @@ const makeStyles = (colors: ThemeColors) =>
     },
     sectionContainer: {
       borderRadius: NeumoTokens.radius.lg,
-      padding: 18,
-      marginBottom: 20,
+      padding: 16,
+      marginBottom: 16,
       flexDirection: "row",
       alignItems: "center",
       width: "100%",
@@ -310,7 +314,7 @@ const makeStyles = (colors: ThemeColors) =>
       width: "100%",
       maxWidth: 420,
       gap: 12,
-      paddingVertical: 18,
+      paddingVertical: 16,
     },
     sectionTitle: {
       color: colors.textPrimary,
@@ -328,6 +332,6 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.danger.background,
     },
     ctaContainer: {
-      marginTop: 8,
+      marginTop: 6,
     },
   });

@@ -45,7 +45,6 @@ import {
 import * as Print from "expo-print";
 import { shareAsync } from "expo-sharing";
 import { generateHTML } from "../constants/PdfTemplate";
-import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 import useAppTheme from "../hooks/useAppTheme";
 import DibbyButton from "../components/DibbyButton";
 import DibbyAvatars from "../components/DibbyAvatars";
@@ -65,12 +64,15 @@ import StatsSection from "../components/StatsSection";
 import { buildTripStats, pickStats } from "../helpers/StatsHelpers";
 import ScreenState, { ScreenStateStatus } from "../components/ScreenState";
 import { track } from "../helpers/track";
+import ScreenLayout from "../components/ScreenLayout";
+import useResponsiveLayout from "../hooks/useResponsiveLayout";
+import ActionMenu, { ActionMenuItem } from "../components/ActionMenu";
 
 const cardWidth = 500;
-const numColumns = Math.floor(windowWidth / cardWidth);
 
 const ViewTrip = ({ route }: any) => {
   const colors = useAppTheme();
+  const responsive = useResponsiveLayout();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation: any = useNavigation();
   const { tripName, tripId, openAddExpense } = route.params || {};
@@ -130,7 +132,7 @@ const ViewTrip = ({ route }: any) => {
       ]),
     [tripStats],
   );
-  const statsColumns = wideScreen ? 3 : 2;
+  const statsColumns = responsive.isDesktop ? 2 : 2;
   const tripScreenStatus: ScreenStateStatus = useMemo(() => {
     if (loadingIndicator && !currentTrip) {
       return "loading";
@@ -283,7 +285,7 @@ const ViewTrip = ({ route }: any) => {
         trip={currentTrip}
         onDeleteItem={() => deleteAlert(item)}
         cardWidth={cardWidth}
-        wideScreen={wideScreen}
+        wideScreen={responsive.isDesktop}
         onPress={() =>
           navigation.navigate("ViewExpense", {
             tripName,
@@ -293,7 +295,7 @@ const ViewTrip = ({ route }: any) => {
         }
       />
     ),
-    [currentTrip, deleteAlert, navigation, tripId, tripName, wideScreen],
+    [currentTrip, deleteAlert, navigation, tripId, tripName, responsive.isDesktop],
   );
 
   const toggleCreateExpenseModal = () => {
@@ -332,11 +334,19 @@ const ViewTrip = ({ route }: any) => {
     }
     printToFile();
   };
+  const tripActions: ActionMenuItem[] = [
+    {
+      key: "share",
+      label: "Share summary",
+      icon: faShareNodes,
+      onPress: handleShare,
+    },
+  ];
 
-  const renderTripHeader = () => (
+  const renderTripSummaryPanel = () => (
     <View style={styles.headerStack}>
       <NeumoSurface
-        variant="raised"
+        variant="glass"
         tone="surface"
         radius={NeumoTokens.radius.lg}
         style={styles.headerCard}
@@ -356,7 +366,7 @@ const ViewTrip = ({ route }: any) => {
       </NeumoSurface>
 
       <NeumoSurface
-        variant="raised"
+        variant="glass"
         tone="surface"
         radius={NeumoTokens.radius.lg}
         style={styles.quickSummary}
@@ -371,8 +381,8 @@ const ViewTrip = ({ route }: any) => {
       </NeumoSurface>
 
       <NeumoPressable
-        variant={hasOpenBalances ? "raised" : "flat"}
-        tone="surface"
+        variant={hasOpenBalances ? "glass-strong" : "solid"}
+        tone={hasOpenBalances ? "accent" : "surface"}
         radius={NeumoTokens.radius.pill}
         padding={NeumoTokens.control.pill.padding}
         onPress={() => hasOpenBalances && setSummaryOpen(true)}
@@ -383,11 +393,12 @@ const ViewTrip = ({ route }: any) => {
           <FontAwesomeIcon
             icon={faMoneyBillWave}
             size={14}
-            color={hasOpenBalances ? colors.accent : colors.textSecondary}
+            color={hasOpenBalances ? colors.primary.text : colors.textSecondary}
           />
           <Text
             style={[
               styles.settleButtonText,
+              hasOpenBalances && styles.settleButtonTextActive,
               !hasOpenBalances && styles.settleButtonTextMuted,
             ]}
           >
@@ -397,7 +408,7 @@ const ViewTrip = ({ route }: any) => {
       </NeumoPressable>
 
       <NeumoPressable
-        variant="flat"
+        variant="solid"
         tone="base"
         onPress={() => setSummaryOpen(!summaryOpen)}
         style={styles.summaryToggle}
@@ -420,7 +431,11 @@ const ViewTrip = ({ route }: any) => {
           calculatedTrip={calculatedTrip}
         />
       )}
+    </View>
+  );
 
+  const renderTripControls = () => (
+    <View style={styles.controlsStack}>
       <NeumoSurface
         variant="inset"
         tone="surface"
@@ -430,7 +445,7 @@ const ViewTrip = ({ route }: any) => {
       >
         <View style={styles.segmentRow}>
           <NeumoPressable
-            variant={segment === "expenses" ? "raised" : "flat"}
+            variant={segment === "expenses" ? "glass-strong" : "solid"}
             tone="surface"
             onPress={() => setSegment("expenses")}
             radius={NeumoTokens.radius.pill}
@@ -448,7 +463,7 @@ const ViewTrip = ({ route }: any) => {
             </Text>
           </NeumoPressable>
           <NeumoPressable
-            variant={segment === "travelers" ? "raised" : "flat"}
+            variant={segment === "travelers" ? "glass-strong" : "solid"}
             tone="surface"
             onPress={() => setSegment("travelers")}
             radius={NeumoTokens.radius.pill}
@@ -503,21 +518,11 @@ const ViewTrip = ({ route }: any) => {
             />
           }
           rightButton={
-            <DibbyButton
-              onPress={handleShare}
-              type="clear"
-              title={
-                <FontAwesomeIcon
-                  icon={faShareNodes}
-                  size={24}
-                  color={colors.textPrimary}
-                />
-              }
-            />
+            <ActionMenu items={tripActions} compact />
           }
         />
 
-        <View style={styles.content}>
+        <ScreenLayout contentStyle={styles.layoutContent}>
           <ScreenState
             status={tripScreenStatus}
             title="Trip not found"
@@ -525,21 +530,151 @@ const ViewTrip = ({ route }: any) => {
             actionLabel="Back to trips"
             onAction={() => navigation.navigate("Home")}
           >
-            {segment === "expenses" ? (
+            {responsive.isDesktop ? (
+              <View style={styles.desktopShell}>
+                <View style={styles.desktopPrimary}>
+                  {renderTripControls()}
+                  {segment === "expenses" ? (
+                    <FlatList
+                      removeClippedSubviews={false}
+                      data={visibleExpenses}
+                      key="trip-expenses-desktop"
+                      numColumns={1}
+                      keyExtractor={(expense) => expense.id}
+                      contentContainerStyle={styles.desktopListContent}
+                      ListEmptyComponent={
+                        loadingIndicator ? (
+                          <DibbyLoading />
+                        ) : (
+                          <NeumoSurface
+                            variant="glass"
+                            tone="surface"
+                            radius={NeumoTokens.radius.lg}
+                            style={styles.emptyState}
+                          >
+                            <Text style={styles.emptyText}>
+                              {expenses.length > 0
+                                ? "No expenses match this filter."
+                                : "No expenses yet. Tap + to add the first one."}
+                            </Text>
+                            {expenses.length > 0 && (
+                              <DibbyButton
+                                title="Clear filters"
+                                onPress={() => {
+                                  setExpenseFilter("all");
+                                  setExpenseSort("recent");
+                                }}
+                                fullWidth
+                              />
+                            )}
+                          </NeumoSurface>
+                        )
+                      }
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={refreshing}
+                          onRefresh={onRefresh}
+                        />
+                      }
+                      style={styles.list}
+                      initialNumToRender={8}
+                      maxToRenderPerBatch={10}
+                      windowSize={9}
+                      updateCellsBatchingPeriod={50}
+                      renderItem={renderExpenseItem}
+                    />
+                  ) : (
+                    <ScrollView
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={styles.desktopTravelersContent}
+                      style={styles.list}
+                    >
+                      <View style={styles.travelersContainer}>
+                        <NeumoSurface
+                          variant="glass"
+                          tone="surface"
+                          radius={NeumoTokens.radius.lg}
+                          style={styles.travelersCard}
+                        >
+                          <Text style={styles.sectionTitle}>Participants</Text>
+                          <View style={styles.travelersList}>
+                            {currentTrip?.participants.map((t) => {
+                              const participantColor = resolveParticipantColor(
+                                t.color,
+                                t.uid || t.username || t.name || "",
+                              );
+                              return (
+                                <NeumoSurface
+                                  key={t.uid}
+                                  variant="solid"
+                                  tone="surface"
+                                  radius={NeumoTokens.radius.pill}
+                                  style={[
+                                    styles.travelerPill,
+                                    {
+                                      backgroundColor: changeOpacity(
+                                        participantColor,
+                                        0.25,
+                                      ),
+                                      borderColor: changeOpacity(
+                                        participantColor,
+                                        0.5,
+                                      ),
+                                    },
+                                  ]}
+                                  padding={NeumoTokens.control.pill.padding}
+                                >
+                                  <Text style={styles.travelerText}>{t.name}</Text>
+                                </NeumoSurface>
+                              );
+                            })}
+                          </View>
+                        </NeumoSurface>
+
+                        <NeumoSurface
+                          variant="inset"
+                          tone="surface"
+                          radius={NeumoTokens.radius.lg}
+                          style={styles.travelersCard}
+                        >
+                          <Text style={styles.sectionTitle}>Add travelers</Text>
+                          <DibbySearchUsername
+                            results={(res) => setSelectedResults(res)}
+                            currentTrip={currentTrip}
+                          />
+                          <DibbyButton
+                            disabled={selectedResults.length < 1}
+                            title={`Add to ${tripTitle}`}
+                            onPress={addTravelers}
+                            fullWidth
+                          />
+                        </NeumoSurface>
+                      </View>
+                    </ScrollView>
+                  )}
+                </View>
+                <View style={styles.desktopAside}>{renderTripSummaryPanel()}</View>
+              </View>
+            ) : segment === "expenses" ? (
               <FlatList
                 removeClippedSubviews={false}
                 data={visibleExpenses}
-                key={numColumns}
-                numColumns={numColumns}
+                key="trip-expenses-mobile"
+                numColumns={1}
                 keyExtractor={(expense) => expense.id}
                 contentContainerStyle={styles.listContent}
-                ListHeaderComponent={renderTripHeader}
+                ListHeaderComponent={
+                  <View>
+                    {renderTripSummaryPanel()}
+                    {renderTripControls()}
+                  </View>
+                }
                 ListEmptyComponent={
                   loadingIndicator ? (
                     <DibbyLoading />
                   ) : (
                     <NeumoSurface
-                      variant="inset"
+                      variant="glass"
                       tone="surface"
                       radius={NeumoTokens.radius.lg}
                       style={styles.emptyState}
@@ -563,10 +698,7 @@ const ViewTrip = ({ route }: any) => {
                   )
                 }
                 refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                  />
+                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
                 style={styles.list}
                 initialNumToRender={6}
@@ -581,10 +713,11 @@ const ViewTrip = ({ route }: any) => {
                 contentContainerStyle={styles.listContent}
                 style={styles.list}
               >
-                {renderTripHeader()}
+                {renderTripSummaryPanel()}
+                {renderTripControls()}
                 <View style={styles.travelersContainer}>
                   <NeumoSurface
-                    variant="raised"
+                    variant="glass"
                     tone="surface"
                     radius={NeumoTokens.radius.lg}
                     style={styles.travelersCard}
@@ -599,7 +732,7 @@ const ViewTrip = ({ route }: any) => {
                         return (
                           <NeumoSurface
                             key={t.uid}
-                            variant="flat"
+                            variant="solid"
                             tone="surface"
                             radius={NeumoTokens.radius.pill}
                             style={[
@@ -660,7 +793,7 @@ const ViewTrip = ({ route }: any) => {
               />
             )}
           </Modal>
-        </View>
+        </ScreenLayout>
       </SafeAreaView>
     </View>
   );
@@ -674,12 +807,16 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background.default,
     },
-    content: {
+    layoutContent: {
       flex: 1,
-      paddingHorizontal: 16,
+      overflow: "visible",
     },
     headerStack: {
       gap: NeumoTokens.spacing.sm,
+    },
+    controlsStack: {
+      gap: NeumoTokens.spacing.sm,
+      marginBottom: NeumoTokens.spacing.sm,
     },
     headerCard: {
       marginBottom: 16,
@@ -701,8 +838,8 @@ const makeStyles = (colors: ThemeColors) =>
       marginTop: 4,
     },
     listContent: {
-      paddingBottom: FloatingTabBar.spacer,
-      paddingHorizontal: NeumoTokens.spacing.xs,
+      paddingBottom: FloatingTabBar.spacer + NeumoTokens.spacing.xs,
+      paddingHorizontal: NeumoTokens.spacing.xxs,
       paddingTop: NeumoTokens.spacing.xs,
       overflow: "visible",
     },
@@ -726,10 +863,10 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
     },
     segmentContainer: {
-      marginBottom: 16,
+      marginBottom: 12,
     },
     quickSummary: {
-      marginVertical: 12,
+      marginVertical: 8,
       gap: 8,
     },
     segmentRow: {
@@ -759,6 +896,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     settleButton: {
       alignSelf: "flex-start",
+      paddingHorizontal: NeumoTokens.control.pill.paddingHorizontal,
     },
     settleButtonContent: {
       flexDirection: "row",
@@ -770,11 +908,14 @@ const makeStyles = (colors: ThemeColors) =>
       fontSize: Typography.size.sm,
       fontWeight: Typography.weight.semibold as any,
     },
+    settleButtonTextActive: {
+      color: colors.primary.text,
+    },
     settleButtonTextMuted: {
       color: colors.textSecondary,
     },
     emptyState: {
-      marginVertical: 12,
+      marginVertical: 10,
     },
     emptyText: {
       color: colors.textSecondary,
@@ -799,5 +940,31 @@ const makeStyles = (colors: ThemeColors) =>
     travelerText: {
       color: colors.textPrimary,
       fontSize: Typography.size.sm,
+    },
+    desktopShell: {
+      flex: 1,
+      flexDirection: "row",
+      gap: 20,
+      overflow: "visible",
+    },
+    desktopPrimary: {
+      flex: 1.25,
+      minWidth: 0,
+      overflow: "visible",
+    },
+    desktopAside: {
+      flex: 0.9,
+      minWidth: 0,
+      alignSelf: "flex-start",
+      position: Platform.OS === "web" ? ("sticky" as any) : "relative",
+      top: Platform.OS === "web" ? 0 : undefined,
+    },
+    desktopListContent: {
+      paddingBottom: FloatingTabBar.spacer + NeumoTokens.spacing.md,
+      overflow: "visible",
+    },
+    desktopTravelersContent: {
+      paddingBottom: FloatingTabBar.spacer + NeumoTokens.spacing.md,
+      overflow: "visible",
     },
   });

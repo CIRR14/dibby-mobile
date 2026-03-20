@@ -37,6 +37,7 @@ import useAppTheme from "../hooks/useAppTheme";
 import { assignUniqueParticipantColors } from "../helpers/GenerateColor";
 import EmojiSelector from "./EmojiSelector";
 import { track } from "../helpers/track";
+import ScreenLayout from "./ScreenLayout";
 
 export interface DibbyTripFormValues {
   title: string;
@@ -135,14 +136,15 @@ const CreateTrip = () => {
       {isLoading ? (
         <DibbyLoading />
       ) : (
-        <View style={styles.content}>
-          <KeyboardAvoidingView
-            behavior="padding"
-            enabled
-            keyboardVerticalOffset={150}
-          >
+        <ScreenLayout contentStyle={styles.layoutContent}>
+          <View style={styles.content}>
+            <KeyboardAvoidingView
+              behavior="padding"
+              enabled
+              keyboardVerticalOffset={150}
+            >
             <NeumoSurface
-              variant="raised"
+              variant="glass"
               tone="surface"
               radius={NeumoTokens.radius.lg}
               style={styles.sectionCard}
@@ -183,7 +185,7 @@ const CreateTrip = () => {
             </NeumoSurface>
 
             <NeumoSurface
-              variant="raised"
+              variant="glass"
               tone="surface"
               radius={NeumoTokens.radius.lg}
               style={styles.sectionCard}
@@ -220,8 +222,9 @@ const CreateTrip = () => {
                 Add one more traveler to continue.
               </Text>
             )}
-          </KeyboardAvoidingView>
-        </View>
+            </KeyboardAvoidingView>
+          </View>
+        </ScreenLayout>
       )}
     </SafeAreaView>
   );
@@ -305,7 +308,10 @@ const makeStyles = (colors: ThemeColors) =>
       marginTop: 8,
     },
     content: {
-      margin: 16,
       gap: 12,
+      overflow: "visible",
+    },
+    layoutContent: {
+      flex: 1,
     },
   });

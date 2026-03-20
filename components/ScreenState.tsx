@@ -59,7 +59,7 @@ const ScreenState: React.FC<ScreenStateProps> = ({
   return (
     <View style={[styles.center, containerStyle]}>
       <NeumoSurface
-        variant="raised"
+        variant="glass"
         tone="surface"
         radius={NeumoTokens.radius.lg}
         style={styles.card}

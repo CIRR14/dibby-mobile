@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ViewStyle, Text } from "react-native";
+import { Platform, View, ViewStyle, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import {
@@ -8,6 +8,7 @@ import {
   NeumoTokens,
   NeumoTone,
   NeumoVariant,
+  resolveNeumoVariant,
 } from "../constants/Neumo";
 import useAppTheme from "../hooks/useAppTheme";
 
@@ -17,8 +18,10 @@ interface NeumoSurfaceProps {
   tone?: NeumoTone;
   radius?: number;
   padding?: number;
+  clipContent?: boolean;
   gradient?: boolean;
   gradientColors?: string[];
+  strokeIntensity?: "none" | "subtle" | "strong";
   style?: ViewStyle | ViewStyle[];
   pointerEvents?: "auto" | "none" | "box-none" | "box-only";
 }
@@ -29,24 +32,54 @@ const NeumoSurface: React.FC<NeumoSurfaceProps> = ({
   tone = "surface",
   radius = NeumoTokens.radius.md,
   padding = NeumoTokens.spacing.md,
+  clipContent,
   gradient,
   gradientColors,
+  strokeIntensity,
   style,
   pointerEvents,
 }) => {
   const colors = useAppTheme();
-  const backgroundColor = getSurfaceColor(colors as any, tone);
-  const isInset = variant === "inset";
-  const borderStyle = isInset
-    ? { borderWidth: 1, borderColor: colors.shadowDark }
-    : { borderWidth: 0, borderColor: "transparent" };
+  const resolvedVariant = resolveNeumoVariant(variant);
+  const isGlass =
+    resolvedVariant === "glass" || resolvedVariant === "glass-strong";
+  const backgroundColor = isGlass
+    ? resolvedVariant === "glass-strong"
+      ? colors.surfaceGlassStrong
+      : colors.surfaceGlass
+    : getSurfaceColor(colors as any, tone);
+  const borderMode =
+    strokeIntensity ??
+    (resolvedVariant === "inset"
+      ? "strong"
+      : isGlass
+      ? "subtle"
+      : "none");
+  const borderStyle =
+    borderMode === "none"
+      ? { borderWidth: 0, borderColor: "transparent" }
+      : borderMode === "strong"
+      ? { borderWidth: 1, borderColor: colors.strokeSubtle }
+      : { borderWidth: Platform.OS === "web" ? 1 : 0.6, borderColor: colors.strokeSubtle };
   const shouldUseGradient =
-    gradient ?? (variant === "raised" && tone === "surface");
+    gradient ??
+    ((resolvedVariant === "glass-strong" || resolvedVariant === "glass") &&
+      tone === "surface");
   const resolvedGradientColors =
-    gradientColors ?? (tone === "accent" ? colors.gradient : colors.card);
+    gradientColors ??
+    (tone === "accent"
+      ? colors.gradient
+      : resolvedVariant === "glass-strong"
+      ? [colors.surfaceGlassStrong, colors.surface]
+      : [colors.surfaceGlass, colors.surface]);
   const Container: any = shouldUseGradient ? LinearGradient : View;
+  const shouldClipContent = clipContent ?? shouldUseGradient;
   const containerProps = shouldUseGradient
-    ? { colors: resolvedGradientColors, start: { x: 0, y: 0 }, end: { x: 1, y: 1 } }
+    ? {
+        colors: resolvedGradientColors,
+        start: { x: 0, y: 0 },
+        end: { x: 1, y: 1 },
+      }
     : {};
   const normalizeChildren = (child: React.ReactNode): React.ReactNode => {
     if (typeof child === "string" || typeof child === "number") {
@@ -88,9 +121,15 @@ const NeumoSurface: React.FC<NeumoSurfaceProps> = ({
           borderRadius: radius,
           padding,
           ...borderStyle,
-          ...(shouldUseGradient ? { overflow: "hidden" } : {}),
+          ...(shouldClipContent ? { overflow: "hidden" } : { overflow: "visible" }),
+          ...(Platform.OS === "web" && isGlass
+            ? ({
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
+              } as any)
+            : {}),
         },
-        getNeumoShadow(colors as any, variant),
+        getNeumoShadow(colors as any, resolvedVariant),
         style,
       ]}
     >

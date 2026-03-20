@@ -37,10 +37,10 @@ const StatsGrid: React.FC<StatsGridProps> = ({ items, columns = 2 }) => {
       {items.map((item) => (
         <NeumoSurface
           key={item.id || `${item.label}-${item.value}`}
-          variant="flat"
+          variant="solid"
           tone="surface"
           radius={NeumoTokens.radius.md}
-          padding={NeumoTokens.spacing.sm}
+          padding={NeumoTokens.spacing.xs}
           style={[styles.card, { flexBasis: basis }]}
         >
           <Text style={styles.label}>{item.label}</Text>
@@ -72,7 +72,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     card: {
       flexGrow: 1,
-      minWidth: 140,
+      minWidth: 132,
     },
     label: {
       color: colors.textSecondary,

@@ -67,6 +67,7 @@ import {
   reauthenticateWithPopup,
 } from "firebase/auth";
 import DibbyVersion from "../components/DibbyVersion";
+import ScreenLayout from "../components/ScreenLayout";
 
 export const Profile = () => {
   const colors = useAppTheme();
@@ -287,14 +288,15 @@ export const Profile = () => {
       <SafeAreaView style={styles.topContainer}>
         {loading && <DibbyLoading />}
         <TopBar title="Profile" />
-        <ScreenState
-          status={profileStatus}
-          title="Profile unavailable"
-          description="We couldn’t load your profile yet."
-          actionLabel="Back to trips"
-          onAction={() => navigation.navigate("Home")}
-        >
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScreenLayout contentStyle={styles.layoutContent}>
+          <ScreenState
+            status={profileStatus}
+            title="Profile unavailable"
+            description="We couldn’t load your profile yet."
+            actionLabel="Back to trips"
+            onAction={() => navigation.navigate("Home")}
+          >
+            <ScrollView contentContainerStyle={styles.scrollContent}>
             {dibbyUser && (
               <View style={styles.content}>
                 <DibbyProfileCard
@@ -304,7 +306,7 @@ export const Profile = () => {
                 />
 
                 <NeumoSurface
-                  variant="raised"
+                  variant="glass"
                   tone="surface"
                   radius={NeumoTokens.radius.lg}
                   style={styles.sectionCard}
@@ -379,7 +381,7 @@ export const Profile = () => {
                 </NeumoSurface>
 
                 <NeumoSurface
-                  variant="raised"
+                  variant="glass"
                   tone="surface"
                   radius={NeumoTokens.radius.lg}
                   style={styles.sectionCard}
@@ -396,7 +398,7 @@ export const Profile = () => {
                 </NeumoSurface>
 
                 <NeumoSurface
-                  variant="raised"
+                  variant="glass"
                   tone="surface"
                   radius={NeumoTokens.radius.lg}
                   style={styles.sectionCard}
@@ -479,7 +481,7 @@ export const Profile = () => {
             >
               <View style={styles.modalOverlay}>
                 <NeumoSurface
-                  variant="raised"
+                  variant="glass-strong"
                   tone="surface"
                   radius={NeumoTokens.radius.lg}
                   style={styles.modalCard}
@@ -516,8 +518,9 @@ export const Profile = () => {
                 </NeumoSurface>
               </View>
             </Modal>
-          </ScrollView>
-        </ScreenState>
+            </ScrollView>
+          </ScreenState>
+        </ScreenLayout>
         <DibbyVersion bottom={2} />
       </SafeAreaView>
     </View>
@@ -534,11 +537,16 @@ const makeStyles = (colors: ThemeColors) =>
       margin: 16,
       gap: 16,
     },
+    layoutContent: {
+      flex: 1,
+    },
     scrollContent: {
-      paddingBottom: FloatingTabBar.spacer,
+      paddingBottom: FloatingTabBar.spacer + NeumoTokens.spacing.xs,
+      overflow: "visible",
     },
     sectionCard: {
       gap: 12,
+      overflow: "visible",
     },
     sectionHeader: {
       flexDirection: "row",

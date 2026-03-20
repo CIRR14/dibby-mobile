@@ -36,11 +36,12 @@ import DibbyInput from "./DibbyInput";
 import { createDibbyExpense } from "../helpers/FirebaseHelpers";
 import NeumoSurface from "./NeumoSurface";
 import NeumoPressable from "./NeumoPressable";
-import { NeumoTokens } from "../constants/Neumo";
+import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import EmojiSelector from "./EmojiSelector";
 import { track } from "../helpers/track";
+import ScreenLayout from "./ScreenLayout";
 
 interface ICreateExpenseProps {
   currentUser: DibbyUser;
@@ -328,7 +329,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <KeyboardAvoidingView style={styles.content}>
           <NeumoSurface
-            variant="raised"
+            variant="glass"
             tone="surface"
             radius={NeumoTokens.radius.lg}
             style={styles.sectionCard}
@@ -397,7 +398,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
           </NeumoSurface>
 
           <NeumoSurface
-            variant="raised"
+            variant="glass"
             tone="surface"
             radius={NeumoTokens.radius.lg}
             style={styles.sectionCard}
@@ -523,7 +524,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
           </NeumoSurface>
 
           <NeumoSurface
-            variant="raised"
+            variant="glass"
             tone="surface"
             radius={NeumoTokens.radius.lg}
             style={styles.sectionCard}
@@ -550,7 +551,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                       <NeumoPressable
                         key={option.value}
                         onPress={() => onChange(option.value)}
-                        variant={isActive ? "raised" : "flat"}
+                        variant={isActive ? "glass-strong" : "solid"}
                         tone="surface"
                         radius={NeumoTokens.radius.pill}
                         padding={NeumoTokens.control.pill.padding}
@@ -577,7 +578,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             <Text style={styles.splitHelper}>{splitDescription}</Text>
 
             <NeumoSurface
-              variant="flat"
+              variant="solid"
               tone="base"
               radius={NeumoTokens.radius.md}
               padding={NeumoTokens.spacing.sm}
@@ -726,7 +727,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             title={"Add Expense"}
             fullWidth
           />
-        <View style={{ paddingBottom: 200 }} />
+        <View style={{ paddingBottom: FloatingTabBar.spacer }} />
       </KeyboardAvoidingView>
     </ScrollView>
   );
@@ -756,7 +757,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
           />
         }
       />
-      {formContent}
+      <ScreenLayout contentStyle={styles.layoutContent}>{formContent}</ScreenLayout>
     </SafeAreaView>
   );
 };
@@ -774,7 +775,7 @@ const makeStyles = (colors: ThemeColors) =>
       backgroundColor: "transparent",
     },
     scrollContent: {
-      paddingBottom: 32,
+      paddingBottom: NeumoTokens.spacing.lg,
     },
     errorText: {
       color: colors.danger.background,
@@ -787,9 +788,12 @@ const makeStyles = (colors: ThemeColors) =>
     },
     content: {
       backgroundColor: colors.background.default,
-      margin: 16,
       display: "flex",
       gap: 16,
+      overflow: "visible",
+    },
+    layoutContent: {
+      flex: 1,
     },
     inputContainer: {
       marginVertical: 12,
@@ -802,6 +806,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     sectionCard: {
       gap: 12,
+      overflow: "visible",
     },
     titleRow: {
       flexDirection: "row",
@@ -908,6 +913,7 @@ const makeStyles = (colors: ThemeColors) =>
     segmentButtonContainer: {
       flexGrow: 1,
       flexBasis: "30%",
+      minHeight: NeumoTokens.touch.minTarget,
     },
     segmentButton: {
       alignItems: "center",
@@ -937,6 +943,7 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.textSecondary,
       fontSize: Typography.size.xs,
       marginTop: 4,
+      marginBottom: 4,
     },
     summaryRow: {
       flexDirection: "row",

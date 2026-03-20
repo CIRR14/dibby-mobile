@@ -37,6 +37,7 @@ import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
+import ScreenLayout from "../components/ScreenLayout";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -205,59 +206,103 @@ const LoginScreen = () => {
   return (
     <View style={styles.topContainer}>
       <KeyboardAvoidingView style={styles.topContainer} behavior="padding">
-        <View style={styles.innerContainer}>
+        <ScreenLayout contentStyle={styles.layoutContent}>
           <View style={styles.titleContainer}>
             <Text style={styles.titleText}>Dibby</Text>
-            <Text style={styles.descriptionText}>Split money, simply</Text>
+            <Text style={styles.descriptionText}>Split money, simply.</Text>
           </View>
-          <View style={styles.inputContainer}>
-            <DibbyInput
-              placeholder="Email"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
-            <DibbyInput
-              placeholder="Password"
-              keyboardType="visible-password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-            {passwordVerificationRequired && (
+
+          <NeumoSurface
+            variant="glass"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.authCard}
+          >
+            <View style={styles.modeRow}>
+              <View style={styles.modeButton}>
+                <DibbyButton
+                  title="Login"
+                  onPress={() => {
+                    setPasswordVerificationRequired(false);
+                    setError("");
+                  }}
+                  type={passwordVerificationRequired ? "outline" : "solid"}
+                  size="sm"
+                  fullWidth
+                />
+              </View>
+              <View style={styles.modeButton}>
+                <DibbyButton
+                  title="Create account"
+                  onPress={() => {
+                    setPasswordVerificationRequired(true);
+                    setError("");
+                  }}
+                  type={passwordVerificationRequired ? "solid" : "outline"}
+                  size="sm"
+                  fullWidth
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
               <DibbyInput
-                placeholder="Verify Password"
-                keyboardType="visible-password"
-                value={passwordVerification}
-                onChangeText={setPasswordVerification}
-                secureTextEntry
+                placeholder="Email"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
               />
-            )}
+              <DibbyInput
+                placeholder="Password"
+                keyboardType="visible-password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              {passwordVerificationRequired && (
+                <DibbyInput
+                  placeholder="Verify Password"
+                  keyboardType="visible-password"
+                  value={passwordVerification}
+                  onChangeText={setPasswordVerification}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+              )}
 
-            {error && <Text style={styles.errorText}>{error}</Text>}
-          </View>
+              {error && <Text style={styles.errorText}>{error}</Text>}
+            </View>
 
-          <View style={styles.buttonContainer}>
-            <DibbyButton
-              onPress={
-                passwordVerificationRequired ? resetToLogin : handleLogin
-              }
-              type={passwordVerificationRequired ? "outline" : "solid"}
-              title="Login"
-              fullWidth
-            />
-            <DibbyButton
-              onPress={handleSignUp}
-              type={passwordVerificationRequired ? "solid" : "outline"}
-              fullWidth
-              title={"Register"}
-            />
-          </View>
-          <View style={styles.nextStepContainer}>
+            <View style={styles.buttonContainer}>
+              <DibbyButton
+                onPress={
+                  passwordVerificationRequired ? handleSignUp : handleLogin
+                }
+                title={passwordVerificationRequired ? "Create account" : "Continue"}
+                fullWidth
+              />
+              {passwordVerificationRequired ? (
+                <DibbyButton
+                  onPress={resetToLogin}
+                  type="clear"
+                  title="Back to login"
+                  size="sm"
+                />
+              ) : (
+                <DibbyButton
+                  title="Forgot password?"
+                  type="clear"
+                  onPress={handleForgotPassword}
+                  size="sm"
+                />
+              )}
+            </View>
             <Text style={styles.nextStepHint}>
-              New here? Create an account.
+              Verify email → complete profile → start your first trip.
             </Text>
-          </View>
+          </NeumoSurface>
 
           <View style={styles.orContainer}>
             <View style={styles.orLines} />
@@ -278,6 +323,7 @@ const LoginScreen = () => {
               }
               type="clear"
               onPress={handleFacebookLogin}
+              size="sm"
             />
             <DibbyButton
               title={
@@ -289,6 +335,7 @@ const LoginScreen = () => {
               }
               type="clear"
               onPress={handleGoogleLogIn}
+              size="sm"
             />
             <DibbyButton
               title={
@@ -300,14 +347,10 @@ const LoginScreen = () => {
               }
               type="clear"
               onPress={handleAppleLogin}
+              size="sm"
             />
           </View>
-          <DibbyButton
-            title={"forgot password?"}
-            type="clear"
-            onPress={handleForgotPassword}
-          />
-        </View>
+        </ScreenLayout>
       </KeyboardAvoidingView>
       {loading && <DibbyLoading />}
     </View>
@@ -322,11 +365,11 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background.default,
     },
-    innerContainer: {
+    layoutContent: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      paddingHorizontal: wideScreen ? "35%" : "8%",
+      paddingHorizontal: wideScreen ? "20%" : "8%",
     },
     inputContainer: {
       width: "100%",
@@ -355,13 +398,23 @@ const makeStyles = (colors: ThemeColors) =>
     authCard: {
       width: "100%",
       gap: 12,
+      maxWidth: 460,
+      padding: NeumoTokens.spacing.md,
     },
     buttonContainer: {
       width: "100%",
-      gap: 16,
-      marginTop: 16,
+      gap: 10,
+      marginTop: 8,
       display: "flex",
       alignItems: "center",
+    },
+    modeRow: {
+      flexDirection: "row",
+      gap: 8,
+      width: "100%",
+    },
+    modeButton: {
+      flex: 1,
     },
     nextStepContainer: {
       marginTop: 12,
@@ -369,7 +422,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     nextStepHint: {
       color: colors.textSecondary,
-      fontSize: Typography.size.sm,
+      fontSize: Typography.size.xs,
       textAlign: "center",
     },
     nextStepText: {

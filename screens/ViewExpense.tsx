@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, View, Text, StyleSheet } from "react-native";
+import { ScrollView, View, Text, StyleSheet, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
 import { useNavigation } from "@react-navigation/native";
 import { ThemeColors } from "../constants/Colors";
-import { Divider } from "@rneui/themed";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import {
@@ -33,12 +32,15 @@ import useAppTheme from "../hooks/useAppTheme";
 import StatsSection from "../components/StatsSection";
 import { buildExpenseStats, pickStats } from "../helpers/StatsHelpers";
 import { useUser } from "../hooks/useUser";
-import { wideScreen } from "../constants/DeviceWidth";
 import { getDibbySplitMethodString } from "../helpers/TypeHelpers";
 import ScreenState, { ScreenStateStatus } from "../components/ScreenState";
+import ScreenLayout from "../components/ScreenLayout";
+import useResponsiveLayout from "../hooks/useResponsiveLayout";
+import ActionMenu, { ActionMenuItem } from "../components/ActionMenu";
 
 const ViewExpense = ({ route }: any) => {
   const colors = useAppTheme();
+  const responsive = useResponsiveLayout();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const navigation = useNavigation();
   const { tripName, tripId, expenseId } = route.params;
@@ -62,7 +64,7 @@ const ViewExpense = ({ route }: any) => {
       ]),
     [expenseStats],
   );
-  const statsColumns = wideScreen ? 3 : 2;
+  const statsColumns = responsive.isDesktop ? 2 : 2;
   const safeNumber = (value?: number | null) =>
     Number.isFinite(value as number) ? (value as number) : 0;
 
@@ -120,6 +122,134 @@ const ViewExpense = ({ route }: any) => {
     }
     return "ready";
   }, [currentTrip, currentExpense]);
+  const expenseActions = useMemo<ActionMenuItem[]>(
+    () =>
+      currentExpense && currentTrip
+        ? [
+            {
+              key: "delete",
+              label: "Delete expense",
+              icon: faTrash,
+              destructive: true,
+              onPress: () => deleteDibbyExpense(currentExpense, currentTrip),
+            },
+          ]
+        : [],
+    [currentExpense, currentTrip],
+  );
+
+  const renderHeaderMeta = () => (
+    <>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{expenseTitle}</Text>
+        <Text style={styles.title}>
+          ${numberWithCommas((currentExpense?.amount || 0).toString())}
+        </Text>
+      </View>
+      <Text style={styles.metaText}>Trip: {tripTitle}</Text>
+    </>
+  );
+
+  const renderStatsCard = () =>
+    currentExpense ? (
+      <NeumoSurface
+        variant="glass"
+        tone="surface"
+        radius={NeumoTokens.radius.lg}
+        style={styles.statsCard}
+      >
+        <StatsSection
+          title="Expense stats"
+          compactItems={expenseCompactStats}
+          fullItems={expenseStats}
+          compactColumns={2}
+          expandedColumns={statsColumns}
+        />
+      </NeumoSurface>
+    ) : null;
+
+  const renderBreakdownCard = () =>
+    currentExpense ? (
+      <NeumoSurface
+        variant="glass"
+        tone="surface"
+        radius={NeumoTokens.radius.lg}
+        style={styles.breakdownCard}
+      >
+        <View style={styles.breakdownHeader}>
+          <Text style={styles.breakdownTitle}>Breakdown</Text>
+          <Text style={styles.breakdownMeta}>Split: {splitLabel}</Text>
+        </View>
+        <View style={styles.breakdownList}>
+          {expenseBreakdown.map((item) => (
+            <NeumoSurface
+              key={item.uid}
+              variant="solid"
+              tone="surface"
+              radius={NeumoTokens.radius.md}
+              style={[
+                styles.breakdownRow,
+                {
+                  backgroundColor: changeOpacity(item.color, 0.85),
+                },
+              ]}
+            >
+              <View style={styles.breakdownLeft}>
+                <Text style={styles.breakdownName}>{item.name}</Text>
+                {item.paidBy && <Text style={styles.breakdownBadge}>Paid</Text>}
+              </View>
+              <View style={styles.breakdownRight}>
+                {currentExpense.splitMethod === DibbySplitMethod.PERCENTAGE && (
+                  <Text style={styles.breakdownPercent}>
+                    {item.percent.toFixed(0)}%
+                  </Text>
+                )}
+                <Text style={styles.breakdownAmount}>
+                  ${numberWithCommas(item.amount.toString())}
+                </Text>
+              </View>
+            </NeumoSurface>
+          ))}
+        </View>
+        {(hasDuplicateParticipants || !paidByIncluded || !isBalanced) && (
+          <View style={styles.breakdownWarning}>
+            {!paidByIncluded && (
+              <Text style={styles.warningText}>
+                Paid-by person isn’t included in this expense.
+              </Text>
+            )}
+            {hasDuplicateParticipants && (
+              <Text style={styles.warningText}>
+                Duplicate participants detected in the split.
+              </Text>
+            )}
+            {!isBalanced && (
+              <Text style={styles.warningText}>
+                Split amounts don’t add up to the expense total.
+              </Text>
+            )}
+          </View>
+        )}
+      </NeumoSurface>
+    ) : null;
+
+  const renderBalanceRow = () => (
+    <View style={styles.totalRow}>
+      <Text style={styles.remainderLabel}>
+        {isBalanced ? "Balanced" : "Unallocated"}
+      </Text>
+      <Text
+        style={[
+          styles.remainderValue,
+          {
+            color: isBalanced ? colors.success.background : colors.danger.button,
+          },
+        ]}
+      >
+        ${numberWithCommas((isBalanced ? 0 : remainder).toString())}
+      </Text>
+    </View>
+  );
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "trips", tripId), (doc) => {
@@ -155,154 +285,48 @@ const ViewExpense = ({ route }: any) => {
             />
           }
           rightButton={
-            <DibbyButton
-              type="clear"
-              onPress={() => {
-                currentExpense &&
-                  currentTrip &&
-                  deleteDibbyExpense(currentExpense, currentTrip);
-              }}
-              title={
-                <FontAwesomeIcon
-                  icon={faTrash}
-                  size={24}
-                  color={colors.danger.button}
-                />
-              }
-            />
+            <ActionMenu items={expenseActions} compact />
           }
         />
 
-        <ScreenState
-          status={expenseScreenStatus}
-          title="Expense not found"
-          description="This expense may have been deleted."
-          actionLabel="Back to trip"
-          onAction={() => navigation.navigate("ViewTrip", { tripName, tripId })}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
+        <ScreenLayout contentStyle={styles.layoutContent}>
+          <ScreenState
+            status={expenseScreenStatus}
+            title="Expense not found"
+            description="This expense may have been deleted."
+            actionLabel="Back to trip"
+            onAction={() => navigation.navigate("ViewTrip", { tripName, tripId })}
           >
-            <View style={styles.content}>
-              <View style={styles.headerRow}>
-                <Text style={styles.title}>{expenseTitle}</Text>
-                <Text style={styles.title}>${currentExpense?.amount}</Text>
-              </View>
-              <Text style={styles.metaText}>Trip: {tripTitle}</Text>
-
-              {currentExpense && (
-                <NeumoSurface
-                  variant="raised"
-                  tone="surface"
-                  radius={NeumoTokens.radius.lg}
-                  style={styles.statsCard}
-                >
-                  <StatsSection
-                    title="Expense stats"
-                    compactItems={expenseCompactStats}
-                    fullItems={expenseStats}
-                    compactColumns={2}
-                    expandedColumns={statsColumns}
-                  />
-                </NeumoSurface>
-              )}
-
-              {currentExpense && (
-                <NeumoSurface
-                  variant="raised"
-                  tone="surface"
-                  radius={NeumoTokens.radius.lg}
-                  style={styles.breakdownCard}
-                >
-                  <View style={styles.breakdownHeader}>
-                    <Text style={styles.breakdownTitle}>Breakdown</Text>
-                    <Text style={styles.breakdownMeta}>Split: {splitLabel}</Text>
-                  </View>
-                  <View style={styles.breakdownList}>
-                    {expenseBreakdown.map((item) => (
-                      <NeumoSurface
-                        key={item.uid}
-                        variant="flat"
-                        tone="surface"
-                        radius={NeumoTokens.radius.md}
-                        style={[
-                          styles.breakdownRow,
-                          {
-                            backgroundColor: changeOpacity(item.color, 0.85),
-                          },
-                        ]}
-                      >
-                        <View style={styles.breakdownLeft}>
-                          <Text style={styles.breakdownName}>{item.name}</Text>
-                          {item.paidBy && (
-                            <Text style={styles.breakdownBadge}>Paid</Text>
-                          )}
-                        </View>
-                        <View style={styles.breakdownRight}>
-                          {currentExpense.splitMethod ===
-                            DibbySplitMethod.PERCENTAGE && (
-                            <Text style={styles.breakdownPercent}>
-                              {item.percent.toFixed(0)}%
-                            </Text>
-                          )}
-                          <Text style={styles.breakdownAmount}>
-                            ${numberWithCommas(item.amount.toString())}
-                          </Text>
-                        </View>
-                      </NeumoSurface>
-                    ))}
-                  </View>
-                  {(hasDuplicateParticipants ||
-                    !paidByIncluded ||
-                    !isBalanced) && (
-                    <View style={styles.breakdownWarning}>
-                      {!paidByIncluded && (
-                        <Text style={styles.warningText}>
-                          Paid-by person isn’t included in this expense.
-                        </Text>
-                      )}
-                      {hasDuplicateParticipants && (
-                        <Text style={styles.warningText}>
-                          Duplicate participants detected in the split.
-                        </Text>
-                      )}
-                      {!isBalanced && (
-                        <Text style={styles.warningText}>
-                          Split amounts don’t add up to the expense total.
-                        </Text>
-                      )}
+            <ScrollView
+              contentContainerStyle={
+                responsive.isDesktop
+                  ? styles.desktopScrollContent
+                  : styles.scrollContent
+              }
+              showsVerticalScrollIndicator={false}
+            >
+              {responsive.isDesktop ? (
+                <View style={styles.desktopShell}>
+                  <View style={styles.desktopPrimary}>
+                    <View style={styles.content}>
+                      {renderHeaderMeta()}
+                      {renderBreakdownCard()}
+                      {renderBalanceRow()}
                     </View>
-                  )}
-                </NeumoSurface>
+                  </View>
+                  <View style={styles.desktopAside}>{renderStatsCard()}</View>
+                </View>
+              ) : (
+                <View style={styles.content}>
+                  {renderHeaderMeta()}
+                  {renderStatsCard()}
+                  {renderBreakdownCard()}
+                  {renderBalanceRow()}
+                </View>
               )}
-              <Divider
-                color={colors.shadowDark}
-                style={{
-                  marginBottom: 16,
-                }}
-              />
-
-              <View style={styles.totalRow}>
-                <Text style={styles.remainderLabel}>
-                  {isBalanced ? "Balanced" : "Unallocated"}
-                </Text>
-                <Text
-                  style={[
-                    styles.remainderValue,
-                    {
-                      color: isBalanced
-                        ? colors.success.background
-                        : colors.danger.button,
-                    },
-                  ]}
-                >
-                  ${numberWithCommas((isBalanced ? 0 : remainder).toString())}
-                </Text>
-              </View>
-            </View>
-          </ScrollView>
-        </ScreenState>
+            </ScrollView>
+          </ScreenState>
+        </ScreenLayout>
       </SafeAreaView>
     </View>
   );
@@ -316,9 +340,18 @@ const makeStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background.default,
     },
+    layoutContent: {
+      flex: 1,
+    },
     scrollContent: {
       padding: 16,
-      paddingBottom: FloatingTabBar.spacer,
+      paddingBottom: FloatingTabBar.spacer + NeumoTokens.spacing.xs,
+      overflow: "visible",
+    },
+    desktopScrollContent: {
+      padding: 16,
+      paddingBottom: FloatingTabBar.spacer + NeumoTokens.spacing.md,
+      overflow: "visible",
     },
     content: {
       gap: 16,
@@ -340,11 +373,11 @@ const makeStyles = (colors: ThemeColors) =>
       marginTop: 4,
     },
     statsCard: {
-      marginTop: 16,
+      marginTop: 8,
       gap: 8,
     },
     breakdownCard: {
-      marginTop: 16,
+      marginTop: 8,
       gap: 12,
     },
     breakdownHeader: {
@@ -420,6 +453,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: "center",
       padding: 10,
       borderRadius: 10,
+      backgroundColor: colors.surfaceGlass,
     },
     remainderLabel: {
       color: colors.textSecondary,
@@ -428,5 +462,23 @@ const makeStyles = (colors: ThemeColors) =>
     remainderValue: {
       fontSize: Typography.size.sm,
       fontWeight: Typography.weight.semibold as any,
+    },
+    desktopShell: {
+      flex: 1,
+      flexDirection: "row",
+      gap: 20,
+      overflow: "visible",
+    },
+    desktopPrimary: {
+      flex: 1.3,
+      minWidth: 0,
+      overflow: "visible",
+    },
+    desktopAside: {
+      flex: 0.9,
+      minWidth: 0,
+      alignSelf: "flex-start",
+      position: Platform.OS === "web" ? ("sticky" as any) : "relative",
+      top: Platform.OS === "web" ? 0 : undefined,
     },
   });

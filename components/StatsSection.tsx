@@ -32,6 +32,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [showAll, setShowAll] = useState(false);
   const compactIds = new Set(
     compactItems.map((item) => item.id).filter(Boolean) as string[],
   );
@@ -40,12 +41,25 @@ const StatsSection: React.FC<StatsSectionProps> = ({
   );
   const hasMore = extraItems.length > 0;
   const effectiveMax = maxExpandedItems > 0 ? maxExpandedItems : extraItems.length;
+  const hasOverflow = extraItems.length > effectiveMax;
   const visibleExtraItems = expanded
-    ? extraItems.slice(0, effectiveMax)
+    ? showAll
+      ? extraItems
+      : extraItems.slice(0, effectiveMax)
     : [];
   const remainingCount = expanded
     ? Math.max(extraItems.length - visibleExtraItems.length, 0)
     : 0;
+
+  const toggleExpanded = () => {
+    setExpanded((prev) => {
+      const next = !prev;
+      if (!next) {
+        setShowAll(false);
+      }
+      return next;
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -53,11 +67,11 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       <StatsGrid items={compactItems} columns={compactColumns} />
       {hasMore && (
         <NeumoPressable
-          variant="flat"
+          variant="solid"
           tone="base"
           radius={NeumoTokens.radius.pill}
           padding={NeumoTokens.control.pill.padding}
-          onPress={() => setExpanded((prev) => !prev)}
+          onPress={toggleExpanded}
           containerStyle={styles.toggleContainer}
           style={styles.toggleButton}
         >
@@ -76,10 +90,20 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       {expanded && (
         <View style={styles.expanded}>
           <StatsGrid items={visibleExtraItems} columns={expandedColumns} />
-          {remainingCount > 0 && (
-            <Text style={styles.moreText}>
-              +{remainingCount} more insights
-            </Text>
+          {hasOverflow && (
+            <NeumoPressable
+              variant="flat"
+              tone="base"
+              radius={NeumoTokens.radius.pill}
+              padding={NeumoTokens.control.pill.padding}
+              onPress={() => setShowAll((prev) => !prev)}
+              containerStyle={styles.moreToggleContainer}
+              style={styles.moreToggleButton}
+            >
+              <Text style={styles.moreText}>
+                {showAll ? "Show fewer insights" : `Show all insights (+${remainingCount})`}
+              </Text>
+            </NeumoPressable>
           )}
         </View>
       )}
@@ -122,9 +146,19 @@ const makeStyles = (colors: ThemeColors) =>
       marginTop: 4,
       gap: 8,
     },
+    moreToggleContainer: {
+      alignSelf: "center",
+    },
+    moreToggleButton: {
+      minHeight: NeumoTokens.control.pill.minHeight,
+      paddingHorizontal: NeumoTokens.control.pill.paddingHorizontal,
+    },
     moreText: {
       color: colors.textSecondary,
       fontSize: Typography.size.xs,
       textAlign: "center",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      fontWeight: Typography.weight.semibold as any,
     },
   });

@@ -39,6 +39,8 @@ interface IDibbyInputProps {
   valid?: boolean;
   clearTextOnFocus?: boolean;
   maxLength?: number;
+  helperText?: string;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
 }
 
 const DibbyInput: React.FC<IDibbyInputProps> = ({
@@ -60,22 +62,24 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
   valid,
   clearTextOnFocus = false,
   maxLength,
+  helperText,
+  autoCapitalize = "none",
 }) => {
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
-  const errorStyle = errorText ? styles.errorText : styles.errorTextHidden;
+  const hasError = Boolean(errorText);
   return (
     <View style={styles.inputContainer}>
-      {label && <Text style={styles.inputLabel}> {label} </Text>}
+      {label && <Text style={styles.inputLabel}>{label}</Text>}
       <NeumoSurface
-        variant="flat"
+        variant="inset"
         radius={NeumoTokens.radius.md}
         padding={0}
         style={styles.inputSurface}
       >
         <Input
-          autoCapitalize="words"
-          style={styles.input}
+          autoCapitalize={autoCapitalize}
+          inputStyle={styles.input}
           placeholder={placeholder}
           keyboardType={keyboardType}
           value={value}
@@ -94,7 +98,8 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
           underlineColorAndroid={"transparent"}
           leftIconContainerStyle={styles.leftIconContainer}
           errorMessage={errorText}
-          errorStyle={errorStyle}
+          renderErrorMessage={hasError}
+          errorStyle={styles.errorText}
           leftIcon={
             (money || username || percentage) && (
               <FontAwesomeIcon
@@ -112,6 +117,9 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
           }
         />
       </NeumoSurface>
+      {helperText && !hasError ? (
+        <Text style={styles.helperText}>{helperText}</Text>
+      ) : null}
     </View>
   );
 };
@@ -120,29 +128,30 @@ export default DibbyInput;
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    inputContainer: {
-      // minWidth: "80%",
-    },
+    inputContainer: {},
     inputOuterContainer: {
       paddingHorizontal: 0,
       paddingVertical: 0,
       marginBottom: 0,
+      minHeight: NeumoTokens.touch.minTarget,
     },
     inputInnerContainer: {
       borderBottomWidth: 0,
+      minHeight: NeumoTokens.touch.minTarget,
+      paddingHorizontal: 12,
       paddingVertical: 0,
-      minHeight: 44,
       alignItems: "center",
+      marginBottom: 0,
     },
     leftIconContainer: {
-      marginRight: 8,
+      marginRight: 6,
       alignSelf: "center",
     },
     inputLabel: {
       color: colors.textSecondary,
       fontSize: Typography.size.sm,
       textAlign: "left",
-      marginBottom: 8,
+      marginBottom: 6,
     },
     inputSurface: {
       backgroundColor: colors.surfaceAlt,
@@ -150,21 +159,25 @@ const makeStyles = (colors: ThemeColors) =>
     input: {
       backgroundColor: "transparent",
       color: colors.textPrimary,
-      paddingHorizontal: 20,
-      paddingVertical: 10,
+      paddingHorizontal: 6,
+      paddingVertical: 0,
+      marginVertical: 0,
       borderRadius: NeumoTokens.radius.md,
       fontSize: Typography.size.md,
-      lineHeight: Typography.size.md * 1.2,
+      lineHeight: Typography.size.md * Typography.lineHeight.tight,
       textAlignVertical: "center",
+      includeFontPadding: false,
     },
     errorText: {
       color: colors.danger.background,
-      marginBottom: 8,
-      alignSelf: "flex-end",
       fontSize: Typography.size.xs,
+      marginTop: 6,
+      marginHorizontal: 4,
     },
-    errorTextHidden: {
-      height: 0,
-      marginBottom: 0,
+    helperText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      marginTop: 6,
+      marginHorizontal: 4,
     },
   });
