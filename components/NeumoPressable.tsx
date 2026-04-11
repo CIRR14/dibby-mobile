@@ -12,6 +12,7 @@ import {
 interface NeumoPressableProps {
   onPress?: () => void;
   disabled?: boolean;
+  unstyled?: boolean;
   variant?: NeumoVariant;
   tone?: NeumoTone;
   radius?: number;
@@ -27,6 +28,7 @@ interface NeumoPressableProps {
 const NeumoPressable: React.FC<NeumoPressableProps> = ({
   onPress,
   disabled,
+  unstyled = false,
   variant = "raised",
   tone = "surface",
   radius = NeumoTokens.radius.md,
@@ -64,26 +66,29 @@ const NeumoPressable: React.FC<NeumoPressableProps> = ({
           minHeight: NeumoTokens.touch.minTarget,
           justifyContent: "center",
         },
+        unstyled ? (style as any) : null,
         pressed && !disabled ? { transform: [{ scale: 0.985 }] } : null,
         containerStyle as any,
       ]}
     >
-      {({ pressed }) => (
-        <NeumoSurface
-          variant={getPressedVariant(pressed)}
-          tone={tone}
-          radius={radius}
-          padding={padding}
-          gradient={gradient}
-          gradientColors={gradientColors}
-          strokeIntensity={strokeIntensity}
-          style={[
-            style,
-          ]}
-        >
-          {children}
-        </NeumoSurface>
-      )}
+      {({ pressed }) =>
+        unstyled ? (
+          <>{children}</>
+        ) : (
+          <NeumoSurface
+            variant={getPressedVariant(pressed)}
+            tone={tone}
+            radius={radius}
+            padding={padding}
+            gradient={gradient}
+            gradientColors={gradientColors}
+            strokeIntensity={strokeIntensity}
+            style={[style]}
+          >
+            {children}
+          </NeumoSurface>
+        )
+      }
     </Pressable>
   );
 };

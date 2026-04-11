@@ -295,7 +295,10 @@ export default DibbySummary;
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
-      margin: 16,
+      marginTop: 12,
+      marginBottom: 20,
+      marginHorizontal: 0,
+      alignSelf: "stretch",
     },
     content: {
       gap: NeumoTokens.spacing.md,
@@ -333,12 +336,13 @@ const makeStyles = (colors: ThemeColors) =>
     statsGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 12,
+      justifyContent: "space-between",
     },
     statCard: {
-      flexBasis: "48%",
+      width: "48.5%",
       alignItems: "flex-start",
       backgroundColor: colors.surfaceAlt,
+      marginBottom: 10,
     },
     statLabel: {
       fontSize: Typography.size.xs,

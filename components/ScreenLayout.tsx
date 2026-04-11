@@ -4,6 +4,7 @@ import { FloatingTabBar } from "../constants/Neumo";
 import useResponsiveLayout from "../hooks/useResponsiveLayout";
 import useAppTheme from "../hooks/useAppTheme";
 import { ThemeColors } from "../constants/Colors";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface ScreenLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,13 @@ const ScreenLayout: React.FC<ScreenLayoutProps> = ({
 
   return (
     <View style={[styles.container, style]}>
+      <LinearGradient
+        pointerEvents="none"
+        colors={colors.background.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.backgroundGradient}
+      />
       <View
         style={[
           styles.content,
@@ -53,6 +61,9 @@ const makeStyles = (colors: ThemeColors, gutter: number) =>
       alignItems: "center",
       backgroundColor: colors.background.default,
       overflow: "visible",
+    },
+    backgroundGradient: {
+      ...StyleSheet.absoluteFillObject,
     },
     content: {
       width: "100%",

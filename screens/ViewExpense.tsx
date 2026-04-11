@@ -37,6 +37,7 @@ import ScreenState, { ScreenStateStatus } from "../components/ScreenState";
 import ScreenLayout from "../components/ScreenLayout";
 import useResponsiveLayout from "../hooks/useResponsiveLayout";
 import ActionMenu, { ActionMenuItem } from "../components/ActionMenu";
+import { subscribeTripExpenses } from "../helpers/TripRepository";
 
 const ViewExpense = ({ route }: any) => {
   const colors = useAppTheme();
@@ -47,6 +48,7 @@ const ViewExpense = ({ route }: any) => {
   const { dibbyUser } = useUser();
   const [currentExpense, setCurrentExpense] = useState<DibbyExpense>();
   const [currentTrip, setCurrentTrip] = useState<DibbyTrip>();
+  const [tripExpenses, setTripExpenses] = useState<DibbyExpense[]>([]);
   const expenseStats = useMemo(
     () =>
       currentExpense
@@ -252,11 +254,18 @@ const ViewExpense = ({ route }: any) => {
   );
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "trips", tripId), (doc) => {
-      const newData: DibbyTrip = { ...(doc.data() as DibbyTrip), id: doc.id };
+    const unsub = onSnapshot(doc(db, "trips", tripId), (docSnap) => {
+      if (!docSnap.exists()) {
+        setCurrentTrip(undefined);
+        setCurrentExpense(undefined);
+        setTripExpenses([]);
+        return;
+      }
+      const newData: DibbyTrip = {
+        ...(docSnap.data() as DibbyTrip),
+        id: docSnap.id,
+      };
       setCurrentTrip(newData);
-      const expense = newData.expenses.find((e) => e.id === expenseId);
-      setCurrentExpense(expense);
     });
 
     return () => {
@@ -264,10 +273,36 @@ const ViewExpense = ({ route }: any) => {
     };
   }, [tripId]);
 
+  useEffect(() => {
+    if (!currentTrip) {
+      setTripExpenses([]);
+      return;
+    }
+    const unsub = subscribeTripExpenses(currentTrip, (expenses) => {
+      setTripExpenses(expenses);
+    });
+    return () => unsub();
+  }, [currentTrip?.id, currentTrip?.dateUpdated]);
+
+  useEffect(() => {
+    if (!currentTrip) {
+      setCurrentExpense(undefined);
+      return;
+    }
+    const expense = tripExpenses.find((item) => item.id === expenseId);
+    if (expense) {
+      setCurrentExpense(expense);
+      return;
+    }
+    const legacyExpense = currentTrip.expenses.find((item) => item.id === expenseId);
+    setCurrentExpense(legacyExpense);
+  }, [tripExpenses, currentTrip, expenseId]);
+
   return (
     <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
+          withSurface={false}
           title={expenseTitle}
           leftButton={
             <DibbyButton
@@ -342,6 +377,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     layoutContent: {
       flex: 1,
+      paddingTop: 74,
     },
     scrollContent: {
       padding: 16,

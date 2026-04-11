@@ -1,9 +1,15 @@
-import { KeyboardAvoidingView, StyleSheet, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import {
   appleProvider,
   auth,
-  db,
   facebookProvider,
   googleProvider,
 } from "../firebase";
@@ -14,7 +20,6 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
-  User,
   UserCredential,
 } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
@@ -38,6 +43,9 @@ import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import ScreenLayout from "../components/ScreenLayout";
+import NeumoPressable from "../components/NeumoPressable";
+
+const DIBBY_LOGO = require("../assets/images/icon-small.png");
 
 const LoginScreen = () => {
   const [email, setEmail] = useState<string>("");
@@ -205,151 +213,230 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.topContainer}>
-      <KeyboardAvoidingView style={styles.topContainer} behavior="padding">
+      <KeyboardAvoidingView
+        style={styles.topContainer}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <ScreenLayout contentStyle={styles.layoutContent}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>Dibby</Text>
-            <Text style={styles.descriptionText}>Split money, simply.</Text>
-          </View>
-
-          <NeumoSurface
-            variant="glass"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
-            style={styles.authCard}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <View style={styles.modeRow}>
-              <View style={styles.modeButton}>
-                <DibbyButton
-                  title="Login"
+            <View style={styles.brandWrap}>
+              <NeumoSurface
+                variant="glass-strong"
+                tone="accent"
+                radius={NeumoTokens.radius.pill}
+                style={styles.brandBadge}
+              >
+                <Image
+                  source={DIBBY_LOGO}
+                  resizeMode="contain"
+                  style={styles.brandLogo}
+                />
+              </NeumoSurface>
+              <Text style={styles.titleText}>Welcome to Dibby</Text>
+              <Text style={styles.descriptionText}>Split money, simply.</Text>
+            </View>
+
+            <NeumoSurface
+              variant="glass"
+              tone="surface"
+              radius={NeumoTokens.radius.lg}
+              style={styles.authCard}
+            >
+              <NeumoSurface
+                variant="inset"
+                tone="surface"
+                radius={NeumoTokens.radius.pill}
+                padding={NeumoTokens.control.pill.padding}
+                style={styles.modeRow}
+              >
+                <NeumoPressable
                   onPress={() => {
                     setPasswordVerificationRequired(false);
                     setError("");
                   }}
-                  type={passwordVerificationRequired ? "outline" : "solid"}
-                  size="sm"
-                  fullWidth
-                />
-              </View>
-              <View style={styles.modeButton}>
-                <DibbyButton
-                  title="Create account"
+                  variant={passwordVerificationRequired ? "solid" : "glass-strong"}
+                  tone="surface"
+                  radius={NeumoTokens.radius.pill}
+                  padding={NeumoTokens.control.pill.padding}
+                  style={styles.modeButton}
+                >
+                  <Text
+                    style={[
+                      styles.modeText,
+                      !passwordVerificationRequired && styles.modeTextActive,
+                    ]}
+                  >
+                    Login
+                  </Text>
+                </NeumoPressable>
+                <NeumoPressable
                   onPress={() => {
                     setPasswordVerificationRequired(true);
                     setError("");
                   }}
-                  type={passwordVerificationRequired ? "solid" : "outline"}
-                  size="sm"
-                  fullWidth
-                />
-              </View>
-            </View>
+                  variant={passwordVerificationRequired ? "glass-strong" : "solid"}
+                  tone="surface"
+                  radius={NeumoTokens.radius.pill}
+                  padding={NeumoTokens.control.pill.padding}
+                  style={styles.modeButton}
+                >
+                  <Text
+                    style={[
+                      styles.modeText,
+                      passwordVerificationRequired && styles.modeTextActive,
+                    ]}
+                  >
+                    Create account
+                  </Text>
+                </NeumoPressable>
+              </NeumoSurface>
 
-            <View style={styles.inputContainer}>
-              <DibbyInput
-                placeholder="Email"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-              />
-              <DibbyInput
-                placeholder="Password"
-                keyboardType="visible-password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-              {passwordVerificationRequired && (
+              <View style={styles.inputContainer}>
                 <DibbyInput
-                  placeholder="Verify Password"
-                  keyboardType="visible-password"
-                  value={passwordVerification}
-                  onChangeText={setPasswordVerification}
-                  secureTextEntry
+                  label="Email"
+                  placeholder="you@email.com"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={setEmail}
                   autoCapitalize="none"
                 />
-              )}
+                <DibbyInput
+                  label="Password"
+                  placeholder="Enter password"
+                  keyboardType="visible-password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  helperText={
+                    passwordVerificationRequired
+                      ? "Use at least 8 characters."
+                      : undefined
+                  }
+                />
+                {passwordVerificationRequired && (
+                  <DibbyInput
+                    label="Confirm password"
+                    placeholder="Re-enter password"
+                    keyboardType="visible-password"
+                    value={passwordVerification}
+                    onChangeText={setPasswordVerification}
+                    secureTextEntry
+                    autoCapitalize="none"
+                  />
+                )}
+              </View>
+              {error ? (
+                <NeumoSurface
+                  variant="solid"
+                  tone="danger"
+                  radius={NeumoTokens.radius.md}
+                  padding={NeumoTokens.spacing.sm}
+                  style={styles.errorCard}
+                >
+                  <Text style={styles.errorText}>{error}</Text>
+                </NeumoSurface>
+              ) : null}
 
-              {error && <Text style={styles.errorText}>{error}</Text>}
-            </View>
-
-            <View style={styles.buttonContainer}>
-              <DibbyButton
-                onPress={
-                  passwordVerificationRequired ? handleSignUp : handleLogin
-                }
-                title={passwordVerificationRequired ? "Create account" : "Continue"}
-                fullWidth
-              />
-              {passwordVerificationRequired ? (
+              <View style={styles.buttonContainer}>
                 <DibbyButton
-                  onPress={resetToLogin}
-                  type="clear"
-                  title="Back to login"
-                  size="sm"
+                  onPress={
+                    passwordVerificationRequired ? handleSignUp : handleLogin
+                  }
+                  title={passwordVerificationRequired ? "Create account" : "Continue"}
+                  fullWidth
                 />
-              ) : (
-                <DibbyButton
-                  title="Forgot password?"
-                  type="clear"
-                  onPress={handleForgotPassword}
-                  size="sm"
-                />
-              )}
-            </View>
-            <Text style={styles.nextStepHint}>
-              Verify email → complete profile → start your first trip.
-            </Text>
-          </NeumoSurface>
+                {passwordVerificationRequired ? (
+                  <DibbyButton
+                    onPress={resetToLogin}
+                    type="clear"
+                    title="Back to login"
+                    size="sm"
+                  />
+                ) : (
+                  <DibbyButton
+                    title="Forgot password?"
+                    type="clear"
+                    onPress={handleForgotPassword}
+                    size="sm"
+                  />
+                )}
+              </View>
+              <NeumoSurface
+                variant="solid"
+                tone="base"
+                radius={NeumoTokens.radius.md}
+                style={styles.nextStepContainer}
+                padding={NeumoTokens.spacing.sm}
+              >
+                <Text style={styles.nextStepTitle}>What happens next</Text>
+                <Text style={styles.nextStepHint}>
+                  Verify email → complete profile → start your first trip.
+                </Text>
+              </NeumoSurface>
+            </NeumoSurface>
 
-          <View style={styles.orContainer}>
-            <View style={styles.orLines} />
-            <View>
-              <Text style={styles.orText}>or</Text>
-            </View>
-            <View style={styles.orLines} />
-          </View>
-
-          <View style={styles.providerContainer}>
-            <DibbyButton
-              title={
-                <FontAwesomeIcon
-                  icon={faFacebookSquare}
-                  size={28}
-                  color={colors.textPrimary}
-                />
-              }
-              type="clear"
-              onPress={handleFacebookLogin}
-              size="sm"
-            />
-            <DibbyButton
-              title={
-                <FontAwesomeIcon
-                  icon={faGoogle}
-                  size={28}
-                  color={colors.textPrimary}
-                />
-              }
-              type="clear"
-              onPress={handleGoogleLogIn}
-              size="sm"
-            />
-            <DibbyButton
-              title={
-                <FontAwesomeIcon
-                  icon={faApple}
-                  size={28}
-                  color={colors.textPrimary}
-                />
-              }
-              type="clear"
-              onPress={handleAppleLogin}
-              size="sm"
-            />
-          </View>
+            <NeumoSurface
+              variant="glass"
+              tone="surface"
+              radius={NeumoTokens.radius.lg}
+              style={styles.socialCard}
+            >
+              <Text style={styles.socialTitle}>Or continue with</Text>
+              <View style={styles.providerContainer}>
+                <NeumoPressable
+                  onPress={handleGoogleLogIn}
+                  variant="solid"
+                  tone="surface"
+                  radius={NeumoTokens.radius.md}
+                  padding={NeumoTokens.spacing.sm}
+                  style={styles.providerButton}
+                >
+                  <FontAwesomeIcon
+                    icon={faGoogle}
+                    size={16}
+                    color={colors.textPrimary}
+                  />
+                  <Text style={styles.providerText}>Google</Text>
+                </NeumoPressable>
+                <NeumoPressable
+                  onPress={handleAppleLogin}
+                  variant="solid"
+                  tone="surface"
+                  radius={NeumoTokens.radius.md}
+                  padding={NeumoTokens.spacing.sm}
+                  style={styles.providerButton}
+                >
+                  <FontAwesomeIcon
+                    icon={faApple}
+                    size={16}
+                    color={colors.textPrimary}
+                  />
+                  <Text style={styles.providerText}>Apple</Text>
+                </NeumoPressable>
+                <NeumoPressable
+                  onPress={handleFacebookLogin}
+                  variant="solid"
+                  tone="surface"
+                  radius={NeumoTokens.radius.md}
+                  padding={NeumoTokens.spacing.sm}
+                  style={styles.providerButton}
+                >
+                  <FontAwesomeIcon
+                    icon={faFacebookSquare}
+                    size={16}
+                    color={colors.textPrimary}
+                  />
+                  <Text style={styles.providerText}>Facebook</Text>
+                </NeumoPressable>
+              </View>
+            </NeumoSurface>
+            <DibbyVersion />
+          </ScrollView>
         </ScreenLayout>
       </KeyboardAvoidingView>
       {loading && <DibbyLoading />}
@@ -367,89 +454,132 @@ const makeStyles = (colors: ThemeColors) =>
     },
     layoutContent: {
       flex: 1,
-      justifyContent: "center",
       alignItems: "center",
-      paddingHorizontal: wideScreen ? "20%" : "8%",
+      paddingHorizontal: wideScreen ? "18%" : "6%",
+    },
+    scrollContent: {
+      width: "100%",
+      maxWidth: 500,
+      alignSelf: "center",
+      paddingTop: NeumoTokens.spacing.lg,
+      paddingBottom: NeumoTokens.spacing.xl,
+      gap: 14,
+    },
+    brandWrap: {
+      alignItems: "center",
+      gap: 6,
+      marginBottom: 8,
+    },
+    brandBadge: {
+      width: 54,
+      height: 54,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    brandLogo: {
+      width: 34,
+      height: 34,
     },
     inputContainer: {
       width: "100%",
       gap: 12,
     },
     errorText: {
-      color: colors.danger.button,
-      fontWeight: "500",
+      color: colors.danger.text,
+      fontWeight: Typography.weight.medium as any,
       fontSize: Typography.size.xs,
-      marginTop: 6,
     },
-    titleContainer: {
-      alignSelf: "flex-start",
-      marginBottom: 24,
+    errorCard: {
+      marginTop: 2,
     },
     titleText: {
       color: colors.textPrimary,
-      fontSize: Typography.size.xxl,
-      fontWeight: Typography.weight.bold as any,
+      fontSize: Typography.size.xl,
+      fontWeight: Typography.weight.semibold as any,
     },
     descriptionText: {
       color: colors.textSecondary,
-      fontSize: Typography.size.md,
-      fontWeight: Typography.weight.medium as any,
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.regular as any,
     },
     authCard: {
       width: "100%",
-      gap: 12,
-      maxWidth: 460,
+      gap: 14,
       padding: NeumoTokens.spacing.md,
     },
     buttonContainer: {
       width: "100%",
-      gap: 10,
-      marginTop: 8,
-      display: "flex",
+      gap: 8,
+      marginTop: 2,
       alignItems: "center",
     },
     modeRow: {
       flexDirection: "row",
-      gap: 8,
+      gap: 6,
       width: "100%",
+      marginBottom: 2,
     },
     modeButton: {
       flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: NeumoTokens.control.pill.minHeight,
+    },
+    modeText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.medium as any,
+    },
+    modeTextActive: {
+      color: colors.textPrimary,
+      fontWeight: Typography.weight.semibold as any,
     },
     nextStepContainer: {
-      marginTop: 12,
+      marginTop: 2,
       gap: 4,
+    },
+    nextStepTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.xs,
+      fontWeight: Typography.weight.semibold as any,
+      textTransform: "uppercase",
+      letterSpacing: Typography.tracking.normal,
     },
     nextStepHint: {
       color: colors.textSecondary,
       fontSize: Typography.size.xs,
-      textAlign: "center",
+      lineHeight: Typography.size.xs * Typography.lineHeight.relaxed,
     },
-    nextStepText: {
+    socialCard: {
+      width: "100%",
+      gap: 10,
+      padding: NeumoTokens.spacing.md,
+    },
+    socialTitle: {
       color: colors.textSecondary,
       fontSize: Typography.size.xs,
+      textTransform: "uppercase",
+      letterSpacing: Typography.tracking.normal,
       textAlign: "center",
-    },
-    orContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginTop: 16,
-    },
-    orLines: {
-      flex: 1,
-      height: 1,
-      backgroundColor: colors.shadowDark,
-      width: 100,
-    },
-    orText: {
-      width: 50,
-      textAlign: "center",
-      color: colors.textSecondary,
     },
     providerContainer: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-evenly",
+      justifyContent: "space-between",
+      gap: 8,
       width: "100%",
+    },
+    providerButton: {
+      flex: 1,
+      minHeight: NeumoTokens.touch.minTarget,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    providerText: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.medium as any,
     },
   });

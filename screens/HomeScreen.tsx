@@ -30,11 +30,14 @@ import {
 import { DibbyTrip } from "../constants/DibbyTypes";
 import { Platform } from "react-native";
 import DibbyButton from "../components/DibbyButton";
-import { faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSearch,
+  faSignOutAlt,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { Avatar } from "@rneui/themed";
-import { getInitials } from "../helpers/AppHelpers";
-import DibbyVersion from "../components/DibbyVersion";
+import { getInitials, normalizePhotoURL } from "../helpers/AppHelpers";
 import { deleteDibbyTrip } from "../helpers/FirebaseHelpers";
 import NeumoSurface from "../components/NeumoSurface";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
@@ -43,15 +46,16 @@ import useAppTheme from "../hooks/useAppTheme";
 import { resolveParticipantColor } from "../helpers/GenerateColor";
 import NeumoPressable from "../components/NeumoPressable";
 import SortFilterBar, { SortFilterOption } from "../components/SortFilterBar";
-import { useAvatarUrl } from "../hooks/useAvatarUrl";
 import StatsSection from "../components/StatsSection";
 import { buildHomeStats, pickStats } from "../helpers/StatsHelpers";
 import ScreenState from "../components/ScreenState";
 import ScreenLayout from "../components/ScreenLayout";
 import useResponsiveLayout from "../hooks/useResponsiveLayout";
+import { useDebounce } from "../hooks/useDebounce";
+import DibbyInput from "../components/DibbyInput";
+import { useAvatarUrl } from "../hooks/useAvatarUrl";
 
 const cardWidth = 500;
-
 const HomeScreen = () => {
   const [currentTrips, setCurrentTrips] = useState<DibbyTrip[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -63,6 +67,10 @@ const HomeScreen = () => {
   const [tripSort, setTripSort] = useState<
     "recent" | "oldest" | "amount" | "name"
   >("recent");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const debouncedSearch = useDebounce(searchValue, 150);
 
   const navigation = useNavigation();
   const { dibbyUser, loggedInUser, authReady, profileReady } = useUser();
@@ -101,6 +109,10 @@ const HomeScreen = () => {
       setRefreshing(false);
     }
   }, [dibbyUser?.uid, fetchTrips]);
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [avatarUrl]);
 
   useEffect(() => {
     if (!authReady || !profileReady) {
@@ -237,14 +249,35 @@ const HomeScreen = () => {
   ];
 
   const visibleTrips = useMemo(() => {
+    const searchTerm = debouncedSearch.trim().toLowerCase();
     const filtered = currentTrips.filter((trip) => {
       if (tripFilter === "open") {
-        return !trip.completed;
+        if (trip.completed) {
+          return false;
+        }
       }
-      if (tripFilter === "completed") {
-        return Boolean(trip.completed);
+      if (tripFilter === "completed" && !trip.completed) {
+        return false;
       }
-      return true;
+
+      if (!searchTerm) {
+        return true;
+      }
+
+      const participantText = trip.participants
+        .map((participant) => `${participant.name || ""} ${participant.username || ""}`)
+        .join(" ");
+      const searchableText = [
+        trip.title,
+        trip.emoji,
+        participantText,
+        trip.amount?.toString(),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(searchTerm);
     });
 
     const resolveTripDate = (trip: DibbyTrip) => {
@@ -271,7 +304,26 @@ const HomeScreen = () => {
           return resolveTripDate(b) - resolveTripDate(a);
       }
     });
-  }, [currentTrips, tripFilter, tripSort]);
+  }, [currentTrips, tripFilter, tripSort, debouncedSearch]);
+
+  const toggleSearch = () => {
+    if (searchOpen && searchValue) {
+      setSearchValue("");
+      return;
+    }
+    if (searchOpen) {
+      setSearchOpen(false);
+      return;
+    }
+    setSearchOpen(true);
+  };
+
+  const clearControls = () => {
+    setTripFilter("all");
+    setTripSort("recent");
+    setSearchValue("");
+    setSearchOpen(false);
+  };
 
   const renderTripItem = useCallback(
     ({ item }: { item: DibbyTrip }) => (
@@ -340,10 +392,7 @@ const HomeScreen = () => {
         <Text style={styles.emptyText}>Try changing the filter or sort.</Text>
         <DibbyButton
           title="Clear filters"
-          onPress={() => {
-            setTripFilter("all");
-            setTripSort("recent");
-          }}
+          onPress={clearControls}
           fullWidth
         />
       </NeumoSurface>
@@ -378,6 +427,7 @@ const HomeScreen = () => {
     <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
         <TopBar
+          withSurface={false}
           title="Trips"
           leftButton={
             <DibbyButton
@@ -442,6 +492,24 @@ const HomeScreen = () => {
               <View style={styles.desktopShell}>
                 <View style={styles.desktopPrimary}>
                   <View style={styles.desktopListHeader}>
+                    {searchOpen && (
+                      <NeumoSurface
+                        variant="inset"
+                        tone="surface"
+                        radius={NeumoTokens.radius.md}
+                        style={styles.searchSurface}
+                      >
+                        <DibbyInput
+                          placeholder="Search trips, travelers, amount"
+                          value={searchValue}
+                          onChangeText={setSearchValue}
+                        />
+                      </NeumoSurface>
+                    )}
+                    <Text style={styles.resultsText}>
+                      {visibleTrips.length} trip
+                      {visibleTrips.length === 1 ? "" : "s"}
+                    </Text>
                     {renderSortFilter()}
                   </View>
                   <FlatList
@@ -490,6 +558,24 @@ const HomeScreen = () => {
                 ListHeaderComponent={
                   <View style={styles.listHeader}>
                     {renderHeroCard()}
+                    {searchOpen && (
+                      <NeumoSurface
+                        variant="inset"
+                        tone="surface"
+                        radius={NeumoTokens.radius.md}
+                        style={styles.searchSurface}
+                      >
+                        <DibbyInput
+                          placeholder="Search trips, travelers, amount"
+                          value={searchValue}
+                          onChangeText={setSearchValue}
+                        />
+                      </NeumoSurface>
+                    )}
+                    <Text style={styles.resultsText}>
+                      {visibleTrips.length} trip
+                      {visibleTrips.length === 1 ? "" : "s"}
+                    </Text>
                     {renderSortFilter()}
                   </View>
                 }
@@ -546,6 +632,12 @@ const makeStyles = (colors: ThemeColors) =>
     layoutContent: {
       flex: 1,
       overflow: "visible",
+      paddingTop: 74,
+    },
+    topActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
     },
     list: {
       overflow: "visible",
@@ -560,6 +652,16 @@ const makeStyles = (colors: ThemeColors) =>
     listHeader: {
       gap: 10,
       marginBottom: 10,
+    },
+    searchSurface: {
+      paddingHorizontal: 4,
+      paddingVertical: 0,
+    },
+    resultsText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+      textTransform: "uppercase",
+      letterSpacing: Typography.tracking.normal,
     },
     hero: {
       marginBottom: 0,

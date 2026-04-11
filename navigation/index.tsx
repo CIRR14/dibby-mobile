@@ -12,7 +12,7 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as React from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 
 import { CustomDarkTheme, CustomLightTheme } from "../constants/Colors";
 import CreateProfile from "../screens/CreateProfile";
@@ -45,6 +45,7 @@ import PrivacyPolicy from "../screens/PrivacyPolicy";
 import AccountDeletion from "../screens/AccountDeletion";
 import { useTheme } from "../context/ThemeContext";
 import TripWizard from "../screens/TripWizard";
+import { changeOpacity } from "../helpers/GenerateColor";
 
 export default function Navigation() {
   const { scheme } = useTheme();
@@ -221,20 +222,20 @@ function AddTabButton() {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        marginTop: -NeumoTokens.spacing.lg,
+        marginTop: -NeumoTokens.spacing.lg - 2,
       }}
     >
       <NeumoPressable
         onPress={handleAddPress}
         tone="accent"
-        variant="raised"
+        variant="glass-strong"
         gradient
         gradientColors={colors.gradient}
         radius={NeumoTokens.radius.pill}
         padding={NeumoTokens.spacing.md}
         style={{
-          width: 58,
-          height: 58,
+          width: 60,
+          height: 60,
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -294,7 +295,7 @@ function BottomTabNavigator() {
         tabBarStyle: {
           backgroundColor: "transparent",
           borderTopWidth: 0,
-          height: FloatingTabBar.height,
+          height: FloatingTabBar.height + 4,
           paddingBottom: NeumoTokens.spacing.sm,
           paddingTop: NeumoTokens.spacing.xs,
           position: "absolute",
@@ -302,16 +303,40 @@ function BottomTabNavigator() {
           right: FloatingTabBar.inset,
           bottom: FloatingTabBar.inset,
           borderRadius: NeumoTokens.radius.xl,
+          shadowOpacity: 0,
+          elevation: 0,
+          overflow: "visible",
         },
         tabBarBackground: () => (
-          <NeumoSurface
-            variant="glass-strong"
-            tone="surface"
-            radius={NeumoTokens.radius.xl}
-            padding={0}
-            style={{ flex: 1 }}
+          <View
             pointerEvents="none"
-          />
+            style={{
+              flex: 1,
+              borderRadius: NeumoTokens.radius.xl,
+              overflow: "hidden",
+              ...(Platform.OS === "web"
+                ? ({
+                    backdropFilter: "blur(24px) saturate(150%)",
+                    WebkitBackdropFilter: "blur(24px) saturate(150%)",
+                  } as any)
+                : {}),
+            }}
+          >
+            <NeumoSurface
+              variant="glass-strong"
+              tone="surface"
+              radius={NeumoTokens.radius.xl}
+              padding={0}
+              style={{ flex: 1 }}
+              pointerEvents="none"
+              gradient
+              gradientColors={[
+                changeOpacity(colors.surfaceGlassStrong, 0.58),
+                changeOpacity(colors.surfaceGlass, 0.52),
+                changeOpacity(colors.surfaceAlt, 0.48),
+              ]}
+            />
+          </View>
         ),
         tabBarLabelStyle: {
           fontSize: 12,

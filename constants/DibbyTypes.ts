@@ -43,11 +43,28 @@ export interface DibbyTrip extends DibbyDocWithID {
     completed: boolean;
 }
 
+export interface DibbySubTrip {
+    id: string;
+    title: string;
+    emoji?: string | null;
+    participantIds: string[];
+    includeInParentTotals: boolean;
+    order: number;
+    dateCreated: Timestamp;
+    dateUpdated: Timestamp;
+    stats?: {
+        expenseCount?: number;
+        totalAmount?: number;
+    };
+}
+
 
 export interface DibbyExpense extends DibbyDocWithID {
     paidBy: string;
     splitMethod: DibbySplitMethod;
     peopleInExpense: DibbySplits[];
+    tripId?: string;
+    subTripId?: string;
 }
 
 export interface DibbyParticipant {
@@ -71,4 +88,17 @@ export interface DibbySplits {
     amount: number;
     uid: string;
     name: string;
+}
+
+export interface LeaderboardEntry {
+    uid: string;
+    displayName: string;
+    paid: number;
+    share: number;
+    netBalance: number;
+    amountToPay: number;
+    amountToReceive: number;
+    rank: number;
+    color: string;
+    photoURL?: string | null;
 }

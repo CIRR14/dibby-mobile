@@ -35,9 +35,17 @@ import DibbyAvatars from "./DibbyAvatars";
 import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
-import { resolveParticipantColor } from "../helpers/GenerateColor";
+import {
+  changeOpacity as applyOpacity,
+  resolveParticipantColor,
+} from "../helpers/GenerateColor";
 import useAppTheme from "../hooks/useAppTheme";
 import ActionMenu, { ActionMenuItem } from "./ActionMenu";
+
+const changeOpacity = (color: string, opacity = 1) =>
+  (typeof applyOpacity === "function"
+    ? applyOpacity(color, opacity)
+    : color);
 
 interface IDibbyCardProps {
   trip?: DibbyTrip;
@@ -163,18 +171,21 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
 
   return (
     <NeumoSurface
-      variant="glass"
+      variant="glass-strong"
       radius={NeumoTokens.radius.lg}
       padding={0}
       clipContent={false}
-      style={{
-        margin: 8,
-        zIndex: menuOpen ? 100 : 1,
-        elevation: menuOpen ? 20 : 1,
-        position: "relative",
-      }}
+      gradient
+      gradientColors={colors.card}
+      style={[
+        styles.cardShell,
+        {
+          zIndex: menuOpen ? 100 : 1,
+          elevation: menuOpen ? 30 : 0,
+        },
+      ]}
     >
-      <TouchableOpacity style={styles.card} onPress={onPress}>
+      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
         <View style={styles.cardContent}>
           <View style={styles.mainRow}>
             <View style={styles.textLane}>
@@ -278,18 +289,24 @@ const makeStyles = (
   cardWidth?: number,
 ) =>
   StyleSheet.create({
+    cardShell: {
+      margin: 8,
+      position: "relative",
+    },
     card: {
       minWidth: wideScreen ? cardWidth : 0,
       backgroundColor: "transparent",
-      padding: 12,
+      padding: 14,
       borderRadius: NeumoTokens.radius.lg,
       display: "flex",
       justifyContent: "center",
     },
     cardContent: {
+      position: "relative",
       display: "flex",
       flexDirection: "column",
       gap: 8,
+      overflow: "visible",
     },
     mainRow: {
       flexDirection: "row",
@@ -332,10 +349,16 @@ const makeStyles = (
     splitRow: {
       flexDirection: "row",
       alignItems: "center",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: NeumoTokens.radius.pill,
+      backgroundColor: changeOpacity(colors.surfaceGlassStrong, 0.9),
     },
     splitText: {
       color: colors.textSecondary,
-      fontSize: Typography.size.sm,
+      fontSize: Typography.size.xs,
+      textTransform: "uppercase",
+      letterSpacing: Typography.tracking.normal,
     },
     text: {
       color: colors.textPrimary,
@@ -352,7 +375,7 @@ const makeStyles = (
       fontWeight: Typography.weight.bold as any,
       textTransform: "capitalize",
       overflow: "hidden",
-      lineHeight: 30,
+      lineHeight: 28,
     },
     subtitle: {
       fontSize: Typography.size.sm,

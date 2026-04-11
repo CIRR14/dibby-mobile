@@ -98,6 +98,7 @@ const DibbyButton: React.FC<IButtonProps> = ({
     <NeumoPressable
       onPress={onPress}
       disabled={isDisabled}
+      unstyled={type === "clear" && isIconOnly}
       tone={surfaceTone}
       variant={surfaceVariant}
       gradient={type === "clear" ? false : useGradient}

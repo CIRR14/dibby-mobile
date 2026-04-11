@@ -11,6 +11,7 @@ import { ThemeColors } from "../constants/Colors";
 import { faClose } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
+  DibbySubTrip,
   DibbySplitMethod,
   DibbySplits,
   DibbyTrip,
@@ -42,6 +43,7 @@ import useAppTheme from "../hooks/useAppTheme";
 import EmojiSelector from "./EmojiSelector";
 import { track } from "../helpers/track";
 import ScreenLayout from "./ScreenLayout";
+import { MAIN_SUB_TRIP_ID, listSubTrips } from "../helpers/TripRepository";
 
 interface ICreateExpenseProps {
   currentUser: DibbyUser;
@@ -49,12 +51,14 @@ interface ICreateExpenseProps {
   onPressBack: () => void;
   embedded?: boolean;
   onSuccess?: () => void;
+  defaultSubTripId?: string;
 }
 
 export interface CreateExpenseForm {
   title: string;
   description: string;
   amount: string;
+  subTripId: string;
   peopleInExpense: string[];
   paidBy: string;
   createdBy: string;
@@ -62,6 +66,11 @@ export interface CreateExpenseForm {
   perPersonAverage: number;
   peopleSplits: DibbySplits[];
   emoji?: string | null;
+}
+
+interface WebSelectOption {
+  label: string;
+  value: string;
 }
 
 const windowWidth = Dimensions.get("window").width;
@@ -74,6 +83,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   tripInfo,
   embedded = false,
   onSuccess,
+  defaultSubTripId,
 }) => {
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
@@ -81,11 +91,13 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const [errorMessage, setErrorMessage] = useState<string>();
   const [splitTotal, setSplitTotal] = useState<number>(0);
   const [percentageTotal, setPercentageTotal] = useState<number>(0);
+  const [subTrips, setSubTrips] = useState<DibbySubTrip[]>([]);
 
   const initialValues: CreateExpenseForm = {
     title: "",
     description: "",
     amount: "",
+    subTripId: defaultSubTripId || MAIN_SUB_TRIP_ID,
     peopleInExpense: tripInfo
       ? tripInfo.participants.map((t) => t.uid)
       : [currentUser.uid],
@@ -122,6 +134,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
 
   const expenseAmount = watch("amount");
   const splitMethod = watch("splitMethod");
+  const selectedSubTripId = watch("subTripId");
   const peopleInExpense = watch("peopleInExpense");
   const peopleSplits = watch("peopleSplits");
   const paidBy = watch("paidBy");
@@ -140,6 +153,13 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
       : splitMethod === DibbySplitMethod.PERCENTAGE
         ? "Split by percentages."
         : "Split by exact amounts.";
+  const groupOptions: WebSelectOption[] = (subTrips.length
+    ? subTrips
+    : [{ id: MAIN_SUB_TRIP_ID, title: "Main", emoji: "" }]
+  ).map((group) => ({
+    label: formatTitleWithEmoji(group.title, group.emoji),
+    value: group.id,
+  }));
 
   const getExpenseSplitAmount = useCallback(
     (amount: number): number => {
@@ -271,6 +291,27 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
     }
   }, [peopleInExpense, peopleSplits, tripInfo]);
 
+  useEffect(() => {
+    const loadSubTrips = async () => {
+      if (!tripInfo) {
+        return;
+      }
+      try {
+        const loadedSubTrips = await listSubTrips(tripInfo);
+        setSubTrips(loadedSubTrips);
+        const hasSelected = loadedSubTrips.some(
+          (group) => group.id === selectedSubTripId,
+        );
+        if (!hasSelected) {
+          setValue("subTripId", defaultSubTripId || MAIN_SUB_TRIP_ID);
+        }
+      } catch (error) {
+        setSubTrips([]);
+      }
+    };
+    loadSubTrips();
+  }, [tripInfo?.id, defaultSubTripId, selectedSubTripId, setValue]);
+
   const onSubmit = async (formVal: CreateExpenseForm) => {
     const finalFormValue = {
       ...formVal,
@@ -349,11 +390,11 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                   rules={{
                     required: true,
                     validate: (value) =>
-                      tripInfo?.expenses.every(
+                      (tripInfo?.expenses || []).every(
                         (exp) =>
                           exp.title.toUpperCase().trim() !==
                           value.toUpperCase().trim(),
-                      ),
+                      ) || true,
                   }}
                   render={({ field: { onChange, onBlur, value } }) => (
                     <DibbyInput
@@ -394,6 +435,90 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             />
             {formState.errors.amount && (
               <Text style={styles.errorText}>Expense must cost something.</Text>
+            )}
+
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              Group
+            </Text>
+            <Controller
+              control={control}
+              name="subTripId"
+              rules={{
+                required: true,
+              }}
+              defaultValue={defaultSubTripId || MAIN_SUB_TRIP_ID}
+              render={({ field: { onChange, onBlur, value } }) =>
+                Platform.OS === "web" ? (
+                  <NeumoSurface
+                    variant="inset"
+                    tone="surface"
+                    radius={NeumoTokens.radius.md}
+                    padding={NeumoTokens.spacing.sm}
+                    style={styles.insetField}
+                  >
+                    <View style={styles.webSelectList}>
+                      {groupOptions.map((option) => {
+                        const isActive = value === option.value;
+                        return (
+                          <NeumoPressable
+                            key={option.value}
+                            onPress={() => {
+                              onChange(option.value);
+                              onBlur();
+                            }}
+                            variant={isActive ? "glass-strong" : "solid"}
+                            tone="surface"
+                            radius={NeumoTokens.radius.pill}
+                            padding={NeumoTokens.control.pill.padding}
+                            style={[
+                              styles.webSelectOption,
+                              ...(isActive ? [styles.webSelectOptionActive] : []),
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.webSelectOptionText,
+                                isActive && styles.webSelectOptionTextActive,
+                              ]}
+                            >
+                              {option.label}
+                            </Text>
+                          </NeumoPressable>
+                        );
+                      })}
+                    </View>
+                  </NeumoSurface>
+                ) : (
+                  <NeumoSurface
+                    variant="inset"
+                    tone="surface"
+                    radius={NeumoTokens.radius.md}
+                    padding={NeumoTokens.spacing.sm}
+                    style={styles.insetField}
+                  >
+                    <RNPickerSelect
+                      onValueChange={onChange}
+                      onClose={onBlur}
+                      value={value}
+                      placeholder={{
+                        label: "Select a group",
+                        value: null,
+                      }}
+                      items={groupOptions}
+                      style={{
+                        inputIOS: styles.pickerInput,
+                        inputAndroid: styles.pickerInput,
+                        inputIOSContainer: styles.pickerContainer,
+                        inputAndroidContainer: styles.pickerContainer,
+                        placeholder: styles.pickerPlaceholder,
+                      }}
+                    />
+                  </NeumoSurface>
+                )
+              }
+            />
+            {formState.errors.subTripId && (
+              <Text style={styles.errorText}>Select a group.</Text>
             )}
           </NeumoSurface>
 
@@ -557,7 +682,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                         padding={NeumoTokens.control.pill.padding}
                         style={[
                           styles.segmentButton,
-                          isActive && styles.segmentButtonActive,
+                          ...(isActive ? [styles.segmentButtonActive] : []),
                         ]}
                         containerStyle={styles.segmentButtonContainer}
                       >
@@ -853,6 +978,27 @@ const makeStyles = (colors: ThemeColors) =>
     },
     pickerPlaceholder: {
       color: colors.textSecondary,
+    },
+    webSelectList: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    webSelectOption: {
+      minHeight: NeumoTokens.control.pill.minHeight,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    webSelectOptionActive: {
+      backgroundColor: colors.surfaceAlt,
+    },
+    webSelectOptionText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    webSelectOptionTextActive: {
+      color: colors.textPrimary,
     },
     multiSelectDropdown: {
       backgroundColor: colors.input.background,

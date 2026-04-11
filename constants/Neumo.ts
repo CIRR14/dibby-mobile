@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import { ThemeColors } from "./Colors";
 
 export type NeumoVariant =
@@ -97,46 +96,5 @@ export const getSurfaceColor = (colors: ThemeColors, tone: NeumoTone) => {
 };
 
 export const getNeumoShadow = (colors: ThemeColors, variant: NeumoVariant) => {
-  const resolved = resolveNeumoVariant(variant);
-
-  if (resolved === "solid") {
-    return {};
-  }
-
-  const shadowColor = colors.shadowSoft || colors.shadowDark;
-
-  if (Platform.OS === "web") {
-    if (resolved === "inset") {
-      return {
-        boxShadow: `inset 0 1px 0 ${colors.strokeSubtle}, inset 0 6px 14px ${shadowColor}`,
-      } as any;
-    }
-    if (resolved === "glass-strong") {
-      return {
-        boxShadow: `0 10px 22px ${shadowColor}, 0 2px 0 ${colors.strokeSubtle}`,
-      } as any;
-    }
-    return {
-      boxShadow: `0 8px 18px ${shadowColor}, 0 1px 0 ${colors.strokeSubtle}`,
-    } as any;
-  }
-
-  if (resolved === "inset") {
-    return {
-      shadowColor: colors.shadowDark,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.22,
-      shadowRadius: 6,
-      elevation: 1,
-    };
-  }
-
-  const strong = resolved === "glass-strong";
-  return {
-    shadowColor: colors.shadowDark,
-    shadowOffset: { width: 0, height: strong ? 10 : 7 },
-    shadowOpacity: strong ? 0.34 : 0.22,
-    shadowRadius: strong ? 16 : 12,
-    elevation: strong ? 8 : 5,
-  };
+  return {};
 };

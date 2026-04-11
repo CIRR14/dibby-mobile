@@ -70,8 +70,8 @@ const NeumoSurface: React.FC<NeumoSurfaceProps> = ({
     (tone === "accent"
       ? colors.gradient
       : resolvedVariant === "glass-strong"
-      ? [colors.surfaceGlassStrong, colors.surface]
-      : [colors.surfaceGlass, colors.surface]);
+      ? [colors.surfaceGlassStrong, colors.surface, colors.surfaceAlt]
+      : [colors.surfaceGlass, colors.surface, colors.surfaceAlt]);
   const Container: any = shouldUseGradient ? LinearGradient : View;
   const shouldClipContent = clipContent ?? shouldUseGradient;
   const containerProps = shouldUseGradient
@@ -124,8 +124,14 @@ const NeumoSurface: React.FC<NeumoSurfaceProps> = ({
           ...(shouldClipContent ? { overflow: "hidden" } : { overflow: "visible" }),
           ...(Platform.OS === "web" && isGlass
             ? ({
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
+                backdropFilter:
+                  resolvedVariant === "glass-strong"
+                    ? "blur(24px) saturate(150%)"
+                    : "blur(20px) saturate(140%)",
+                WebkitBackdropFilter:
+                  resolvedVariant === "glass-strong"
+                    ? "blur(24px) saturate(150%)"
+                    : "blur(20px) saturate(140%)",
               } as any)
             : {}),
         },

@@ -6,6 +6,12 @@ import { getTravelerFromId } from "./AppHelpers";
 import { assignUniqueParticipantColors } from "./GenerateColor";
 import { CreateExpenseForm } from "../components/CreateExpense";
 import { v4 } from "uuid";
+import {
+  MAIN_SUB_TRIP_ID,
+  createTripExpense,
+  deleteTripExpense,
+  ensureMainSubTripForTrip,
+} from "./TripRepository";
 
 const chunkArray = <T>(items: T[], size = 10): T[][] => {
   if (!items.length) {
@@ -129,6 +135,7 @@ export const deleteDibbyUserData = async (
 
   export const createDibbyTrip = async (tripData: DibbyTrip, tripRef: DocumentReference<DocumentData>, participants: DibbyParticipant[]) => {
     await setDoc(tripRef, tripData)
+    await ensureMainSubTripForTrip(tripData);
     participants.forEach(async (user) => {
       const docRef = doc(db, "users", user.uid);
       const updatedUser = {
@@ -156,6 +163,7 @@ export const deleteDibbyUserData = async (
     const expenseId = `${trip.id}-${v4()}`
     const expensePerPersonAverage = formData.perPersonAverage;
     const expenseAmount: number = parseFloat(formData.amount)
+    const selectedSubTripId = formData.subTripId || MAIN_SUB_TRIP_ID;
 
     
     const getNewParticipants = (): DibbyParticipant[] => {
@@ -210,6 +218,8 @@ export const deleteDibbyUserData = async (
 
     const newExpense: DibbyExpense = {
       id: expenseId,
+      tripId: trip.id,
+      subTripId: selectedSubTripId,
       title: formData.title,
       description: formData.description,
       amount: expenseAmount,
@@ -233,6 +243,8 @@ export const deleteDibbyUserData = async (
 
     console.log({newTripData})
 
+    await ensureMainSubTripForTrip(trip);
+    await createTripExpense(trip.id, newExpense);
     await updateDoc(tripRef, newTripData);
   }
 
@@ -262,6 +274,7 @@ export const deleteDibbyUserData = async (
       perPersonAverage: increment(-(expense.amount/trip.participants.length)),
       dateUpdated: Timestamp.now()
     }
+    await deleteTripExpense(trip.id, expense.id);
     const docUpdate = await updateDoc(tripRef, newTrip)
     return docUpdate;
   }
