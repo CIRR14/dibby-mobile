@@ -32,7 +32,6 @@ import {
   numberWithCommas,
 } from "../helpers/AppHelpers";
 import DibbyAvatars from "./DibbyAvatars";
-import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import {
@@ -56,6 +55,8 @@ interface IDibbyCardProps {
   wideScreen: boolean;
   onCompleteItem?: (setAs: boolean) => void;
   completed?: boolean;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
@@ -67,6 +68,8 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
   wideScreen,
   onCompleteItem,
   completed,
+  accessibilityLabel,
+  accessibilityHint,
 }) => {
   const colors = useAppTheme();
   const styles = makeStyles(
@@ -79,6 +82,10 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
     (expense || trip)?.title,
     (expense || trip)?.emoji,
   );
+
+  // Generate descriptive accessibility label
+  const resolvedAccessibilityLabel = accessibilityLabel || `${displayTitle}, $${numberWithCommas((expense || trip)?.amount?.toString() || "0")}`;
+  const resolvedAccessibilityHint = accessibilityHint || `${trip ? "Trip" : "Expense"} card. Double tap to view details${trip && !completed ? ", or use actions to complete or delete" : ""}.`;
 
   const handleShare = async () => {
     try {
@@ -170,22 +177,24 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
   );
 
   return (
-    <NeumoSurface
-      variant="glass-strong"
-      radius={NeumoTokens.radius.lg}
-      padding={0}
-      clipContent={false}
-      gradient
-      gradientColors={colors.card}
+    <View
       style={[
         styles.cardShell,
         {
           zIndex: menuOpen ? 100 : 1,
-          elevation: menuOpen ? 30 : 0,
+          elevation: menuOpen ? 30 : 8,
         },
       ]}
     >
-      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={onPress}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={resolvedAccessibilityLabel}
+        accessibilityHint={resolvedAccessibilityHint}
+        accessibilityState={{ disabled: !onPress }}
+      >
         <View style={styles.cardContent}>
           <View style={styles.mainRow}>
             <View style={styles.textLane}>
@@ -194,13 +203,7 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
                   {timestampToString((expense || trip)?.dateCreated)}
                 </Text>
                 {completed && (
-                  <NeumoSurface
-                    variant="solid"
-                    tone="surface"
-                    radius={NeumoTokens.radius.pill}
-                    padding={NeumoTokens.control.pill.padding}
-                    style={styles.statusPill}
-                  >
+                  <View style={styles.statusPill}>
                     <View style={styles.statusContent}>
                       <FontAwesomeIcon
                         icon={faCheck}
@@ -209,7 +212,7 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
                       />
                       <Text style={styles.statusText}>Completed</Text>
                     </View>
-                  </NeumoSurface>
+                  </View>
                 )}
               </View>
 
@@ -277,7 +280,7 @@ const DibbyCardComponent: React.FC<IDibbyCardProps> = ({
           </View>
         </View>
       </TouchableOpacity>
-    </NeumoSurface>
+    </View>
   );
 };
 
@@ -292,14 +295,22 @@ const makeStyles = (
     cardShell: {
       margin: 8,
       position: "relative",
+      // Floating shadow effect for iOS
+      shadowColor: colors.textPrimary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      // Elevation for Android
+      elevation: 8,
     },
     card: {
       minWidth: wideScreen ? cardWidth : 0,
-      backgroundColor: "transparent",
+      backgroundColor: colors.surface,
       padding: 14,
       borderRadius: NeumoTokens.radius.lg,
       display: "flex",
       justifyContent: "center",
+      overflow: "hidden",
     },
     cardContent: {
       position: "relative",
