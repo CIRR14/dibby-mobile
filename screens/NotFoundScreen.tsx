@@ -1,8 +1,11 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { RootStackScreenProps } from "../types";
 import { ThemeColors } from "../constants/Colors";
-import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import DibbyButton from "../components/DibbyButton";
@@ -15,10 +18,7 @@ export default function NotFoundScreen({
   const styles = makeStyles(colors as unknown as ThemeColors);
   return (
     <View style={styles.container}>
-      <NeumoSurface
-        variant="raised"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
+      <View
         style={styles.card}
       >
         <Text style={styles.title}>This screen doesn't exist.</Text>
@@ -30,7 +30,7 @@ export default function NotFoundScreen({
           title="Go to home"
           fullWidth
         />
-      </NeumoSurface>
+      </View>
     </View>
   );
 }

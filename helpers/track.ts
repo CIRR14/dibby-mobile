@@ -1,6 +1,7 @@
 type TrackEvent =
   | "trip_create"
   | "expense_create"
+  | "sub_trip_create"
   | "settle_share"
   | "traveler_add";
 

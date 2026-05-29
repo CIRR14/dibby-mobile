@@ -7,13 +7,12 @@ import { Divider } from "@rneui/themed";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faAt, faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import DibbyButton from "./DibbyButton";
-import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 
 export interface IDibbyProfileCardProps {
-  title: string;
+  title?: string;
   dibbyUser?: DibbyUser | DibbyParticipant;
   subtitle?: (string | undefined)[];
   divider?: boolean;
@@ -35,10 +34,7 @@ export const DibbyProfileCard: React.FC<IDibbyProfileCardProps> = ({
   const styles = makeStyles(colors as unknown as ThemeColors);
 
   return (
-    <NeumoSurface
-      variant={pending ? "inset" : "raised"}
-      tone="surface"
-      radius={NeumoTokens.radius.lg}
+    <View
       style={{
         ...styles.card,
         justifyContent: "space-around",
@@ -158,7 +154,7 @@ export const DibbyProfileCard: React.FC<IDibbyProfileCardProps> = ({
           </View>
         </>
       )}
-    </NeumoSurface>
+    </View>
   );
 };
 

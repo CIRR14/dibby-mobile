@@ -1,4 +1,8 @@
-import { Text, StyleSheet, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateProfile } from "firebase/auth";
@@ -16,7 +20,6 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import { getParticipantColor } from "../helpers/GenerateColor";
 import { createDibbyUser } from "../helpers/FirebaseHelpers";
-import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
@@ -131,10 +134,7 @@ const CreateProfile = () => {
             </Text>
           </View>
 
-          <NeumoSurface
-            variant="glass"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
+          <View
             style={styles.sectionContainer}
           >
             <View
@@ -190,12 +190,9 @@ const CreateProfile = () => {
                 {loggedInUser?.email}
               </Text>
             </View>
-          </NeumoSurface>
+          </View>
 
-          <NeumoSurface
-            variant="glass"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
+          <View
             style={styles.inputsCard}
           >
             <Text style={styles.sectionTitle}>Your details</Text>
@@ -241,7 +238,7 @@ const CreateProfile = () => {
                 title="Next"
               />
             </View>
-          </NeumoSurface>
+          </View>
         </ScreenLayout>
       </SafeAreaView>
     </View>

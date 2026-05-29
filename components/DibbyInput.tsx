@@ -14,7 +14,6 @@ import {
   faDollarSign,
   faPercentage,
 } from "@fortawesome/free-solid-svg-icons";
-import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
@@ -71,12 +70,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
   return (
     <View style={styles.inputContainer}>
       {label && <Text style={styles.inputLabel}>{label}</Text>}
-      <NeumoSurface
-        variant="inset"
-        radius={NeumoTokens.radius.md}
-        padding={0}
-        style={styles.inputSurface}
-      >
+      <View style={styles.inputSurface}>
         <Input
           autoCapitalize={autoCapitalize}
           inputStyle={styles.input}
@@ -116,7 +110,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
             )
           }
         />
-      </NeumoSurface>
+      </View>
       {helperText && !hasError ? (
         <Text style={styles.helperText}>{helperText}</Text>
       ) : null}

@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   Alert,
-  Platform,
+  Animated,
   Modal,
+  PanResponder,
+  Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
-  Animated,
-  PanResponder,
+  StyleSheet,
+  Text,
+  View,
   useWindowDimensions,
-  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
@@ -58,8 +58,6 @@ import {
   addDibbyParticipant,
   deleteDibbyExpense,
 } from "../helpers/FirebaseHelpers";
-import NeumoSurface from "../components/NeumoSurface";
-import NeumoPressable from "../components/NeumoPressable";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import { DibbySearchUsername } from "../components/DibbySearchUsername";
@@ -648,10 +646,7 @@ const ViewTrip = ({ route }: any) => {
 
   const renderTripSummaryPanel = () => (
     <View style={styles.headerStack}>
-      <NeumoSurface
-        variant="glass"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
+      <View
         style={styles.headerCard}
       >
         <View style={styles.headerRow}>
@@ -668,19 +663,16 @@ const ViewTrip = ({ route }: any) => {
         </View>
         <View style={styles.summaryStatRow}>
           {summaryNumbers.map((item) => (
-            <NeumoSurface
+            <View
               key={item.key}
-              variant="solid"
-              tone="surface"
-              radius={NeumoTokens.radius.md}
               style={styles.summaryStatCard}
             >
               <Text style={styles.summaryStatLabel}>{item.label}</Text>
               <Text style={styles.summaryStatValue}>{item.value}</Text>
-            </NeumoSurface>
+            </View>
           ))}
         </View>
-      </NeumoSurface>
+      </View>
 
       <TripLeaderboard
         entries={leaderboard.entries}
@@ -688,9 +680,7 @@ const ViewTrip = ({ route }: any) => {
         onSettleNow={() => setIsSettleModalVisible(true)}
       />
 
-      <NeumoPressable
-        variant="solid"
-        tone="base"
+      <Pressable
         onPress={() => setIsSettleModalVisible(true)}
         style={styles.summaryToggle}
       >
@@ -699,7 +689,7 @@ const ViewTrip = ({ route }: any) => {
             {hasOpenBalances ? "Open settle details" : "View balances"}
           </Text>
         </View>
-      </NeumoPressable>
+      </Pressable>
     </View>
   );
 
@@ -710,13 +700,7 @@ const ViewTrip = ({ route }: any) => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.groupChipRow}
       >
-        <NeumoPressable
-          variant={
-            selectedSubTripId === ALL_SUB_TRIPS_ID ? "glass-strong" : "solid"
-          }
-          tone="surface"
-          radius={NeumoTokens.radius.pill}
-          padding={NeumoTokens.control.pill.padding}
+        <Pressable
           onPress={() => setSelectedSubTripId(ALL_SUB_TRIPS_ID)}
           style={styles.groupChip}
         >
@@ -729,16 +713,12 @@ const ViewTrip = ({ route }: any) => {
           >
             All groups
           </Text>
-        </NeumoPressable>
+        </Pressable>
         {subTrips.map((group) => {
           const isActive = selectedSubTripId === group.id;
           return (
-            <NeumoPressable
+            <Pressable
               key={group.id}
-              variant={isActive ? "glass-strong" : "solid"}
-              tone="surface"
-              radius={NeumoTokens.radius.pill}
-              padding={NeumoTokens.control.pill.padding}
               onPress={() => setSelectedSubTripId(group.id)}
               style={styles.groupChip}
             >
@@ -747,14 +727,10 @@ const ViewTrip = ({ route }: any) => {
               >
                 {formatTitleWithEmoji(group.title, group.emoji)}
               </Text>
-            </NeumoPressable>
+            </Pressable>
           );
         })}
-        <NeumoPressable
-          variant="solid"
-          tone="base"
-          radius={NeumoTokens.radius.pill}
-          padding={NeumoTokens.control.pill.padding}
+        <Pressable
           onPress={() => setIsCreateGroupModalVisible(true)}
           style={styles.groupChip}
         >
@@ -762,24 +738,15 @@ const ViewTrip = ({ route }: any) => {
             <FontAwesomeIcon icon={faPlus} size={10} color={colors.textSecondary} />
             <Text style={styles.groupChipText}>Group</Text>
           </View>
-        </NeumoPressable>
+        </Pressable>
       </ScrollView>
 
-      <NeumoSurface
-        variant="inset"
-        tone="surface"
-        radius={NeumoTokens.radius.pill}
+      <View
         style={styles.segmentContainer}
-        padding={NeumoTokens.control.pill.padding}
       >
         <View style={styles.segmentRow}>
-          <NeumoPressable
-            variant={segment === "expenses" ? "glass-strong" : "solid"}
-            tone="surface"
+          <Pressable
             onPress={() => setSegment("expenses")}
-            radius={NeumoTokens.radius.pill}
-            padding={NeumoTokens.control.pill.padding}
-            containerStyle={styles.segmentButton}
             style={styles.segmentButtonSurface}
           >
             <Text
@@ -790,14 +757,9 @@ const ViewTrip = ({ route }: any) => {
             >
               Expenses
             </Text>
-          </NeumoPressable>
-          <NeumoPressable
-            variant={segment === "travelers" ? "glass-strong" : "solid"}
-            tone="surface"
+          </Pressable>
+          <Pressable
             onPress={() => setSegment("travelers")}
-            radius={NeumoTokens.radius.pill}
-            padding={NeumoTokens.control.pill.padding}
-            containerStyle={styles.segmentButton}
             style={styles.segmentButtonSurface}
           >
             <Text
@@ -808,16 +770,13 @@ const ViewTrip = ({ route }: any) => {
             >
               Travelers
             </Text>
-          </NeumoPressable>
+          </Pressable>
         </View>
-      </NeumoSurface>
+      </View>
       {segment === "expenses" && (
         <>
           {searchOpen && (
-            <NeumoSurface
-              variant="inset"
-              tone="surface"
-              radius={NeumoTokens.radius.md}
+            <View
               style={styles.searchSurface}
             >
               <DibbyInput
@@ -826,7 +785,7 @@ const ViewTrip = ({ route }: any) => {
                 onChangeText={setSearchValue}
                 clearButtonMode="while-editing"
               />
-            </NeumoSurface>
+            </View>
           )}
           <View style={styles.expenseMetaRow}>
             <Text style={styles.expenseMetaText}>
@@ -834,14 +793,12 @@ const ViewTrip = ({ route }: any) => {
               {visibleExpenses.length === 1 ? "" : "s"}
             </Text>
             {searchValue.trim() ? (
-              <NeumoPressable
-                variant="flat"
-                tone="base"
+              <Pressable
                 onPress={() => setSearchValue("")}
                 style={styles.clearSearchButton}
               >
                 <Text style={styles.clearSearchText}>Clear search</Text>
-              </NeumoPressable>
+              </Pressable>
             ) : null}
           </View>
           <SortFilterBar
@@ -925,10 +882,7 @@ const ViewTrip = ({ route }: any) => {
                         loadingIndicator ? (
                           <DibbyLoading />
                         ) : (
-                          <NeumoSurface
-                            variant="glass"
-                            tone="surface"
-                            radius={NeumoTokens.radius.lg}
+                          <View
                             style={styles.emptyState}
                           >
                             <Text style={styles.emptyText}>
@@ -943,7 +897,7 @@ const ViewTrip = ({ route }: any) => {
                                 fullWidth
                               />
                             )}
-                          </NeumoSurface>
+                          </View>
                         )
                       }
                       refreshControl={
@@ -966,10 +920,7 @@ const ViewTrip = ({ route }: any) => {
                       style={styles.list}
                     >
                       <View style={styles.travelersContainer}>
-                        <NeumoSurface
-                          variant="glass"
-                          tone="surface"
-                          radius={NeumoTokens.radius.lg}
+                        <View
                           style={styles.travelersCard}
                         >
                           <Text style={styles.sectionTitle}>Participants</Text>
@@ -980,11 +931,8 @@ const ViewTrip = ({ route }: any) => {
                                 t.uid || t.username || t.name || "",
                               );
                               return (
-                                <NeumoSurface
+                                <View
                                   key={t.uid}
-                                  variant="solid"
-                                  tone="surface"
-                                  radius={NeumoTokens.radius.pill}
                                   style={[
                                     styles.travelerPill,
                                     {
@@ -994,19 +942,15 @@ const ViewTrip = ({ route }: any) => {
                                       ),
                                     },
                                   ]}
-                                  padding={NeumoTokens.control.pill.padding}
                                 >
                                   <Text style={styles.travelerText}>{t.name}</Text>
-                                </NeumoSurface>
+                                </View>
                               );
                             })}
                           </View>
-                        </NeumoSurface>
+                        </View>
 
-                        <NeumoSurface
-                          variant="inset"
-                          tone="surface"
-                          radius={NeumoTokens.radius.lg}
+                        <View
                           style={styles.travelersCard}
                         >
                           <Text style={styles.sectionTitle}>Add travelers</Text>
@@ -1020,7 +964,7 @@ const ViewTrip = ({ route }: any) => {
                             onPress={addTravelers}
                             fullWidth
                           />
-                        </NeumoSurface>
+                        </View>
                       </View>
                     </ScrollView>
                   )}
@@ -1045,10 +989,7 @@ const ViewTrip = ({ route }: any) => {
                   loadingIndicator ? (
                     <DibbyLoading />
                   ) : (
-                    <NeumoSurface
-                      variant="glass"
-                      tone="surface"
-                      radius={NeumoTokens.radius.lg}
+                    <View
                       style={styles.emptyState}
                     >
                       <Text style={styles.emptyText}>
@@ -1063,7 +1004,7 @@ const ViewTrip = ({ route }: any) => {
                           fullWidth
                         />
                       )}
-                    </NeumoSurface>
+                    </View>
                   )
                 }
                 refreshControl={
@@ -1085,10 +1026,7 @@ const ViewTrip = ({ route }: any) => {
                 {renderTripSummaryPanel()}
                 {renderTripControls()}
                 <View style={styles.travelersContainer}>
-                  <NeumoSurface
-                    variant="glass"
-                    tone="surface"
-                    radius={NeumoTokens.radius.lg}
+                  <View
                     style={styles.travelersCard}
                   >
                     <Text style={styles.sectionTitle}>Participants</Text>
@@ -1099,11 +1037,8 @@ const ViewTrip = ({ route }: any) => {
                           t.uid || t.username || t.name || "",
                         );
                         return (
-                          <NeumoSurface
+                          <View
                             key={t.uid}
-                            variant="solid"
-                            tone="surface"
-                            radius={NeumoTokens.radius.pill}
                             style={[
                               styles.travelerPill,
                               {
@@ -1113,19 +1048,15 @@ const ViewTrip = ({ route }: any) => {
                                 ),
                               },
                             ]}
-                            padding={NeumoTokens.control.pill.padding}
                           >
                             <Text style={styles.travelerText}>{t.name}</Text>
-                          </NeumoSurface>
+                          </View>
                         );
                       })}
                     </View>
-                  </NeumoSurface>
+                  </View>
 
-                  <NeumoSurface
-                    variant="inset"
-                    tone="surface"
-                    radius={NeumoTokens.radius.lg}
+                  <View
                     style={styles.travelersCard}
                   >
                     <Text style={styles.sectionTitle}>Add travelers</Text>
@@ -1139,7 +1070,7 @@ const ViewTrip = ({ route }: any) => {
                       onPress={addTravelers}
                       fullWidth
                     />
-                  </NeumoSurface>
+                  </View>
                 </View>
               </ScrollView>
             )}
@@ -1187,10 +1118,7 @@ const ViewTrip = ({ route }: any) => {
                 ]}
                 {...settlePanResponder.panHandlers}
               >
-                <NeumoSurface
-                  variant="glass-strong"
-                  tone="surface"
-                  radius={NeumoTokens.radius.xl}
+                <View
                   style={styles.settleSheet}
                 >
                   <View style={styles.settleSheetHeader}>
@@ -1200,18 +1128,14 @@ const ViewTrip = ({ route }: any) => {
                         {selectedSubTripLabel} settle up
                       </Text>
                       <View style={styles.settleHeaderActions}>
-                        <NeumoPressable
-                          variant="solid"
-                          tone="base"
+                        <Pressable
                           onPress={() => animateSettleSheet(!isSettleSheetExpanded)}
                           style={styles.settleHeaderButton}
-                          padding={NeumoTokens.control.pill.padding}
-                          radius={NeumoTokens.radius.pill}
                         >
                           <Text style={styles.settleHeaderButtonText}>
                             {isSettleSheetExpanded ? "Collapse" : "Expand"}
                           </Text>
-                        </NeumoPressable>
+                        </Pressable>
                         <DibbyButton
                           type="clear"
                           size="sm"
@@ -1237,7 +1161,7 @@ const ViewTrip = ({ route }: any) => {
                       <DibbyLoading />
                     )}
                   </ScrollView>
-                </NeumoSurface>
+                </View>
               </Animated.View>
             </View>
           </Modal>
@@ -1248,10 +1172,7 @@ const ViewTrip = ({ route }: any) => {
             onRequestClose={() => setIsCreateGroupModalVisible(false)}
           >
             <View style={styles.modalOverlay}>
-              <NeumoSurface
-                variant="glass-strong"
-                tone="surface"
-                radius={NeumoTokens.radius.lg}
+              <View
                 style={styles.modalCard}
               >
                 <Text style={styles.modalTitle}>Create a group</Text>
@@ -1275,7 +1196,6 @@ const ViewTrip = ({ route }: any) => {
                 </View>
                 <View style={styles.modalActions}>
                   <DibbyButton
-                    tone="neutral"
                     title="Cancel"
                     onPress={() => setIsCreateGroupModalVisible(false)}
                     size="sm"
@@ -1288,7 +1208,7 @@ const ViewTrip = ({ route }: any) => {
                     size="sm"
                   />
                 </View>
-              </NeumoSurface>
+              </View>
             </View>
           </Modal>
         </ScreenLayout>

@@ -12,8 +12,6 @@ import { User, reload, sendEmailVerification, signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
-import NeumoSurface from "../components/NeumoSurface";
-import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import * as Linking from "expo-linking";
@@ -39,13 +37,17 @@ export const VerifyEmail = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       if (loggedInUser) {
-        reload(loggedInUser);
+        await reload(loggedInUser);
         if (loggedInUser.emailVerified) {
           clearInterval(interval);
           navigateTo(loggedInUser);
         }
       }
     }, 2000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, [loggedInUser]);
 
   const resendVerificationEmail = async () => {
@@ -95,12 +97,7 @@ export const VerifyEmail = () => {
           }
         />
         <ScreenLayout contentStyle={styles.layoutContent}>
-          <NeumoSurface
-            variant="glass"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
-            style={styles.cardContainer}
-          >
+          <View style={styles.cardContainer}>
             <Text style={styles.stepLabel}>Step 1 of 3</Text>
             <Text style={styles.title}>Verify your email</Text>
             <Text style={styles.subtitle}>
@@ -137,7 +134,7 @@ export const VerifyEmail = () => {
             <Text style={styles.helperText}>
               Didn’t get it? Check spam or wait a minute, then resend.
             </Text>
-          </NeumoSurface>
+           </View>
         </ScreenLayout>
       </SafeAreaView>
     </View>
@@ -155,9 +152,8 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "center",
     },
     cardContainer: {
-      borderRadius: NeumoTokens.radius.lg,
       gap: 12,
-      padding: NeumoTokens.spacing.lg,
+      padding: 24,
     },
     stepLabel: {
       color: colors.textSecondary,

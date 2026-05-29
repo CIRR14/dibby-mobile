@@ -1,13 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   changeOpacity,
   resolveParticipantColor,
 } from "../helpers/GenerateColor";
 import { ThemeColors } from "../constants/Colors";
 import useAppTheme from "../hooks/useAppTheme";
-import NeumoPressable from "./NeumoPressable";
-import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import { LeaderboardEntry } from "../constants/DibbyTypes";
@@ -34,15 +32,10 @@ const TripLeaderboard: React.FC<TripLeaderboardProps> = ({
 
   if (!entries.length) {
     return (
-      <NeumoSurface
-        variant="glass"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
-        style={styles.container}
-      >
+      <View style={styles.container}>
         <Text style={styles.title}>Leaderboard</Text>
         <Text style={styles.subtitle}>No balances yet for this group.</Text>
-      </NeumoSurface>
+      </View>
     );
   }
 
@@ -50,25 +43,14 @@ const TripLeaderboard: React.FC<TripLeaderboardProps> = ({
   const hasMoreEntries = entries.length > topEntries.length;
 
   return (
-    <NeumoSurface
-      variant="glass"
-      tone="surface"
-      radius={NeumoTokens.radius.lg}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Who should pay next?</Text>
           <Text style={styles.subtitle}>Debt-first leaderboard</Text>
         </View>
         {nextPayment ? (
-          <NeumoPressable
-            variant="raised"
-            tone="accent"
-            gradient
-            gradientColors={colors.gradient}
-            radius={NeumoTokens.radius.pill}
-            padding={NeumoTokens.control.pill.padding}
+          <Pressable
             onPress={onSettleNow}
             style={styles.settleButton}
           >
@@ -80,33 +62,25 @@ const TripLeaderboard: React.FC<TripLeaderboardProps> = ({
               />
               <Text style={styles.settleText}>Settle now</Text>
             </View>
-          </NeumoPressable>
+          </Pressable>
         ) : null}
       </View>
 
       {nextPayment ? (
-        <NeumoSurface
-          variant="solid"
-          tone="surface"
-          radius={NeumoTokens.radius.md}
-          style={styles.nextPaymentCard}
-        >
+        <View style={styles.nextPaymentCard}>
           <Text style={styles.nextPaymentText}>
             {nextPayment.owee.name} pays {nextPayment.owed.name}
           </Text>
           <Text style={styles.nextPaymentAmount}>
             ${numberWithCommas(nextPayment.amount.toString())}
           </Text>
-        </NeumoSurface>
+        </View>
       ) : null}
 
       <View style={styles.rows}>
         {visibleEntries.map((entry) => (
-          <NeumoSurface
+          <View
             key={entry.uid}
-            variant="solid"
-            tone="surface"
-            radius={NeumoTokens.radius.md}
             style={styles.row}
           >
             <View style={styles.rowLeft}>
@@ -143,18 +117,13 @@ const TripLeaderboard: React.FC<TripLeaderboardProps> = ({
                     : "Settled"}
               </Text>
             </View>
-          </NeumoSurface>
+          </View>
         ))}
       </View>
 
       {hasMoreEntries && (
-        <NeumoPressable
-          variant="flat"
-          tone="base"
-          radius={NeumoTokens.radius.pill}
-          padding={NeumoTokens.control.pill.padding}
+        <Pressable
           onPress={() => setExpanded((value) => !value)}
-          containerStyle={styles.expandContainer}
         >
           <View style={styles.expandRow}>
             <Text style={styles.expandText}>
@@ -166,9 +135,9 @@ const TripLeaderboard: React.FC<TripLeaderboardProps> = ({
               color={colors.textSecondary}
             />
           </View>
-        </NeumoPressable>
+        </Pressable>
       )}
-    </NeumoSurface>
+    </View>
   );
 };
 

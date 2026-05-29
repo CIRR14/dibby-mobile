@@ -12,7 +12,7 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as React from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 
 import { CustomDarkTheme, CustomLightTheme } from "../constants/Colors";
 import CreateProfile from "../screens/CreateProfile";
@@ -34,11 +34,9 @@ import CreateTrip from "../components/CreateTrip";
 import { Profile } from "../screens/Profile";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faPlus, faSuitcase, faUser } from "@fortawesome/free-solid-svg-icons";
-import NeumoPressable from "../components/NeumoPressable";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import useAppTheme from "../hooks/useAppTheme";
-import NeumoSurface from "../components/NeumoSurface";
-import { useUser } from "../hooks/useUser";
+import { useUser, useUserBootstrap } from "../hooks/useUser";
 import DibbyLoading from "../components/DibbyLoading";
 import DibbyVersion from "../components/DibbyVersion";
 import PrivacyPolicy from "../screens/PrivacyPolicy";
@@ -80,6 +78,7 @@ const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
 function RootNavigator() {
   const colors = useAppTheme();
+  useUserBootstrap();
   const { loggedInUser, authReady, profileReady, profileStatus } = useUser();
   const needsEmailVerification = Boolean(
     loggedInUser && !loggedInUser.emailVerified,
@@ -87,7 +86,7 @@ function RootNavigator() {
   const needsProfile =
     loggedInUser && !needsEmailVerification && profileStatus !== "complete";
 
-  if (!authReady || (loggedInUser && !profileReady)) {
+  if (!authReady || (loggedInUser && !needsEmailVerification && !profileReady)) {
     return (
       <View
         style={{
@@ -104,6 +103,7 @@ function RootNavigator() {
 
   return (
     <Stack.Navigator
+      key={`${loggedInUser ? "user" : "guest"}-${needsEmailVerification ? "verify" : "no-verify"}-${needsProfile ? "needs-profile" : "profile-complete"}`}
       initialRouteName={
         loggedInUser
           ? needsEmailVerification
@@ -118,26 +118,25 @@ function RootNavigator() {
         contentStyle: { backgroundColor: colors.background.default },
       }}
     >
-      {!loggedInUser ? (
+      {!loggedInUser && (
         <Stack.Screen
           name="Login"
           component={LoginScreen}
           options={{ headerShown: false, title: "Login" }}
         />
-      ) : needsEmailVerification ? (
-        <Stack.Screen
-          name="VerifyEmail"
-          component={VerifyEmail}
-          options={{ headerShown: false, title: "Verify Email" }}
-        />
-      ) : needsProfile ? (
-        <Stack.Screen
-          name="CreateProfile"
-          component={CreateProfile}
-          options={{ headerShown: false, title: "Create Profile" }}
-        />
-      ) : (
+      )}
+      {loggedInUser && (
         <>
+          <Stack.Screen
+            name="VerifyEmail"
+            component={VerifyEmail}
+            options={{ headerShown: false, title: "Verify Email" }}
+          />
+          <Stack.Screen
+            name="CreateProfile"
+            component={CreateProfile}
+            options={{ headerShown: false, title: "Create Profile" }}
+          />
           <Stack.Screen
             name="Root"
             component={BottomTabNavigator}
@@ -225,23 +224,19 @@ function AddTabButton() {
         marginTop: -NeumoTokens.spacing.lg - 2,
       }}
     >
-      <NeumoPressable
+      <Pressable
         onPress={handleAddPress}
-        tone="accent"
-        variant="glass-strong"
-        gradient
-        gradientColors={colors.gradient}
-        radius={NeumoTokens.radius.pill}
-        padding={NeumoTokens.spacing.md}
         style={{
           width: 60,
           height: 60,
           alignItems: "center",
           justifyContent: "center",
+          borderRadius: 30,
+          backgroundColor: colors.primary.background,
         }}
       >
         <FontAwesomeIcon icon={faPlus} size={20} color={colors.primary.text} />
-      </NeumoPressable>
+      </Pressable>
     </View>
   );
 }
@@ -284,14 +279,14 @@ function BottomTabNavigator() {
   return (
     <BottomTab.Navigator
       initialRouteName="TripsTab"
+      sceneContainerStyle={{
+        backgroundColor: colors.background.default,
+      }}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarHideOnKeyboard: true,
-        sceneContainerStyle: {
-          backgroundColor: colors.background.default,
-        },
         tabBarStyle: {
           backgroundColor: "transparent",
           borderTopWidth: 0,
@@ -322,19 +317,11 @@ function BottomTabNavigator() {
                 : {}),
             }}
           >
-            <NeumoSurface
-              variant="glass-strong"
-              tone="surface"
-              radius={NeumoTokens.radius.xl}
-              padding={0}
-              style={{ flex: 1 }}
-              pointerEvents="none"
-              gradient
-              gradientColors={[
-                changeOpacity(colors.surfaceGlassStrong, 0.58),
-                changeOpacity(colors.surfaceGlass, 0.52),
-                changeOpacity(colors.surfaceAlt, 0.48),
-              ]}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: changeOpacity(colors.surfaceGlassStrong, 0.58),
+              }}
             />
           </View>
         ),

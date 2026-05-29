@@ -1,8 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, View, Text, StyleSheet, Platform } from "react-native";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ThemeColors } from "../constants/Colors";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
@@ -25,7 +32,6 @@ import {
   resolveParticipantColor,
 } from "../helpers/GenerateColor";
 import { deleteDibbyExpense } from "../helpers/FirebaseHelpers";
-import NeumoSurface from "../components/NeumoSurface";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
@@ -38,12 +44,13 @@ import ScreenLayout from "../components/ScreenLayout";
 import useResponsiveLayout from "../hooks/useResponsiveLayout";
 import ActionMenu, { ActionMenuItem } from "../components/ActionMenu";
 import { subscribeTripExpenses } from "../helpers/TripRepository";
+import { TripsStackParamList } from "../types";
 
 const ViewExpense = ({ route }: any) => {
   const colors = useAppTheme();
   const responsive = useResponsiveLayout();
   const styles = makeStyles(colors as unknown as ThemeColors);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<TripsStackParamList>>();
   const { tripName, tripId, expenseId } = route.params;
   const { dibbyUser } = useUser();
   const [currentExpense, setCurrentExpense] = useState<DibbyExpense>();
@@ -154,10 +161,7 @@ const ViewExpense = ({ route }: any) => {
 
   const renderStatsCard = () =>
     currentExpense ? (
-      <NeumoSurface
-        variant="glass"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
+      <View
         style={styles.statsCard}
       >
         <StatsSection
@@ -167,15 +171,12 @@ const ViewExpense = ({ route }: any) => {
           compactColumns={2}
           expandedColumns={statsColumns}
         />
-      </NeumoSurface>
+      </View>
     ) : null;
 
   const renderBreakdownCard = () =>
     currentExpense ? (
-      <NeumoSurface
-        variant="glass"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
+      <View
         style={styles.breakdownCard}
       >
         <View style={styles.breakdownHeader}>
@@ -184,11 +185,8 @@ const ViewExpense = ({ route }: any) => {
         </View>
         <View style={styles.breakdownList}>
           {expenseBreakdown.map((item) => (
-            <NeumoSurface
+            <View
               key={item.uid}
-              variant="solid"
-              tone="surface"
-              radius={NeumoTokens.radius.md}
               style={[
                 styles.breakdownRow,
                 {
@@ -210,7 +208,7 @@ const ViewExpense = ({ route }: any) => {
                   ${numberWithCommas(item.amount.toString())}
                 </Text>
               </View>
-            </NeumoSurface>
+            </View>
           ))}
         </View>
         {(hasDuplicateParticipants || !paidByIncluded || !isBalanced) && (
@@ -232,7 +230,7 @@ const ViewExpense = ({ route }: any) => {
             )}
           </View>
         )}
-      </NeumoSurface>
+      </View>
     ) : null;
 
   const renderBalanceRow = () => (

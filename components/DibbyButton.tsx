@@ -1,21 +1,20 @@
 import React, { JSXElementConstructor, ReactElement } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { ThemeColors } from "../constants/Colors";
-import NeumoPressable from "./NeumoPressable";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 
-type LegacyButtonType = "solid" | "clear" | "outline" | "danger";
-type DibbyButtonTone = "primary" | "danger" | "neutral";
+export type ButtonType = "solid" | "clear" | "outline" | "danger";
 
 interface IButtonProps {
   onPress: () => void;
   title?: string | ReactElement<{}, string | JSXElementConstructor<any>>;
-  type?: LegacyButtonType;
-  tone?: DibbyButtonTone;
+  type?: ButtonType;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
   disabled?: boolean;
   loading?: boolean;
   add?: boolean;
@@ -23,24 +22,12 @@ interface IButtonProps {
   size?: "sm" | "md" | "lg";
 }
 
-const resolveTone = (type: LegacyButtonType, tone?: DibbyButtonTone) => {
-  if (tone) {
-    return tone;
-  }
-  if (type === "danger") {
-    return "danger";
-  }
-  if (type === "clear" || type === "outline") {
-    return "neutral";
-  }
-  return "primary";
-};
-
 const DibbyButton: React.FC<IButtonProps> = ({
   onPress,
   title,
   type = "solid",
-  tone,
+  accessibilityLabel,
+  accessibilityHint,
   disabled,
   loading = false,
   add,
@@ -48,78 +35,89 @@ const DibbyButton: React.FC<IButtonProps> = ({
   size = "md",
 }) => {
   const colors = useAppTheme();
+  const resolvedType = type;
   const isIconOnly = !add && title !== undefined && typeof title !== "string";
   const effectiveSize: "sm" | "md" | "lg" =
-    type === "clear" && isIconOnly && size === "md" ? "sm" : size;
-  const resolvedTone = resolveTone(type, tone);
+    resolvedType === "clear" && isIconOnly && size === "md" ? "sm" : size;
   const sizeConfig = NeumoTokens.control.button[effectiveSize];
   const controlMinHeight =
-    add ? 56 : type === "clear" && isIconOnly ? 36 : sizeConfig.minHeight;
+    add
+      ? 56
+      : resolvedType === "clear" && isIconOnly
+      ? 36
+      : sizeConfig.minHeight;
   const controlPaddingHorizontal =
-    type === "clear" && isIconOnly ? 6 : sizeConfig.paddingHorizontal;
+    resolvedType === "clear" && isIconOnly ? 6 : sizeConfig.paddingHorizontal;
   const styles = makeStyles(
     colors as unknown as ThemeColors,
-    fullWidth,
     controlMinHeight,
     effectiveSize,
   );
 
   const isDisabled = disabled || loading;
-  const useGradient = resolvedTone === "primary" || resolvedTone === "danger";
-  const gradientColors =
-    resolvedTone === "danger"
-      ? [colors.danger.background, colors.danger.button]
-      : colors.gradient;
-  const surfaceTone =
-    type === "clear"
-      ? "base"
-      : resolvedTone === "danger"
-      ? "danger"
-      : resolvedTone === "neutral"
-      ? "surface"
-      : "accent";
-  const surfaceVariant =
-    type === "clear"
-      ? "flat"
-      : resolvedTone === "neutral"
-      ? "glass"
-      : "glass-strong";
+  const resolvedAccessibilityLabel =
+    accessibilityLabel ?? (typeof title === "string" ? title : add ? "Add" : undefined);
+  const rippleColor =
+    resolvedType === "solid" || resolvedType === "danger"
+      ? "rgba(255,255,255,0.16)"
+      : colors.strokeSubtle;
+  const hitSlop =
+    isIconOnly || add
+      ? { top: 8, bottom: 8, left: 8, right: 8 }
+      : undefined;
+
+  const surfaceStyle =
+    resolvedType === "solid"
+      ? {
+          backgroundColor: colors.primary.background,
+          borderWidth: 0,
+        }
+      : resolvedType === "danger"
+      ? {
+          backgroundColor: colors.danger.background,
+          borderWidth: 0,
+        }
+      : resolvedType === "outline"
+      ? {
+          backgroundColor: "transparent",
+          borderWidth: 1,
+          borderColor: colors.outlinedButtonText,
+        }
+      : {
+          backgroundColor: "transparent",
+          borderWidth: 0,
+        };
 
   const textColor =
-    resolvedTone === "primary"
-      ? colors.primary.text
-      : resolvedTone === "danger"
+    resolvedType === "danger"
       ? colors.danger.text
-      : type === "clear"
-      ? colors.textSecondary
+      : resolvedType === "solid"
+      ? colors.primary.text
+      : resolvedType === "outline"
+      ? colors.outlinedButtonText
       : colors.textPrimary;
 
   return (
-    <NeumoPressable
+    <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      unstyled={type === "clear" && isIconOnly}
-      tone={surfaceTone}
-      variant={surfaceVariant}
-      gradient={type === "clear" ? false : useGradient}
-      gradientColors={type === "clear" ? undefined : gradientColors}
-      radius={
-        add
-          ? NeumoTokens.radius.lg
-          : type === "clear" && isIconOnly
-          ? NeumoTokens.radius.pill
-          : NeumoTokens.radius.md
-      }
-      padding={0}
-      style={[
+      accessibilityRole="button"
+      accessibilityLabel={resolvedAccessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      android_ripple={{ color: rippleColor, borderless: false }}
+      hitSlop={hitSlop}
+      style={({ pressed }) => [
         add ? styles.addButton : styles.button,
+        !add && surfaceStyle,
         {
           minHeight: controlMinHeight,
           paddingHorizontal: add ? 0 : controlPaddingHorizontal,
+          width: add ? undefined : fullWidth ? "100%" : "auto",
+          opacity: isDisabled ? 0.6 : pressed ? 0.9 : 1,
+          transform: !isDisabled && pressed ? [{ scale: 0.98 }] : undefined,
         },
       ]}
-      containerStyle={add ? styles.addButtonContainer : styles.buttonContainer}
-      strokeIntensity={type === "clear" ? "none" : "subtle"}
     >
       <View style={styles.content}>
         {loading ? (
@@ -147,7 +145,7 @@ const DibbyButton: React.FC<IButtonProps> = ({
           title
         )}
       </View>
-    </NeumoPressable>
+    </Pressable>
   );
 };
 
@@ -155,30 +153,24 @@ export default DibbyButton;
 
 const makeStyles = (
   colors: ThemeColors,
-  fullWidth?: boolean,
   minHeight = 48,
   size: "sm" | "md" | "lg" = "md",
 ) =>
   StyleSheet.create({
-    buttonContainer: {
-      width: fullWidth ? "100%" : "auto",
-      borderRadius: NeumoTokens.radius.md,
-      minHeight,
-    },
-    addButtonContainer: {
-      position: "absolute",
-      bottom: 16,
-      width: "100%",
-      zIndex: 2000,
-      paddingHorizontal: 16,
-    },
     addButton: {
       alignItems: "center",
       justifyContent: "center",
+      width: 56,
+      minHeight: 56,
+      borderRadius: NeumoTokens.radius.pill,
+      backgroundColor: colors.primary.background,
+      overflow: "hidden",
     },
     button: {
       alignItems: "center",
       justifyContent: "center",
+      borderRadius: NeumoTokens.radius.md,
+      overflow: "hidden",
     },
     content: {
       alignItems: "center",

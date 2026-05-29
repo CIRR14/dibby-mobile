@@ -307,7 +307,7 @@ const makeStyles = (
       minWidth: wideScreen ? cardWidth : 0,
       backgroundColor: colors.surface,
       padding: 14,
-      borderRadius: NeumoTokens.radius.lg,
+      borderRadius: 16,
       display: "flex",
       justifyContent: "center",
       overflow: "hidden",
@@ -317,7 +317,8 @@ const makeStyles = (
       display: "flex",
       flexDirection: "column",
       gap: 8,
-      overflow: "visible",
+      overflow: "hidden",
+      borderRadius: 16,
     },
     mainRow: {
       flexDirection: "row",

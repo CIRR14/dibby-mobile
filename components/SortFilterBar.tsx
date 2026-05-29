@@ -11,8 +11,6 @@ import { ThemeColors } from "../constants/Colors";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
-import NeumoPressable from "./NeumoPressable";
-import NeumoSurface from "./NeumoSurface";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import {
   faCaretDown,
@@ -50,13 +48,8 @@ const Selector: React.FC<{
 
   return (
     <View ref={triggerRef} collapsable={false}>
-      <NeumoPressable
+      <Pressable
         onPress={onPress}
-        variant={open ? "glass-strong" : "glass"}
-        tone="surface"
-        radius={NeumoTokens.radius.pill}
-        padding={NeumoTokens.control.pill.padding}
-        containerStyle={styles.selectorContainer}
         style={styles.selectorButton}
       >
         <View style={styles.selectorRow}>
@@ -69,7 +62,7 @@ const Selector: React.FC<{
             color={colors.textSecondary}
           />
         </View>
-      </NeumoPressable>
+      </Pressable>
     </View>
   );
 };
@@ -177,11 +170,7 @@ const SortFilterBar: React.FC<SortFilterBarProps> = ({
         >
           <Pressable style={styles.backdrop} onPress={closeSelector} />
           <View style={styles.modalLayer} pointerEvents="box-none">
-            <NeumoSurface
-              variant="glass-strong"
-              tone="surface"
-              radius={NeumoTokens.radius.md}
-              padding={NeumoTokens.spacing.xs}
+            <View
               style={[
                 styles.dropdown,
                 {
@@ -197,7 +186,7 @@ const SortFilterBar: React.FC<SortFilterBarProps> = ({
                     ? option.value === selectedFilter
                     : option.value === selectedSort;
                 return (
-                  <NeumoPressable
+                  <Pressable
                     key={option.value}
                     onPress={() => {
                       if (openMenu === "filter") {
@@ -207,10 +196,6 @@ const SortFilterBar: React.FC<SortFilterBarProps> = ({
                       }
                       closeSelector();
                     }}
-                    variant={isActive ? "glass-strong" : "solid"}
-                    tone="surface"
-                    radius={NeumoTokens.radius.sm}
-                    padding={NeumoTokens.spacing.xs}
                     style={styles.dropdownItem}
                   >
                     <Text
@@ -221,10 +206,10 @@ const SortFilterBar: React.FC<SortFilterBarProps> = ({
                     >
                       {option.label}
                     </Text>
-                  </NeumoPressable>
+                  </Pressable>
                 );
               })}
-            </NeumoSurface>
+            </View>
           </View>
         </Modal>
       )}

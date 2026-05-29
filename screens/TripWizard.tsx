@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
+  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -19,8 +20,6 @@ import { formatTitleWithEmoji, capitalizeName } from "../helpers/AppHelpers";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import TopBar from "../components/TopBar";
-import NeumoSurface from "../components/NeumoSurface";
-import NeumoPressable from "../components/NeumoPressable";
 import DibbyButton from "../components/DibbyButton";
 import DibbyInput from "../components/DibbyInput";
 import EmojiSelector from "../components/EmojiSelector";
@@ -124,11 +123,7 @@ const TripWizard = () => {
   };
 
   const renderStepHeader = () => (
-    <NeumoSurface
-      variant="glass"
-      tone="surface"
-      radius={NeumoTokens.radius.lg}
-      padding={NeumoTokens.spacing.md}
+    <View
       style={styles.stepHeader}
     >
       <Text style={styles.stepLabel}>Step {step} of 3</Text>
@@ -144,16 +139,13 @@ const TripWizard = () => {
           />
         ))}
       </View>
-    </NeumoSurface>
+    </View>
   );
 
   const renderStep1 = () => (
     <View style={styles.stepContent}>
       {renderStepHeader()}
-      <NeumoSurface
-        variant="glass"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
+      <View
         style={styles.sectionCard}
       >
         <Text style={styles.sectionTitle}>Trip details</Text>
@@ -176,7 +168,7 @@ const TripWizard = () => {
         <Text style={styles.helperText}>
           A clear name helps everyone recognize the trip.
         </Text>
-      </NeumoSurface>
+      </View>
 
       <DibbyButton
         title="Continue"
@@ -190,10 +182,7 @@ const TripWizard = () => {
   const renderStep2 = () => (
     <View style={styles.stepContent}>
       {renderStepHeader()}
-      <NeumoSurface
-        variant="glass"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
+      <View
         style={styles.sectionCard}
       >
         <Text style={styles.sectionTitle}>{formattedTripTitle || "Trip"}</Text>
@@ -205,7 +194,7 @@ const TripWizard = () => {
         <Text style={styles.helperText}>
           Add at least two travelers to continue.
         </Text>
-      </NeumoSurface>
+      </View>
 
       {creatingTrip ? (
         <DibbyLoading />
@@ -217,14 +206,12 @@ const TripWizard = () => {
           fullWidth
         />
       )}
-      <NeumoPressable
-        variant="flat"
-        tone="base"
+      <Pressable
         onPress={() => setStep(1)}
         style={styles.secondaryAction}
       >
         <Text style={styles.secondaryText}>Back</Text>
-      </NeumoPressable>
+      </Pressable>
     </View>
   );
 
@@ -233,14 +220,12 @@ const TripWizard = () => {
       {renderStepHeader()}
       <View style={styles.step3Header}>
         <Text style={styles.sectionTitle}>First expense</Text>
-        <NeumoPressable
-          variant="flat"
-          tone="base"
+        <Pressable
           onPress={handleSkipExpense}
           style={styles.secondaryAction}
         >
           <Text style={styles.secondaryText}>Skip for now</Text>
-        </NeumoPressable>
+        </Pressable>
       </View>
       {createdTrip && dibbyUser ? (
         <CreateExpense

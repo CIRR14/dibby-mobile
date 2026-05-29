@@ -1,12 +1,17 @@
 import React from "react";
-import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChevronLeft, faExternalLink } from "@fortawesome/free-solid-svg-icons";
 import { useNavigation } from "@react-navigation/native";
 import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
-import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { ThemeColors } from "../constants/Colors";
 import { Typography } from "../constants/Typography";
@@ -45,10 +50,7 @@ const AccountDeletion = () => {
           }
         />
         <ScrollView contentContainerStyle={styles.content}>
-          <NeumoSurface
-            variant="raised"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
+          <View
             style={styles.card}
           >
             <Text style={styles.title}>How to delete your account</Text>
@@ -76,7 +78,7 @@ const AccountDeletion = () => {
               }
               type="clear"
             />
-          </NeumoSurface>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>

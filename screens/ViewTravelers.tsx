@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TopBar from "../components/TopBar";
 import { useNavigation } from "@react-navigation/native";
@@ -13,7 +17,6 @@ import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { DibbyParticipant, DibbyTrip } from "../constants/DibbyTypes";
 import { addDibbyParticipant } from "../helpers/FirebaseHelpers";
 import { DibbySearchUsername } from "../components/DibbySearchUsername";
-import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
@@ -80,35 +83,25 @@ const ViewTravelers = ({ route }: any) => {
           }
         />
 
-        <NeumoSurface
-          variant="raised"
-          tone="surface"
-          radius={NeumoTokens.radius.lg}
+        <View
           style={styles.sectionCard}
         >
           <Text style={styles.sectionTitle}>Travelers</Text>
           <View style={styles.travelerList}>
             {currentTrip?.participants.map((t) => {
               return (
-                <NeumoSurface
+                <View
                   key={t.uid}
-                  variant="raised"
-                  tone="surface"
-                  radius={NeumoTokens.radius.pill}
-                  padding={NeumoTokens.spacing.sm}
                   style={styles.travelerChip}
                 >
                   <Text style={styles.travelerName}>{t.name}</Text>
-                </NeumoSurface>
+                </View>
               );
             })}
           </View>
-        </NeumoSurface>
+        </View>
 
-        <NeumoSurface
-          variant="raised"
-          tone="surface"
-          radius={NeumoTokens.radius.lg}
+        <View
           style={styles.sectionCard}
         >
           <Text style={styles.sectionTitle}>Add traveler</Text>
@@ -123,7 +116,7 @@ const ViewTravelers = ({ route }: any) => {
             onPress={onSubmit}
             fullWidth
           />
-        </NeumoSurface>
+        </View>
       </SafeAreaView>
     </View>
   );

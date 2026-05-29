@@ -1,7 +1,5 @@
 import React from "react";
 import { View, ActivityIndicator } from "react-native";
-import NeumoSurface from "./NeumoSurface";
-import { NeumoTokens } from "../constants/Neumo";
 import useAppTheme from "../hooks/useAppTheme";
 
 const DibbyLoading: React.FC = () => {
@@ -19,14 +17,9 @@ const DibbyLoading: React.FC = () => {
         alignItems: "center",
       }}
     >
-      <NeumoSurface
-        variant="raised"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
-        padding={NeumoTokens.spacing.lg}
-      >
+      <View>
         <ActivityIndicator size="large" color={colors.primary.background} />
-      </NeumoSurface>
+      </View>
     </View>
   );
 };

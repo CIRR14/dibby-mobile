@@ -4,7 +4,6 @@ import { ThemeColors } from "../constants/Colors";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
-import NeumoSurface from "./NeumoSurface";
 import { StatItem, StatTone } from "../helpers/StatsHelpers";
 
 interface StatsGridProps {
@@ -35,12 +34,8 @@ const StatsGrid: React.FC<StatsGridProps> = ({ items, columns = 2 }) => {
   return (
     <View style={styles.grid}>
       {items.map((item) => (
-        <NeumoSurface
+        <View
           key={item.id || `${item.label}-${item.value}`}
-          variant="solid"
-          tone="surface"
-          radius={NeumoTokens.radius.md}
-          padding={NeumoTokens.spacing.xs}
           style={[styles.card, { flexBasis: basis }]}
         >
           <Text style={styles.label}>{item.label}</Text>
@@ -55,7 +50,7 @@ const StatsGrid: React.FC<StatsGridProps> = ({ items, columns = 2 }) => {
           {item.helper ? (
             <Text style={styles.helper}>{item.helper}</Text>
           ) : null}
-        </NeumoSurface>
+        </View>
       ))}
     </View>
   );

@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, SafeAreaView, View } from "react-native";
+import {
+  SafeAreaView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { ThemeColors } from "../constants/Colors";
 import { faClose, faDownload } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
@@ -12,7 +16,6 @@ import { onSnapshot, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import TopBar from "../components/TopBar";
 import DibbyButton from "../components/DibbyButton";
-import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import useAppTheme from "../hooks/useAppTheme";
 
@@ -86,10 +89,7 @@ const PdfScreen = ({ route }: any) => {
           }
         />
         {calculatedTrip && currentTrip && (
-          <NeumoSurface
-            variant="raised"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
+          <View
             style={styles.content}
           >
             <div
@@ -97,7 +97,7 @@ const PdfScreen = ({ route }: any) => {
                 __html: generateHTML(calculatedTrip, currentTrip),
               }}
             />
-          </NeumoSurface>
+          </View>
         )}
       </SafeAreaView>
     </View>

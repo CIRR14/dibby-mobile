@@ -2,9 +2,8 @@ import { faCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import React from "react";
 import { DibbyParticipant } from "../constants/DibbyTypes";
-import NeumoPressable from "./NeumoPressable";
 import { NeumoTokens } from "../constants/Neumo";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import useAppTheme from "../hooks/useAppTheme";
 
 interface IDibbyChipProps {
@@ -23,13 +22,9 @@ export const DibbyChip: React.FC<IDibbyChipProps> = ({
   const isGuest = Boolean((item as any).createdUser);
 
   return (
-    <NeumoPressable
+    <Pressable
       onPress={() => onRemove(item)}
       disabled={disabled}
-      variant={isGuest ? "raised" : "inset"}
-      tone={isGuest ? "success" : "surface"}
-      radius={NeumoTokens.radius.pill}
-      padding={NeumoTokens.control.pill.padding}
       style={{ paddingHorizontal: NeumoTokens.control.pill.paddingHorizontal }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -57,7 +52,7 @@ export const DibbyChip: React.FC<IDibbyChipProps> = ({
           />
         )}
       </View>
-    </NeumoPressable>
+    </Pressable>
   );
 };
 

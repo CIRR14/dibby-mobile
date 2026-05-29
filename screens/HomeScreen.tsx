@@ -6,12 +6,14 @@ import {
   Alert,
   RefreshControl,
   Modal,
+  Pressable,
 } from "react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
 
-import { useNavigation } from "@react-navigation/native";
+import { CompositeNavigationProp, useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useUser } from "../hooks/useUser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DibbyCard } from "../components/DibbyCard";
@@ -39,12 +41,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { Avatar } from "@rneui/themed";
 import { getInitials, normalizePhotoURL } from "../helpers/AppHelpers";
 import { deleteDibbyTrip } from "../helpers/FirebaseHelpers";
-import NeumoSurface from "../components/NeumoSurface";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import { resolveParticipantColor } from "../helpers/GenerateColor";
-import NeumoPressable from "../components/NeumoPressable";
 import SortFilterBar, { SortFilterOption } from "../components/SortFilterBar";
 import StatsSection from "../components/StatsSection";
 import { buildHomeStats, pickStats } from "../helpers/StatsHelpers";
@@ -54,8 +54,14 @@ import useResponsiveLayout from "../hooks/useResponsiveLayout";
 import { useDebounce } from "../hooks/useDebounce";
 import DibbyInput from "../components/DibbyInput";
 import { useAvatarUrl } from "../hooks/useAvatarUrl";
+import { RootStackParamList, TripsStackParamList } from "../types";
 
 const cardWidth = 500;
+type HomeNavigation = CompositeNavigationProp<
+  NativeStackNavigationProp<TripsStackParamList>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+
 const HomeScreen = () => {
   const [currentTrips, setCurrentTrips] = useState<DibbyTrip[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -72,7 +78,7 @@ const HomeScreen = () => {
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const debouncedSearch = useDebounce(searchValue, 150);
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<HomeNavigation>();
   const { dibbyUser, loggedInUser, authReady, profileReady } = useUser();
   const { uri: avatarUrl, imageProps } = useAvatarUrl(
     dibbyUser?.photoURL || loggedInUser?.photoURL,
@@ -164,12 +170,7 @@ const HomeScreen = () => {
 
   const handleSignOut = () => {
     signOut(auth)
-      .then(() => {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Login" }],
-        });
-      })
+      .then(() => undefined)
       .catch((err) => {
         alert(err.message);
       });
@@ -346,12 +347,7 @@ const HomeScreen = () => {
   );
 
   const renderHeroCard = () => (
-    <NeumoSurface
-      variant="glass"
-      tone="surface"
-      radius={NeumoTokens.radius.lg}
-      style={styles.hero}
-    >
+    <View style={styles.hero}>
       <Text style={styles.heroTitle}>Your trips</Text>
       <View style={styles.heroStats}>
         <StatsSection
@@ -361,7 +357,7 @@ const HomeScreen = () => {
           expandedColumns={statsColumns}
         />
       </View>
-    </NeumoSurface>
+    </View>
   );
 
   const renderSortFilter = () =>
@@ -382,12 +378,7 @@ const HomeScreen = () => {
 
   const renderEmptyState = () =>
     currentTrips.length > 0 ? (
-      <NeumoSurface
-        variant="inset"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
-        style={styles.emptyState}
-      >
+      <View style={styles.emptyState}>
         <Text style={styles.emptyTitle}>No trips match this filter</Text>
         <Text style={styles.emptyText}>Try changing the filter or sort.</Text>
         <DibbyButton
@@ -395,14 +386,9 @@ const HomeScreen = () => {
           onPress={clearControls}
           fullWidth
         />
-      </NeumoSurface>
+      </View>
     ) : (
-      <NeumoSurface
-        variant="glass"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
-        style={styles.emptyState}
-      >
+      <View style={styles.emptyState}>
         <Text style={styles.emptyTitle}>Create your first trip</Text>
         <Text style={styles.emptyText}>
           Add friends and split expenses in minutes.
@@ -412,15 +398,13 @@ const HomeScreen = () => {
           onPress={() => navigation.navigate("TripWizard")}
           fullWidth
         />
-        <NeumoPressable
-          variant="solid"
-          tone="base"
+        <Pressable
           onPress={() => setShowHowItWorks(true)}
           style={styles.howItWorksButton}
         >
           <Text style={styles.howItWorksText}>How it works (30 sec)</Text>
-        </NeumoPressable>
-      </NeumoSurface>
+        </Pressable>
+      </View>
     );
 
   return (
@@ -446,7 +430,7 @@ const HomeScreen = () => {
             <DibbyButton
               type="clear"
               onPress={() => {
-                navigation.navigate("ProfileTab");
+                navigation.getParent()?.navigate("ProfileTab");
               }}
               title={
                 <Avatar
@@ -493,18 +477,13 @@ const HomeScreen = () => {
                 <View style={styles.desktopPrimary}>
                   <View style={styles.desktopListHeader}>
                     {searchOpen && (
-                      <NeumoSurface
-                        variant="inset"
-                        tone="surface"
-                        radius={NeumoTokens.radius.md}
-                        style={styles.searchSurface}
-                      >
+                      <View style={styles.searchSurface}>
                         <DibbyInput
                           placeholder="Search trips, travelers, amount"
                           value={searchValue}
                           onChangeText={setSearchValue}
                         />
-                      </NeumoSurface>
+                      </View>
                     )}
                     <Text style={styles.resultsText}>
                       {visibleTrips.length} trip
@@ -559,18 +538,13 @@ const HomeScreen = () => {
                   <View style={styles.listHeader}>
                     {renderHeroCard()}
                     {searchOpen && (
-                      <NeumoSurface
-                        variant="inset"
-                        tone="surface"
-                        radius={NeumoTokens.radius.md}
-                        style={styles.searchSurface}
-                      >
+                      <View style={styles.searchSurface}>
                         <DibbyInput
                           placeholder="Search trips, travelers, amount"
                           value={searchValue}
                           onChangeText={setSearchValue}
                         />
-                      </NeumoSurface>
+                      </View>
                     )}
                     <Text style={styles.resultsText}>
                       {visibleTrips.length} trip
@@ -593,12 +567,7 @@ const HomeScreen = () => {
         onRequestClose={() => setShowHowItWorks(false)}
       >
         <View style={styles.modalOverlay}>
-          <NeumoSurface
-            variant="glass-strong"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
-            style={styles.modalCard}
-          >
+          <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>How it works</Text>
             <Text style={styles.modalText}>
               1. Create a trip and add travelers.
@@ -614,7 +583,7 @@ const HomeScreen = () => {
               onPress={() => setShowHowItWorks(false)}
               fullWidth
             />
-          </NeumoSurface>
+          </View>
         </View>
       </Modal>
     </View>

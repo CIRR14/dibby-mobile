@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Platform, Share, View, Text, StyleSheet } from "react-native";
+import { Alert, Platform, Pressable, Share, View, Text, StyleSheet } from "react-native";
 import {
   formatTitleWithEmoji,
   numberWithCommas,
@@ -13,11 +13,9 @@ import {
   changeOpacity,
   resolveParticipantColor,
 } from "../helpers/GenerateColor";
-import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
-import NeumoPressable from "./NeumoPressable";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faShareNodes } from "@fortawesome/free-solid-svg-icons";
 import { track } from "../helpers/track";
@@ -92,13 +90,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
   };
 
   return (
-    <NeumoSurface
-      variant="raised"
-      tone="surface"
-      radius={NeumoTokens.radius.lg}
-      padding={NeumoTokens.spacing.md}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <View>
@@ -111,11 +103,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
           </View>
           <View style={styles.headerActions}>
             {transactions.length > 0 && (
-              <NeumoPressable
-                variant="flat"
-                tone="base"
-                radius={NeumoTokens.radius.pill}
-                padding={NeumoTokens.control.pill.padding}
+              <Pressable
                 onPress={handleShare}
                 style={styles.shareButton}
               >
@@ -124,14 +112,9 @@ const DibbySummary: React.FC<DibbySummary> = ({
                   size={14}
                   color={colors.textSecondary}
                 />
-              </NeumoPressable>
+              </Pressable>
             )}
-            <NeumoSurface
-              variant="raised"
-              tone="surface"
-              radius={NeumoTokens.radius.md}
-              padding={NeumoTokens.control.pill.padding}
-            >
+            <View>
               <Text
                 style={[
                   styles.statusPill,
@@ -142,55 +125,31 @@ const DibbySummary: React.FC<DibbySummary> = ({
               >
                 {isSettled ? "Settled" : "Open"}
               </Text>
-            </NeumoSurface>
+            </View>
           </View>
         </View>
 
         <View style={styles.statsGrid}>
-          <NeumoSurface
-            variant="flat"
-            tone="surface"
-            radius={NeumoTokens.radius.md}
-            padding={NeumoTokens.spacing.sm}
-            style={styles.statCard}
-          >
+          <View style={styles.statCard}>
             <Text style={styles.statLabel}>Total</Text>
             <Text style={styles.statValue}>
               ${numberWithCommas(totalAmount.toString())}
             </Text>
-          </NeumoSurface>
-          <NeumoSurface
-            variant="flat"
-            tone="surface"
-            radius={NeumoTokens.radius.md}
-            padding={NeumoTokens.spacing.sm}
-            style={styles.statCard}
-          >
+          </View>
+          <View style={styles.statCard}>
             <Text style={styles.statLabel}>Per person</Text>
             <Text style={styles.statValue}>
               ${numberWithCommas(perPersonAverage.toString())}
             </Text>
-          </NeumoSurface>
-          <NeumoSurface
-            variant="flat"
-            tone="surface"
-            radius={NeumoTokens.radius.md}
-            padding={NeumoTokens.spacing.sm}
-            style={styles.statCard}
-          >
+          </View>
+          <View style={styles.statCard}>
             <Text style={styles.statLabel}>Expenses</Text>
             <Text style={styles.statValue}>{expenseCount}</Text>
-          </NeumoSurface>
-          <NeumoSurface
-            variant="flat"
-            tone="surface"
-            radius={NeumoTokens.radius.md}
-            padding={NeumoTokens.spacing.sm}
-            style={styles.statCard}
-          >
+          </View>
+          <View style={styles.statCard}>
             <Text style={styles.statLabel}>Open balances</Text>
             <Text style={styles.statValue}>{openBalances}</Text>
-          </NeumoSurface>
+          </View>
         </View>
 
         <View style={styles.balanceList}>
@@ -200,12 +159,8 @@ const DibbySummary: React.FC<DibbySummary> = ({
               t.owed > 0.01 ? "Gets back" : t.owed < -0.01 ? "Owes" : "Settled";
             const amount = Math.abs(t.owed);
             return (
-              <NeumoSurface
+              <View
                 key={t.uid}
-                variant="flat"
-                tone="surface"
-                radius={NeumoTokens.radius.md}
-                padding={NeumoTokens.spacing.sm}
                 style={styles.balanceRow}
               >
                 <View style={styles.balanceUser}>
@@ -244,7 +199,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
                 >
                   ${numberWithCommas(amount.toString())}
                 </Text>
-              </NeumoSurface>
+              </View>
             );
           })}
         </View>
@@ -253,16 +208,12 @@ const DibbySummary: React.FC<DibbySummary> = ({
           <View style={styles.transactions}>
             <View style={styles.transactionsHeader}>
               <Text style={styles.sectionTitle}>Suggested payments</Text>
-              <NeumoPressable
-                variant="flat"
-                tone="base"
-                radius={NeumoTokens.radius.pill}
-                padding={6}
+              <Pressable
                 onPress={handleShare}
                 style={styles.shareTextButton}
               >
                 <Text style={styles.shareText}>Share</Text>
-              </NeumoPressable>
+              </Pressable>
             </View>
             {transactions.map((t, index) => (
               <View
@@ -286,7 +237,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
           </View>
         )}
       </View>
-    </NeumoSurface>
+    </View>
   );
 };
 

@@ -12,8 +12,6 @@ import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import useAppTheme from "../hooks/useAppTheme";
 import { ThemeColors } from "../constants/Colors";
-import NeumoPressable from "./NeumoPressable";
-import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 
@@ -118,12 +116,8 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
   return (
     <View style={styles.wrapper}>
       <View ref={triggerRef} collapsable={false}>
-        <NeumoPressable
+        <Pressable
           onPress={toggle}
-          variant={open ? "glass-strong" : "solid"}
-          tone="surface"
-          radius={NeumoTokens.radius.pill}
-          padding={NeumoTokens.control.pill.padding}
           style={styles.trigger}
         >
           <FontAwesomeIcon
@@ -131,7 +125,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
             size={compact ? 12 : 14}
             color={colors.textSecondary}
           />
-        </NeumoPressable>
+        </Pressable>
       </View>
 
       <Modal
@@ -142,11 +136,7 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
       >
         <Pressable style={styles.backdrop} onPress={close} />
         <View style={styles.modalLayer} pointerEvents="box-none">
-          <NeumoSurface
-            variant="glass-strong"
-            tone="surface"
-            radius={NeumoTokens.radius.md}
-            padding={NeumoTokens.spacing.xs}
+          <View
             style={[
               styles.menu,
               {
@@ -157,16 +147,12 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
             ]}
           >
             {activeItems.map((item) => (
-              <NeumoPressable
+              <Pressable
                 key={item.key}
                 onPress={() => {
                   close();
                   item.onPress();
                 }}
-                variant="solid"
-                tone="surface"
-                radius={NeumoTokens.radius.sm}
-                padding={NeumoTokens.spacing.xs}
                 style={styles.item}
               >
                 <View style={styles.row}>
@@ -188,9 +174,9 @@ const ActionMenu: React.FC<ActionMenuProps> = ({
                     {item.label}
                   </Text>
                 </View>
-              </NeumoPressable>
+              </Pressable>
             ))}
-          </NeumoSurface>
+          </View>
         </View>
       </Modal>
     </View>

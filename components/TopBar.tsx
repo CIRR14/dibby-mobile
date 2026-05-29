@@ -1,7 +1,6 @@
 import { Platform, StyleSheet, Text, View } from "react-native";
 import React, { JSXElementConstructor, ReactElement } from "react";
 import { ThemeColors } from "../constants/Colors";
-import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
@@ -56,30 +55,16 @@ const TopBar: React.FC<ITopBarProps> = ({
 
   if (!withSurface) {
     return (
-      <NeumoSurface
-        variant="glass-strong"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
-        padding={NeumoTokens.spacing.sm}
-        style={[styles.container, styles.containerFlatBlur, styles.containerFloating]}
-        gradient={false}
-        strokeIntensity="none"
-      >
+      <View style={[styles.container, styles.containerFlatBlur, styles.containerFloating]}>
         {content}
-      </NeumoSurface>
+      </View>
     );
   }
 
   return (
-    <NeumoSurface
-      variant="glass"
-      tone="surface"
-      radius={NeumoTokens.radius.lg}
-      padding={NeumoTokens.spacing.sm}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       {content}
-    </NeumoSurface>
+    </View>
   );
 };
 

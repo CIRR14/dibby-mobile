@@ -9,9 +9,6 @@ import {
 } from "react-native";
 import useAppTheme from "../hooks/useAppTheme";
 import { ThemeColors } from "../constants/Colors";
-import NeumoPressable from "./NeumoPressable";
-import NeumoSurface from "./NeumoSurface";
-import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 
 const DEFAULT_EMOJIS = [
@@ -76,16 +73,12 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
 
   return (
     <>
-      <NeumoPressable
-        variant="raised"
-        tone="surface"
-        radius={NeumoTokens.radius.md}
-        padding={0}
+      <Pressable
         style={styles.trigger}
         onPress={() => setOpen(true)}
       >
         <Text style={styles.triggerText}>{currentValue || "✈️"}</Text>
-      </NeumoPressable>
+      </Pressable>
       <Modal
         visible={open}
         transparent
@@ -97,55 +90,38 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
             style={styles.modalWrapper}
             onPress={(event) => event.stopPropagation()}
           >
-            <NeumoSurface
-              variant="raised"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
-              style={styles.modalCard}
-            >
+            <View style={styles.modalCard}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{label}</Text>
                 {currentValue ? (
-                  <NeumoPressable
-                    variant="flat"
-                    tone="base"
-                    radius={NeumoTokens.radius.pill}
-                    padding={6}
+                  <Pressable
                     onPress={handleClear}
                   >
                     <Text style={styles.clearText}>Clear</Text>
-                  </NeumoPressable>
+                  </Pressable>
                 ) : null}
               </View>
               <ScrollView contentContainerStyle={styles.emojiGrid}>
                 {emojis.map((emoji) => {
                   const isActive = emoji === currentValue;
                   return (
-                    <NeumoPressable
+                    <Pressable
                       key={emoji}
-                      variant={isActive ? "inset" : "flat"}
-                      tone="surface"
-                      radius={NeumoTokens.radius.md}
-                      padding={0}
                       style={styles.emojiButton}
                       onPress={() => handleSelect(emoji)}
                     >
                       <Text style={styles.emojiText}>{emoji}</Text>
-                    </NeumoPressable>
+                    </Pressable>
                   );
                 })}
               </ScrollView>
-              <NeumoPressable
-                variant="flat"
-                tone="surface"
-                radius={NeumoTokens.radius.pill}
-                padding={8}
+              <Pressable
                 onPress={() => setOpen(false)}
                 style={styles.closeButton}
               >
                 <Text style={styles.closeText}>Done</Text>
-              </NeumoPressable>
-            </NeumoSurface>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>

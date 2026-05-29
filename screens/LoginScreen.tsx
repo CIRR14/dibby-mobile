@@ -1,10 +1,11 @@
 import {
+  Image,
   KeyboardAvoidingView,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  Image,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -38,12 +39,10 @@ import DibbyButton from "../components/DibbyButton";
 import DibbyInput from "../components/DibbyInput";
 import DibbyVersion from "../components/DibbyVersion";
 import DibbyLoading from "../components/DibbyLoading";
-import NeumoSurface from "../components/NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import ScreenLayout from "../components/ScreenLayout";
-import NeumoPressable from "../components/NeumoPressable";
 
 const DIBBY_LOGO = require("../assets/images/icon-small.png");
 
@@ -224,10 +223,7 @@ const LoginScreen = () => {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.brandWrap}>
-              <NeumoSurface
-                variant="glass-strong"
-                tone="accent"
-                radius={NeumoTokens.radius.pill}
+              <View
                 style={styles.brandBadge}
               >
                 <Image
@@ -235,33 +231,22 @@ const LoginScreen = () => {
                   resizeMode="contain"
                   style={styles.brandLogo}
                 />
-              </NeumoSurface>
+              </View>
               <Text style={styles.titleText}>Welcome to Dibby</Text>
               <Text style={styles.descriptionText}>Split money, simply.</Text>
             </View>
 
-            <NeumoSurface
-              variant="glass"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
+            <View
               style={styles.authCard}
             >
-              <NeumoSurface
-                variant="inset"
-                tone="surface"
-                radius={NeumoTokens.radius.pill}
-                padding={NeumoTokens.control.pill.padding}
+              <View
                 style={styles.modeRow}
               >
-                <NeumoPressable
+                <Pressable
                   onPress={() => {
                     setPasswordVerificationRequired(false);
                     setError("");
                   }}
-                  variant={passwordVerificationRequired ? "solid" : "glass-strong"}
-                  tone="surface"
-                  radius={NeumoTokens.radius.pill}
-                  padding={NeumoTokens.control.pill.padding}
                   style={styles.modeButton}
                 >
                   <Text
@@ -272,16 +257,12 @@ const LoginScreen = () => {
                   >
                     Login
                   </Text>
-                </NeumoPressable>
-                <NeumoPressable
+                </Pressable>
+                <Pressable
                   onPress={() => {
                     setPasswordVerificationRequired(true);
                     setError("");
                   }}
-                  variant={passwordVerificationRequired ? "glass-strong" : "solid"}
-                  tone="surface"
-                  radius={NeumoTokens.radius.pill}
-                  padding={NeumoTokens.control.pill.padding}
                   style={styles.modeButton}
                 >
                   <Text
@@ -292,8 +273,8 @@ const LoginScreen = () => {
                   >
                     Create account
                   </Text>
-                </NeumoPressable>
-              </NeumoSurface>
+                </Pressable>
+              </View>
 
               <View style={styles.inputContainer}>
                 <DibbyInput
@@ -331,19 +312,16 @@ const LoginScreen = () => {
                 )}
               </View>
               {error ? (
-                <NeumoSurface
-                  variant="solid"
-                  tone="danger"
-                  radius={NeumoTokens.radius.md}
-                  padding={NeumoTokens.spacing.sm}
+                <View
                   style={styles.errorCard}
                 >
                   <Text style={styles.errorText}>{error}</Text>
-                </NeumoSurface>
+                </View>
               ) : null}
 
               <View style={styles.buttonContainer}>
                 <DibbyButton
+                type="solid"
                   onPress={
                     passwordVerificationRequired ? handleSignUp : handleLogin
                   }
@@ -366,34 +344,15 @@ const LoginScreen = () => {
                   />
                 )}
               </View>
-              <NeumoSurface
-                variant="solid"
-                tone="base"
-                radius={NeumoTokens.radius.md}
-                style={styles.nextStepContainer}
-                padding={NeumoTokens.spacing.sm}
-              >
-                <Text style={styles.nextStepTitle}>What happens next</Text>
-                <Text style={styles.nextStepHint}>
-                  Verify email → complete profile → start your first trip.
-                </Text>
-              </NeumoSurface>
-            </NeumoSurface>
+            </View>
 
-            <NeumoSurface
-              variant="glass"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
+            <View
               style={styles.socialCard}
             >
               <Text style={styles.socialTitle}>Or continue with</Text>
               <View style={styles.providerContainer}>
-                <NeumoPressable
+                <Pressable
                   onPress={handleGoogleLogIn}
-                  variant="solid"
-                  tone="surface"
-                  radius={NeumoTokens.radius.md}
-                  padding={NeumoTokens.spacing.sm}
                   style={styles.providerButton}
                 >
                   <FontAwesomeIcon
@@ -401,14 +360,9 @@ const LoginScreen = () => {
                     size={16}
                     color={colors.textPrimary}
                   />
-                  <Text style={styles.providerText}>Google</Text>
-                </NeumoPressable>
-                <NeumoPressable
+                </Pressable>
+                <Pressable
                   onPress={handleAppleLogin}
-                  variant="solid"
-                  tone="surface"
-                  radius={NeumoTokens.radius.md}
-                  padding={NeumoTokens.spacing.sm}
                   style={styles.providerButton}
                 >
                   <FontAwesomeIcon
@@ -416,14 +370,9 @@ const LoginScreen = () => {
                     size={16}
                     color={colors.textPrimary}
                   />
-                  <Text style={styles.providerText}>Apple</Text>
-                </NeumoPressable>
-                <NeumoPressable
+                </Pressable>
+                <Pressable
                   onPress={handleFacebookLogin}
-                  variant="solid"
-                  tone="surface"
-                  radius={NeumoTokens.radius.md}
-                  padding={NeumoTokens.spacing.sm}
                   style={styles.providerButton}
                 >
                   <FontAwesomeIcon
@@ -431,10 +380,9 @@ const LoginScreen = () => {
                     size={16}
                     color={colors.textPrimary}
                   />
-                  <Text style={styles.providerText}>Facebook</Text>
-                </NeumoPressable>
+                </Pressable>
               </View>
-            </NeumoSurface>
+            </View>
             <DibbyVersion />
           </ScrollView>
         </ScreenLayout>
@@ -533,22 +481,6 @@ const makeStyles = (colors: ThemeColors) =>
     modeTextActive: {
       color: colors.textPrimary,
       fontWeight: Typography.weight.semibold as any,
-    },
-    nextStepContainer: {
-      marginTop: 2,
-      gap: 4,
-    },
-    nextStepTitle: {
-      color: colors.textPrimary,
-      fontSize: Typography.size.xs,
-      fontWeight: Typography.weight.semibold as any,
-      textTransform: "uppercase",
-      letterSpacing: Typography.tracking.normal,
-    },
-    nextStepHint: {
-      color: colors.textSecondary,
-      fontSize: Typography.size.xs,
-      lineHeight: Typography.size.xs * Typography.lineHeight.relaxed,
     },
     socialCard: {
       width: "100%",

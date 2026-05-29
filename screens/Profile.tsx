@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  SafeAreaView,
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
   Modal,
   Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemeColors } from "../constants/Colors";
 import TopBar from "../components/TopBar";
@@ -49,8 +50,6 @@ import {
   onAcceptDibbyFriend,
   onRejectDibbyFriend,
 } from "../helpers/FirebaseHelpers";
-import NeumoSurface from "../components/NeumoSurface";
-import NeumoPressable from "../components/NeumoPressable";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
@@ -208,6 +207,10 @@ export const Profile = () => {
           trips.push(doc.data() as DibbyTrip);
         });
         setTripsInvolvedIn(trips);
+        setLoading(false);
+      }, () => {
+        setTripsInvolvedIn([]);
+        setLoading(false);
       });
 
       return () => unsubscribe();
@@ -236,6 +239,10 @@ export const Profile = () => {
           friends.push(doc.data() as DibbyUser);
         });
         setCurrentFriends(friends);
+        setLoading(false);
+      }, () => {
+        setCurrentFriends([]);
+        setLoading(false);
       });
 
       return () => unsubscribe();
@@ -305,10 +312,7 @@ export const Profile = () => {
                   divider={true}
                 />
 
-                <NeumoSurface
-                  variant="glass"
-                  tone="surface"
-                  radius={NeumoTokens.radius.lg}
+                <View
                   style={styles.sectionCard}
                 >
                   <View style={styles.sectionHeader}>
@@ -378,12 +382,9 @@ export const Profile = () => {
                       </View>
                     )}
                   </ScrollView>
-                </NeumoSurface>
+                </View>
 
-                <NeumoSurface
-                  variant="glass"
-                  tone="surface"
-                  radius={NeumoTokens.radius.lg}
+                <View
                   style={styles.sectionCard}
                 >
                   <View style={styles.statsWrap}>
@@ -395,32 +396,20 @@ export const Profile = () => {
                       expandedColumns={wideScreen ? 3 : 2}
                     />
                   </View>
-                </NeumoSurface>
+                </View>
 
-                <NeumoSurface
-                  variant="glass"
-                  tone="surface"
-                  radius={NeumoTokens.radius.lg}
+                <View
                   style={styles.sectionCard}
                 >
                   <Text style={styles.sectionTitle}>Account</Text>
                   <View style={styles.themeBlock}>
                     <Text style={styles.sectionSubtitle}>Theme</Text>
-                    <NeumoSurface
-                      variant="inset"
-                      tone="surface"
-                      radius={NeumoTokens.radius.pill}
-                      padding={NeumoTokens.control.pill.padding}
+                    <View
                       style={styles.themeToggle}
                     >
                       <View style={styles.themeToggleRow}>
-                        <NeumoPressable
-                          variant={themeMode === "light" ? "raised" : "flat"}
-                          tone="surface"
+                        <Pressable
                           onPress={() => setThemeMode("light")}
-                          radius={NeumoTokens.radius.pill}
-                          padding={NeumoTokens.control.pill.padding}
-                          containerStyle={styles.themeToggleButton}
                           style={styles.themeToggleButtonSurface}
                         >
                           <Text
@@ -432,14 +421,9 @@ export const Profile = () => {
                           >
                             Light
                           </Text>
-                        </NeumoPressable>
-                        <NeumoPressable
-                          variant={themeMode === "dark" ? "raised" : "flat"}
-                          tone="surface"
+                        </Pressable>
+                        <Pressable
                           onPress={() => setThemeMode("dark")}
-                          radius={NeumoTokens.radius.pill}
-                          padding={NeumoTokens.control.pill.padding}
-                          containerStyle={styles.themeToggleButton}
                           style={styles.themeToggleButtonSurface}
                         >
                           <Text
@@ -451,9 +435,9 @@ export const Profile = () => {
                           >
                             Dark
                           </Text>
-                        </NeumoPressable>
+                        </Pressable>
                       </View>
-                    </NeumoSurface>
+                    </View>
                   </View>
                   <DibbyButton
                     title="Privacy policy"
@@ -470,7 +454,7 @@ export const Profile = () => {
                     title="Delete account"
                     onPress={openDeleteModal}
                   />
-                </NeumoSurface>
+                </View>
               </View>
             )}
             <Modal
@@ -480,10 +464,7 @@ export const Profile = () => {
               onRequestClose={() => setDeleteModalVisible(false)}
             >
               <View style={styles.modalOverlay}>
-                <NeumoSurface
-                  variant="glass-strong"
-                  tone="surface"
-                  radius={NeumoTokens.radius.lg}
+                <View
                   style={styles.modalCard}
                 >
                   <Text style={styles.modalTitle}>Delete your account?</Text>
@@ -515,7 +496,7 @@ export const Profile = () => {
                       type="danger"
                     />
                   </View>
-                </NeumoSurface>
+                </View>
               </View>
             </Modal>
             </ScrollView>

@@ -2,8 +2,6 @@ import React from "react";
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import useAppTheme from "../hooks/useAppTheme";
 import { ThemeColors } from "../constants/Colors";
-import NeumoSurface from "./NeumoSurface";
-import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import DibbyButton from "./DibbyButton";
 import DibbyLoading from "./DibbyLoading";
@@ -58,12 +56,7 @@ const ScreenState: React.FC<ScreenStateProps> = ({
 
   return (
     <View style={[styles.center, containerStyle]}>
-      <NeumoSurface
-        variant="glass"
-        tone="surface"
-        radius={NeumoTokens.radius.lg}
-        style={styles.card}
-      >
+      <View style={[styles.card]}>
         {title ? <Text style={styles.title}>{title}</Text> : null}
         {description ? (
           <Text style={styles.description}>{description}</Text>
@@ -71,7 +64,7 @@ const ScreenState: React.FC<ScreenStateProps> = ({
         {actionLabel && onAction && (
           <DibbyButton title={actionLabel} onPress={onAction} fullWidth />
         )}
-      </NeumoSurface>
+      </View>
     </View>
   );
 };

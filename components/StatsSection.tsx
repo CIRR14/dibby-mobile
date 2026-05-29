@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ThemeColors } from "../constants/Colors";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
 import { StatItem } from "../helpers/StatsHelpers";
 import StatsGrid from "./StatsGrid";
-import NeumoPressable from "./NeumoPressable";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 
@@ -66,13 +65,8 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       {title ? <Text style={styles.title}>{title}</Text> : null}
       <StatsGrid items={compactItems} columns={compactColumns} />
       {hasMore && (
-        <NeumoPressable
-          variant="solid"
-          tone="base"
-          radius={NeumoTokens.radius.pill}
-          padding={NeumoTokens.control.pill.padding}
+        <Pressable
           onPress={toggleExpanded}
-          containerStyle={styles.toggleContainer}
           style={styles.toggleButton}
         >
           <View style={styles.toggleRow}>
@@ -85,25 +79,22 @@ const StatsSection: React.FC<StatsSectionProps> = ({
               color={colors.textSecondary}
             />
           </View>
-        </NeumoPressable>
+        </Pressable>
       )}
       {expanded && (
         <View style={styles.expanded}>
           <StatsGrid items={visibleExtraItems} columns={expandedColumns} />
-          {hasOverflow && (
-            <NeumoPressable
-              variant="flat"
-              tone="base"
-              radius={NeumoTokens.radius.pill}
-              padding={NeumoTokens.control.pill.padding}
-              onPress={() => setShowAll((prev) => !prev)}
-              containerStyle={styles.moreToggleContainer}
-              style={styles.moreToggleButton}
-            >
-              <Text style={styles.moreText}>
-                {showAll ? "Show fewer insights" : `Show all insights (+${remainingCount})`}
-              </Text>
-            </NeumoPressable>
+          {hasOverflow && remainingCount > 0 && (
+            <View style={styles.moreToggleContainer}>
+              <Pressable
+                onPress={() => setShowAll((prev) => !prev)}
+                style={styles.moreToggleButton}
+              >
+                <Text style={styles.moreText}>
+                  {showAll ? "Show fewer insights" : `Show all insights (+${remainingCount})`}
+                </Text>
+              </Pressable>
+            </View>
           )}
         </View>
       )}

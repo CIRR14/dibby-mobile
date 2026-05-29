@@ -30,7 +30,6 @@ import DibbyLoading from "./DibbyLoading";
 import { useUser } from "../hooks/useUser";
 import { createDibbyTrip } from "../helpers/FirebaseHelpers";
 import { DibbySearchUsername } from "./DibbySearchUsername";
-import NeumoSurface from "./NeumoSurface";
 import { NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
@@ -143,12 +142,7 @@ const CreateTrip = () => {
               enabled
               keyboardVerticalOffset={150}
             >
-            <NeumoSurface
-              variant="glass"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
-              style={styles.sectionCard}
-            >
+            <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Trip details</Text>
               <View style={styles.titleRow}>
                 <EmojiSelector
@@ -182,14 +176,9 @@ const CreateTrip = () => {
               {formState.errors.title && (
                 <Text style={styles.errorText}>Trip must have a name.</Text>
               )}
-            </NeumoSurface>
+            </View>
 
-            <NeumoSurface
-              variant="glass"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
-              style={styles.sectionCard}
-            >
+            <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Travelers</Text>
               <Text style={styles.searchHint}>
                 Search by username or add a guest name.
@@ -209,7 +198,7 @@ const CreateTrip = () => {
               <Text style={styles.helperText}>
                 Select at least two travelers to create a trip.
               </Text>
-            </NeumoSurface>
+            </View>
 
             <DibbyButton
               onPress={handleSubmit(onSubmit)}

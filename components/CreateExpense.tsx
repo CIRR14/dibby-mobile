@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  StyleSheet,
-  SafeAreaView,
-  View,
-  Text,
-  ScrollView,
   Dimensions,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { ThemeColors } from "../constants/Colors";
 import { faClose } from "@fortawesome/free-solid-svg-icons";
@@ -35,8 +36,6 @@ import DibbyButton from "./DibbyButton";
 import TopBar from "./TopBar";
 import DibbyInput from "./DibbyInput";
 import { createDibbyExpense } from "../helpers/FirebaseHelpers";
-import NeumoSurface from "./NeumoSurface";
-import NeumoPressable from "./NeumoPressable";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
 import useAppTheme from "../hooks/useAppTheme";
@@ -369,10 +368,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
   const formContent = (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <KeyboardAvoidingView style={styles.content}>
-          <NeumoSurface
-            variant="glass"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
+          <View
             style={styles.sectionCard}
           >
             <Text style={styles.sectionTitle}>Expense details</Text>
@@ -449,27 +445,19 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
               defaultValue={defaultSubTripId || MAIN_SUB_TRIP_ID}
               render={({ field: { onChange, onBlur, value } }) =>
                 Platform.OS === "web" ? (
-                  <NeumoSurface
-                    variant="inset"
-                    tone="surface"
-                    radius={NeumoTokens.radius.md}
-                    padding={NeumoTokens.spacing.sm}
+                  <View
                     style={styles.insetField}
                   >
                     <View style={styles.webSelectList}>
                       {groupOptions.map((option) => {
                         const isActive = value === option.value;
                         return (
-                          <NeumoPressable
+                          <Pressable
                             key={option.value}
                             onPress={() => {
                               onChange(option.value);
                               onBlur();
                             }}
-                            variant={isActive ? "glass-strong" : "solid"}
-                            tone="surface"
-                            radius={NeumoTokens.radius.pill}
-                            padding={NeumoTokens.control.pill.padding}
                             style={[
                               styles.webSelectOption,
                               ...(isActive ? [styles.webSelectOptionActive] : []),
@@ -483,17 +471,13 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                             >
                               {option.label}
                             </Text>
-                          </NeumoPressable>
+                          </Pressable>
                         );
                       })}
                     </View>
-                  </NeumoSurface>
+                  </View>
                 ) : (
-                  <NeumoSurface
-                    variant="inset"
-                    tone="surface"
-                    radius={NeumoTokens.radius.md}
-                    padding={NeumoTokens.spacing.sm}
+                  <View
                     style={styles.insetField}
                   >
                     <RNPickerSelect
@@ -513,19 +497,16 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                         placeholder: styles.pickerPlaceholder,
                       }}
                     />
-                  </NeumoSurface>
+                  </View>
                 )
               }
             />
             {formState.errors.subTripId && (
               <Text style={styles.errorText}>Select a group.</Text>
             )}
-          </NeumoSurface>
+          </View>
 
-          <NeumoSurface
-            variant="glass"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
+          <View
             style={styles.sectionCard}
           >
             <Text style={styles.sectionTitle}>People</Text>
@@ -552,7 +533,6 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                           title={item.name || undefined}
                           checkedColor={colors.accent}
                           uncheckedColor={colors.textSecondary}
-                          containerStyle={styles.checkboxItem}
                           wrapperStyle={styles.checkboxWrapper}
                           textStyle={styles.checkboxText}
                         />
@@ -560,11 +540,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                     />
                   </View>
                 ) : (
-                  <NeumoSurface
-                    variant="inset"
-                    tone="surface"
-                    radius={NeumoTokens.radius.md}
-                    padding={NeumoTokens.spacing.sm}
+                  <View
                     style={styles.insetField}
                   >
                     <RNPickerSelect
@@ -586,7 +562,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                         placeholder: styles.pickerPlaceholder,
                       }}
                     />
-                  </NeumoSurface>
+                  </View>
                 );
               }}
             />
@@ -646,12 +622,9 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             {formState.errors.peopleInExpense && (
               <Text style={styles.errorText}>Select at least one user.</Text>
             )}
-          </NeumoSurface>
+          </View>
 
-          <NeumoSurface
-            variant="glass"
-            tone="surface"
-            radius={NeumoTokens.radius.lg}
+          <View
             style={styles.sectionCard}
           >
             <Text style={styles.sectionTitle}>Split</Text>
@@ -673,18 +646,13 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                   {splitOptions.map((option) => {
                     const isActive = value === option.value;
                     return (
-                      <NeumoPressable
+                      <Pressable
                         key={option.value}
                         onPress={() => onChange(option.value)}
-                        variant={isActive ? "glass-strong" : "solid"}
-                        tone="surface"
-                        radius={NeumoTokens.radius.pill}
-                        padding={NeumoTokens.control.pill.padding}
                         style={[
                           styles.segmentButton,
                           ...(isActive ? [styles.segmentButtonActive] : []),
                         ]}
-                        containerStyle={styles.segmentButtonContainer}
                       >
                         <Text
                           style={[
@@ -694,7 +662,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                         >
                           {option.label}
                         </Text>
-                      </NeumoPressable>
+                      </Pressable>
                     );
                   })}
                 </View>
@@ -702,11 +670,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
             />
             <Text style={styles.splitHelper}>{splitDescription}</Text>
 
-            <NeumoSurface
-              variant="solid"
-              tone="base"
-              radius={NeumoTokens.radius.md}
-              padding={NeumoTokens.spacing.sm}
+            <View
               style={styles.summaryCard}
             >
               <View style={styles.summaryRow}>
@@ -751,7 +715,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                   </Text>
                 )}
               </View>
-            </NeumoSurface>
+            </View>
 
             {splitMethod === DibbySplitMethod.AMOUNT ||
             splitMethod === DibbySplitMethod.PERCENTAGE ? (
@@ -836,7 +800,7 @@ const CreateExpense: React.FC<ICreateExpenseProps> = ({
                 )}
               />
             )}
-          </NeumoSurface>
+          </View>
 
           {!formValid && (
             <View style={styles.errorContainer}>
