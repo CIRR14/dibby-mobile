@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ViewStyle, Text } from "react-native";
+import { View, ViewStyle, Text, StyleProp } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import {
@@ -19,7 +19,7 @@ interface NeumoSurfaceProps {
   padding?: number;
   gradient?: boolean;
   gradientColors?: string[];
-  style?: ViewStyle | ViewStyle[];
+  style?: StyleProp<ViewStyle>;
   pointerEvents?: "auto" | "none" | "box-none" | "box-only";
 }
 

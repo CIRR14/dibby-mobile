@@ -20,6 +20,7 @@ import {
   DibbyExpense,
   DibbyParticipant,
   DibbyTrip,
+  DibbyTripLinkRequest,
 } from "../constants/DibbyTypes";
 import { db } from "../firebase";
 import { DibbyCard } from "../components/DibbyCard";
@@ -53,6 +54,8 @@ import DibbyLoading from "../components/DibbyLoading";
 import DibbySummary from "../components/DibbySummary";
 import {
   addDibbyParticipant,
+  cancelTripLinkRequest,
+  createTripLinkRequest,
   deleteDibbyExpense,
 } from "../helpers/FirebaseHelpers";
 import NeumoSurface from "../components/NeumoSurface";
@@ -65,6 +68,8 @@ import StatsSection from "../components/StatsSection";
 import { buildTripStats, pickStats } from "../helpers/StatsHelpers";
 import ScreenState, { ScreenStateStatus } from "../components/ScreenState";
 import { track } from "../helpers/track";
+import { useTripLinkRequests } from "../hooks/useTripLinkRequests";
+import { TripLinkRequestCard } from "../components/TripLinkRequestCard";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -102,9 +107,22 @@ const ViewTrip = ({ route }: any) => {
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
     [],
   );
+  const [linkingGuest, setLinkingGuest] = useState<DibbyParticipant | null>(
+    null,
+  );
+  const [selectedLinkTarget, setSelectedLinkTarget] = useState<
+    DibbyParticipant[]
+  >([]);
+  const [busyLinkRequestId, setBusyLinkRequestId] = useState<string | null>(
+    null,
+  );
 
   const [loadingIndicator, setLoadingIndicator] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const { requests: tripLinkRequests } = useTripLinkRequests(
+    "tripId",
+    currentTrip?.id,
+  );
   const tripTitle = useMemo(
     () =>
       formatTitleWithEmoji(currentTrip?.title || tripName, currentTrip?.emoji),
@@ -120,6 +138,26 @@ const ViewTrip = ({ route }: any) => {
       false,
     [currentTrip],
   );
+  const isTripOwner = Boolean(
+    currentTrip && dibbyUser?.uid && currentTrip.createdBy === dibbyUser.uid,
+  );
+  const guestParticipants = useMemo(
+    () => currentTrip?.participants.filter((p) => p.createdUser) || [],
+    [currentTrip?.participants],
+  );
+  const pendingLinksByGuest = useMemo(() => {
+    const pending = new Map<string, DibbyTripLinkRequest>();
+    tripLinkRequests.forEach((request) => {
+      pending.set(request.guestUid, request);
+    });
+    return pending;
+  }, [tripLinkRequests]);
+  const selectedLinkableUser = useMemo(() => {
+    if (selectedResults.length !== 1 || selectedResults[0]?.createdUser) {
+      return undefined;
+    }
+    return selectedResults[0];
+  }, [selectedResults]);
   const tripCompactStats = useMemo(
     () =>
       pickStats(tripStats, [
@@ -256,6 +294,50 @@ const ViewTrip = ({ route }: any) => {
         count: selectedResults.length,
       });
       setSelectedResults([]);
+    }
+  };
+
+  const sendTripLinkRequest = async (
+    guest: DibbyParticipant,
+    target?: DibbyParticipant,
+  ) => {
+    if (!dibbyUser || !currentTrip || !target) {
+      return;
+    }
+
+    setBusyLinkRequestId(guest.uid);
+    try {
+      await createTripLinkRequest(dibbyUser, currentTrip, guest, target);
+      setLinkingGuest(null);
+      setSelectedLinkTarget([]);
+      setSelectedResults([]);
+    } catch (err: any) {
+      Alert.alert(
+        "Unable to send request",
+        err?.message || "This guest could not be linked right now.",
+      );
+    } finally {
+      setBusyLinkRequestId(null);
+    }
+  };
+
+  const cancelPendingTripLinkRequest = async (
+    request: DibbyTripLinkRequest,
+  ) => {
+    if (!dibbyUser) {
+      return;
+    }
+
+    setBusyLinkRequestId(request.id);
+    try {
+      await cancelTripLinkRequest(dibbyUser, request);
+    } catch (err: any) {
+      Alert.alert(
+        "Unable to cancel request",
+        err?.message || "This request could not be cancelled right now.",
+      );
+    } finally {
+      setBusyLinkRequestId(null);
     }
   };
 
@@ -596,8 +678,11 @@ const ViewTrip = ({ route }: any) => {
                           t.color,
                           t.uid || t.username || t.name || "",
                         );
+                        const pendingLink = pendingLinksByGuest.get(t.uid);
+                        const canLinkGuest =
+                          isTripOwner && t.createdUser && !pendingLink;
                         return (
-                          <NeumoSurface
+                          <NeumoPressable
                             key={t.uid}
                             variant="flat"
                             tone="surface"
@@ -616,13 +701,52 @@ const ViewTrip = ({ route }: any) => {
                               },
                             ]}
                             padding={NeumoTokens.control.pill.padding}
+                            onPress={
+                              canLinkGuest
+                                ? () => {
+                                    setSelectedLinkTarget([]);
+                                    setLinkingGuest(t);
+                                  }
+                                : undefined
+                            }
                           >
-                            <Text style={styles.travelerText}>{t.name}</Text>
-                          </NeumoSurface>
+                            <View style={styles.travelerPillContent}>
+                              <Text style={styles.travelerText}>
+                                {t.createdUser ? t.name : `@${t.username}`}
+                              </Text>
+                              {pendingLink && (
+                                <Text style={styles.pendingLabel}>
+                                  Pending @{pendingLink.targetUsername}
+                                </Text>
+                              )}
+                            </View>
+                          </NeumoPressable>
                         );
                       })}
                     </View>
                   </NeumoSurface>
+
+                  {isTripOwner && tripLinkRequests.length > 0 && (
+                    <NeumoSurface
+                      variant="raised"
+                      tone="surface"
+                      radius={NeumoTokens.radius.lg}
+                      style={styles.travelersCard}
+                    >
+                      <Text style={styles.sectionTitle}>
+                        Pending account links
+                      </Text>
+                      {tripLinkRequests.map((request) => (
+                        <TripLinkRequestCard
+                          key={request.id}
+                          request={request}
+                          mode="owner"
+                          busy={busyLinkRequestId === request.id}
+                          onCancel={cancelPendingTripLinkRequest}
+                        />
+                      ))}
+                    </NeumoSurface>
+                  )}
 
                   <NeumoSurface
                     variant="inset"
@@ -641,6 +765,38 @@ const ViewTrip = ({ route }: any) => {
                       onPress={addTravelers}
                       fullWidth
                     />
+                    {isTripOwner &&
+                      selectedLinkableUser &&
+                      guestParticipants.some(
+                        (guest) => !pendingLinksByGuest.has(guest.uid),
+                      ) && (
+                        <View style={styles.linkShortcut}>
+                          <Text style={styles.linkShortcutTitle}>
+                            Link @{selectedLinkableUser.username} to a guest
+                          </Text>
+                          <View style={styles.linkShortcutActions}>
+                            {guestParticipants
+                              .filter(
+                                (guest) => !pendingLinksByGuest.has(guest.uid),
+                              )
+                              .map((guest) => (
+                                <DibbyButton
+                                  key={guest.uid}
+                                  title={guest.name || "Guest"}
+                                  type="outline"
+                                  size="sm"
+                                  disabled={busyLinkRequestId === guest.uid}
+                                  onPress={() =>
+                                    sendTripLinkRequest(
+                                      guest,
+                                      selectedLinkableUser,
+                                    )
+                                  }
+                                />
+                              ))}
+                          </View>
+                        </View>
+                      )}
                   </NeumoSurface>
                 </View>
               </ScrollView>
@@ -659,6 +815,60 @@ const ViewTrip = ({ route }: any) => {
                 tripInfo={currentTrip}
               />
             )}
+          </Modal>
+          <Modal
+            transparent
+            animationType="fade"
+            visible={Boolean(linkingGuest)}
+            onRequestClose={() => {
+              setLinkingGuest(null);
+              setSelectedLinkTarget([]);
+            }}
+          >
+            <View style={styles.modalOverlay}>
+              <NeumoSurface
+                variant="raised"
+                tone="surface"
+                radius={NeumoTokens.radius.lg}
+                style={styles.linkModalCard}
+              >
+                <Text style={styles.modalTitle}>Link guest account</Text>
+                <Text style={styles.modalText}>
+                  Choose the Dibby username that should claim{" "}
+                  {linkingGuest?.name || "this guest"}.
+                </Text>
+                <DibbySearchUsername
+                  key={linkingGuest?.uid || "link-guest"}
+                  results={(res) => setSelectedLinkTarget(res)}
+                  currentTrip={currentTrip}
+                  useDefaultSuggestion={false}
+                  multi={false}
+                />
+                <View style={styles.modalActions}>
+                  <DibbyButton
+                    title="Cancel"
+                    type="clear"
+                    onPress={() => {
+                      setLinkingGuest(null);
+                      setSelectedLinkTarget([]);
+                    }}
+                  />
+                  <DibbyButton
+                    title="Send request"
+                    disabled={
+                      !linkingGuest ||
+                      selectedLinkTarget.length !== 1 ||
+                      Boolean(selectedLinkTarget[0]?.createdUser) ||
+                      busyLinkRequestId === linkingGuest?.uid
+                    }
+                    onPress={() =>
+                      linkingGuest &&
+                      sendTripLinkRequest(linkingGuest, selectedLinkTarget[0])
+                    }
+                  />
+                </View>
+              </NeumoSurface>
+            </View>
           </Modal>
         </View>
       </SafeAreaView>
@@ -799,5 +1009,60 @@ const makeStyles = (colors: ThemeColors) =>
     travelerText: {
       color: colors.textPrimary,
       fontSize: Typography.size.sm,
+    },
+    travelerPillContent: {
+      alignItems: "center",
+      gap: 4,
+    },
+    guestLabel: {
+      color: colors.success.text,
+      fontSize: Typography.size.xs,
+      fontWeight: Typography.weight.semibold as any,
+      textTransform: "uppercase",
+    },
+    pendingLabel: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.xs,
+    },
+    linkShortcut: {
+      gap: 8,
+      marginTop: 8,
+    },
+    linkShortcutTitle: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+    },
+    linkShortcutActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.35)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    },
+    linkModalCard: {
+      width: "100%",
+      maxWidth: 440,
+      gap: 12,
+      ...(Platform.OS === "web" ? { boxShadow: "none" } : {}),
+    },
+    modalTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.lg,
+      fontWeight: Typography.weight.bold as any,
+    },
+    modalText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
+    },
+    modalActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "flex-end",
+      gap: 8,
     },
   });

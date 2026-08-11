@@ -3,8 +3,9 @@ import {
   DibbyParticipant,
   DibbySplitMethod,
   DibbyTrip,
+  DibbyUser,
 } from "../../constants/DibbyTypes";
-import { calculateTrip } from "../DibbyLogic";
+import { calculateTrip, linkGuestParticipantToUser } from "../DibbyLogic";
 
 const makeParticipant = (uid: string, name: string): DibbyParticipant => ({
   uid,
@@ -14,6 +15,17 @@ const makeParticipant = (uid: string, name: string): DibbyParticipant => ({
   amountPaid: 0,
   color: "",
   photoURL: null,
+});
+
+const makeUser = (uid: string, username: string, name: string): DibbyUser => ({
+  uid,
+  username,
+  displayName: name,
+  photoURL: "https://example.com/avatar.png",
+  email: `${username}@example.com`,
+  friends: [],
+  trips: [],
+  color: "#123456",
 });
 
 const makeExpense = (overrides: Partial<DibbyExpense>): DibbyExpense => ({
@@ -166,5 +178,106 @@ describe("calculateTrip", () => {
     expect(transaction.owee.uid).toBe(bob.uid);
     expect(transaction.owed.uid).toBe(alice.uid);
     expect(transaction.amount).toBeCloseTo(25, 2);
+  });
+});
+
+describe("linkGuestParticipantToUser", () => {
+  it("replaces a guest participant with a real user while preserving balances", () => {
+    const alice = makeParticipant("a", "Alice");
+    const guest = {
+      ...makeParticipant("guest-1", "Jordan"),
+      username: "jordan-guest",
+      createdUser: true,
+      owed: -25,
+      amountPaid: 100,
+      color: "#abcdef",
+    };
+    const targetUser = makeUser("u-jordan", "jordan", "Jordan Lee");
+    const expense = makeExpense({
+      amount: 100,
+      paidBy: guest.uid,
+      peopleInExpense: [
+        { uid: alice.uid, name: "Alice", amount: 50 },
+        { uid: guest.uid, name: "Jordan", amount: 50 },
+      ],
+    });
+    const trip = makeTrip([alice, guest], [expense]);
+
+    const result = linkGuestParticipantToUser(trip, guest.uid, targetUser);
+    const linkedParticipant = result.participants.find(
+      (participant) => participant.uid === targetUser.uid,
+    );
+
+    expect(result.participants).toHaveLength(2);
+    expect(linkedParticipant).toMatchObject({
+      uid: targetUser.uid,
+      username: targetUser.username,
+      name: targetUser.displayName,
+      photoURL: targetUser.photoURL,
+      color: targetUser.color,
+      createdUser: false,
+      owed: guest.owed,
+      amountPaid: guest.amountPaid,
+    });
+    expect(result.expenses[0].paidBy).toBe(targetUser.uid);
+    expect(result.expenses[0].peopleInExpense).toEqual([
+      { uid: alice.uid, name: "Alice", amount: 50 },
+      { uid: targetUser.uid, name: targetUser.displayName, amount: 50 },
+    ]);
+  });
+
+  it("leaves unrelated participants and expenses unchanged", () => {
+    const alice = makeParticipant("a", "Alice");
+    const guest = {
+      ...makeParticipant("guest-1", "Jordan"),
+      createdUser: true,
+    };
+    const targetUser = makeUser("u-jordan", "jordan", "Jordan Lee");
+    const unrelatedExpense = makeExpense({
+      id: "expense-2",
+      amount: 40,
+      paidBy: alice.uid,
+      peopleInExpense: [{ uid: alice.uid, name: "Alice", amount: 40 }],
+    });
+    const trip = makeTrip([alice, guest], [unrelatedExpense]);
+
+    const result = linkGuestParticipantToUser(trip, guest.uid, targetUser);
+
+    expect(result.participants[0]).toEqual(alice);
+    expect(result.expenses[0]).toEqual(unrelatedExpense);
+  });
+
+  it("blocks linking when the target user is already in the trip", () => {
+    const alice = makeParticipant("a", "Alice");
+    const guest = {
+      ...makeParticipant("guest-1", "Jordan"),
+      createdUser: true,
+    };
+    const targetUser = makeUser("a", "alice", "Alice");
+    const trip = makeTrip([alice, guest], []);
+
+    expect(() =>
+      linkGuestParticipantToUser(trip, guest.uid, targetUser),
+    ).toThrow("already a traveler");
+  });
+
+  it("fails cleanly when the guest is missing", () => {
+    const alice = makeParticipant("a", "Alice");
+    const targetUser = makeUser("u-jordan", "jordan", "Jordan Lee");
+    const trip = makeTrip([alice], []);
+
+    expect(() =>
+      linkGuestParticipantToUser(trip, "missing-guest", targetUser),
+    ).toThrow("no longer in this trip");
+  });
+
+  it("does not link an existing account participant as if they were a guest", () => {
+    const alice = makeParticipant("a", "Alice");
+    const targetUser = makeUser("u-jordan", "jordan", "Jordan Lee");
+    const trip = makeTrip([alice], []);
+
+    expect(() => linkGuestParticipantToUser(trip, alice.uid, targetUser)).toThrow(
+      "Only guest travelers",
+    );
   });
 });

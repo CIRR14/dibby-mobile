@@ -3,6 +3,7 @@ import {
   DibbyParticipant,
   DibbySplitMethod,
   DibbyTrip,
+  DibbyUser,
 } from "../constants/DibbyTypes";
 import { numberWithCommas } from "./AppHelpers";
 
@@ -217,6 +218,64 @@ export const calculateTrip = (trip: DibbyTrip): ITransactionResponse => {
   return {
     transactions,
     finalNumberOfTransactions: transactions.length,
+  };
+};
+
+export const linkGuestParticipantToUser = (
+  trip: DibbyTrip,
+  guestUid: string,
+  targetUser: DibbyUser,
+): DibbyTrip => {
+  const guestParticipant = trip.participants.find((p) => p.uid === guestUid);
+
+  if (!guestParticipant) {
+    throw new Error("Guest traveler is no longer in this trip.");
+  }
+
+  if (!guestParticipant.createdUser) {
+    throw new Error("Only guest travelers can be linked to an account.");
+  }
+
+  const targetAlreadyInTrip = trip.participants.some(
+    (p) =>
+      p.uid === targetUser.uid ||
+      (!p.createdUser &&
+        Boolean(targetUser.username) &&
+        p.username === targetUser.username),
+  );
+
+  if (targetAlreadyInTrip) {
+    throw new Error("This user is already a traveler in the trip.");
+  }
+
+  const linkedParticipant: DibbyParticipant = {
+    ...guestParticipant,
+    uid: targetUser.uid,
+    name: targetUser.displayName,
+    username: targetUser.username,
+    photoURL: targetUser.photoURL,
+    color: targetUser.color,
+    createdUser: false,
+  };
+
+  return {
+    ...trip,
+    participants: trip.participants.map((participant) =>
+      participant.uid === guestUid ? linkedParticipant : participant,
+    ),
+    expenses: trip.expenses.map((expense) => ({
+      ...expense,
+      paidBy: expense.paidBy === guestUid ? targetUser.uid : expense.paidBy,
+      peopleInExpense: expense.peopleInExpense.map((split) =>
+        split.uid === guestUid
+          ? {
+              ...split,
+              uid: targetUser.uid,
+              name: targetUser.displayName || guestParticipant.name || "",
+            }
+          : split,
+      ),
+    })),
   };
 };
 

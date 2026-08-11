@@ -27,7 +27,7 @@ import {
   where,
   documentId,
 } from "firebase/firestore";
-import { DibbyTrip } from "../constants/DibbyTypes";
+import { DibbyTrip, DibbyTripLinkRequest } from "../constants/DibbyTypes";
 import { Platform } from "react-native";
 import { wideScreen, windowWidth } from "../constants/DeviceWidth";
 import DibbyButton from "../components/DibbyButton";
@@ -36,7 +36,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { Avatar } from "@rneui/themed";
 import { getInitials } from "../helpers/AppHelpers";
 import DibbyVersion from "../components/DibbyVersion";
-import { deleteDibbyTrip } from "../helpers/FirebaseHelpers";
+import {
+  acceptTripLinkRequest,
+  deleteDibbyTrip,
+  rejectTripLinkRequest,
+} from "../helpers/FirebaseHelpers";
 import NeumoSurface from "../components/NeumoSurface";
 import { FloatingTabBar, NeumoTokens } from "../constants/Neumo";
 import { Typography } from "../constants/Typography";
@@ -48,6 +52,8 @@ import { useAvatarUrl } from "../hooks/useAvatarUrl";
 import StatsSection from "../components/StatsSection";
 import { buildHomeStats, pickStats } from "../helpers/StatsHelpers";
 import ScreenState from "../components/ScreenState";
+import { useTripLinkRequests } from "../hooks/useTripLinkRequests";
+import { TripLinkRequestCard } from "../components/TripLinkRequestCard";
 
 const cardWidth = 500;
 const numColumns = Math.floor(windowWidth / cardWidth);
@@ -63,9 +69,16 @@ const HomeScreen = () => {
   const [tripSort, setTripSort] = useState<
     "recent" | "oldest" | "amount" | "name"
   >("recent");
+  const [busyLinkRequestId, setBusyLinkRequestId] = useState<string | null>(
+    null,
+  );
 
-  const navigation = useNavigation();
+  const navigation: any = useNavigation();
   const { dibbyUser, loggedInUser } = useUser();
+  const { requests: tripLinkRequests } = useTripLinkRequests(
+    "targetUid",
+    dibbyUser?.uid,
+  );
   const { uri: avatarUrl, imageProps } = useAvatarUrl(
     dibbyUser?.photoURL || loggedInUser?.photoURL,
     96,
@@ -132,6 +145,31 @@ const HomeScreen = () => {
       await updateDoc(tripRef, { completed: complete });
     },
     [],
+  );
+
+  const actionTripLinkRequest = useCallback(
+    async (action: "accept" | "reject", request: DibbyTripLinkRequest) => {
+      if (!dibbyUser) {
+        return;
+      }
+
+      setBusyLinkRequestId(request.id);
+      try {
+        if (action === "accept") {
+          await acceptTripLinkRequest(dibbyUser, request);
+        } else {
+          await rejectTripLinkRequest(dibbyUser, request);
+        }
+      } catch (err: any) {
+        Alert.alert(
+          "Trip invite unavailable",
+          err?.message || "Unable to update this trip invite right now.",
+        );
+      } finally {
+        setBusyLinkRequestId(null);
+      }
+    },
+    [dibbyUser],
   );
 
   const handleSignOut = () => {
@@ -362,6 +400,25 @@ const HomeScreen = () => {
                 updateCellsBatchingPeriod={50}
                 ListHeaderComponent={
                   <View style={styles.listHeader}>
+                    {tripLinkRequests.length > 0 && (
+                      <View style={styles.pendingRequests}>
+                        <Text style={styles.sectionTitle}>Pending invites</Text>
+                        {tripLinkRequests.map((request) => (
+                          <TripLinkRequestCard
+                            key={request.id}
+                            request={request}
+                            mode="invitee"
+                            busy={busyLinkRequestId === request.id}
+                            onAccept={(item) =>
+                              actionTripLinkRequest("accept", item)
+                            }
+                            onReject={(item) =>
+                              actionTripLinkRequest("reject", item)
+                            }
+                          />
+                        ))}
+                      </View>
+                    )}
                     <NeumoSurface
                       variant="raised"
                       tone="surface"
@@ -528,6 +585,15 @@ const makeStyles = (colors: ThemeColors) =>
     },
     heroStats: {
       marginTop: 4,
+    },
+    pendingRequests: {
+      gap: 10,
+      marginBottom: 4,
+    },
+    sectionTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.semibold as any,
     },
     emptyState: {
       marginVertical: 24,

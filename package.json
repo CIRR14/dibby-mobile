@@ -8,6 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
+    "test:linking": "jest helpers/__tests__/DibbyLogic.test.ts helpers/__tests__/TripLinkRequests.helper.test.ts --runInBand",
+    "test:rules": "firebase emulators:exec --only firestore \"jest firestore/__tests__/tripLinkRequests.rules.test.ts --runInBand\"",
     "predeploy": "npx expo export:web",
     "deploy-hosting": "npm run predeploy && firebase deploy --only hosting"
   },
@@ -64,6 +66,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "2.0.7",
     "@babel/core": "^7.12.9",
     "@types/react": "~18.0.14",
     "@types/react-native": "~0.69.1",

@@ -43,6 +43,21 @@ export interface DibbyTrip extends DibbyDocWithID {
     completed: boolean;
 }
 
+export interface DibbyTripLinkRequest {
+    id: string;
+    tripId: string;
+    tripTitle: string;
+    tripEmoji?: string | null;
+    guestUid: string;
+    guestName: string;
+    targetUid: string;
+    targetUsername: string | null;
+    requestedByUid: string;
+    requestedByUsername: string | null;
+    requestedByName: string | null;
+    dateCreated: Timestamp;
+}
+
 
 export interface DibbyExpense extends DibbyDocWithID {
     paidBy: string;

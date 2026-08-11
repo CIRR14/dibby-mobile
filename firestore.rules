@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function appEnabled() {
+      return request.time < timestamp.date(2026, 10, 10);
+    }
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function tripPath(tripId) {
+      return /databases/$(database)/documents/trips/$(tripId);
+    }
+
+    function tripExists(tripId) {
+      return exists(tripPath(tripId));
+    }
+
+    function tripData(tripId) {
+      return get(tripPath(tripId)).data;
+    }
+
+    function isTripOwner(tripId) {
+      return signedIn() && tripExists(tripId) && tripData(tripId).createdBy == request.auth.uid;
+    }
+
+    function nullableString(value) {
+      return value == null || value is string;
+    }
+
+    function hasValidTripLinkRequestShape(requestId) {
+      return request.resource.data.keys().hasOnly([
+          "id",
+          "tripId",
+          "tripTitle",
+          "tripEmoji",
+          "guestUid",
+          "guestName",
+          "targetUid",
+          "targetUsername",
+          "requestedByUid",
+          "requestedByUsername",
+          "requestedByName",
+          "dateCreated",
+        ]) &&
+        request.resource.data.id == requestId &&
+        request.resource.data.tripId is string &&
+        request.resource.data.tripTitle is string &&
+        nullableString(request.resource.data.tripEmoji) &&
+        request.resource.data.guestUid is string &&
+        request.resource.data.guestName is string &&
+        request.resource.data.targetUid is string &&
+        nullableString(request.resource.data.targetUsername) &&
+        request.resource.data.requestedByUid is string &&
+        nullableString(request.resource.data.requestedByUsername) &&
+        nullableString(request.resource.data.requestedByName) &&
+        request.resource.data.dateCreated is timestamp;
+    }
+
+    match /tripLinkRequests/{requestId} {
+      allow create: if appEnabled() && signedIn() &&
+        hasValidTripLinkRequestShape(requestId) &&
+        request.resource.data.requestedByUid == request.auth.uid &&
+        tripExists(request.resource.data.tripId) &&
+        isTripOwner(request.resource.data.tripId);
+
+      allow get, list: if appEnabled() && signedIn() && (
+        resource.data.targetUid == request.auth.uid ||
+        isTripOwner(resource.data.tripId)
+      );
+
+      allow delete: if appEnabled() && signedIn() && (
+        resource.data.targetUid == request.auth.uid ||
+        isTripOwner(resource.data.tripId)
+      );
+
+      allow update: if false;
+    }
+
+    match /trips/{tripId} {
+      allow read, write: if appEnabled() && signedIn();
+    }
+
+    match /users/{userId} {
+      allow read, write: if appEnabled() && signedIn() && request.auth.uid == userId;
+    }
+  }
+}

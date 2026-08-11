@@ -253,15 +253,13 @@ export const DibbySearchUsername: React.FC<{
           if (searchText && (!suggestionsList || suggestionsList.length === 0)) {
             getSuggestions(searchText);
           }
+          if (!multi && selectedResults.length === 1) {
+            (dropdownController.current as AutocompleteDropdownRef).close();
+          }
         }}
         onFocus={() => {
           if (searchText) {
             getSuggestions(searchText);
-          }
-        }}
-        onOpenSuggestionsList={(e) => {
-          if (!multi && selectedResults.length === 1) {
-            (dropdownController.current as AutocompleteDropdownRef).close();
           }
         }}
         loading={loading}

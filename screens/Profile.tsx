@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   Platform,
+  Alert,
 } from "react-native";
 import { ThemeColors } from "../constants/Colors";
 import TopBar from "../components/TopBar";
@@ -29,6 +30,7 @@ import {
   DibbyFriend,
   DibbyParticipant,
   DibbyTrip,
+  DibbyTripLinkRequest,
   DibbyUser,
 } from "../constants/DibbyTypes";
 import { db } from "../firebase";
@@ -44,10 +46,12 @@ import { DibbyProfileCard } from "../components/DibbyProfileCard";
 import { timestampToString } from "../helpers/TypeHelpers";
 import { DibbySearchUsername } from "../components/DibbySearchUsername";
 import {
+  acceptTripLinkRequest,
   addDibbyFriends,
   deleteDibbyUserData,
   onAcceptDibbyFriend,
   onRejectDibbyFriend,
+  rejectTripLinkRequest,
 } from "../helpers/FirebaseHelpers";
 import NeumoSurface from "../components/NeumoSurface";
 import NeumoPressable from "../components/NeumoPressable";
@@ -67,6 +71,8 @@ import {
   reauthenticateWithPopup,
 } from "firebase/auth";
 import DibbyVersion from "../components/DibbyVersion";
+import { useTripLinkRequests } from "../hooks/useTripLinkRequests";
+import { TripLinkRequestCard } from "../components/TripLinkRequestCard";
 
 export const Profile = () => {
   const colors = useAppTheme();
@@ -84,6 +90,13 @@ export const Profile = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [busyLinkRequestId, setBusyLinkRequestId] = useState<string | null>(
+    null,
+  );
+  const { requests: tripLinkRequests } = useTripLinkRequests(
+    "targetUid",
+    dibbyUser?.uid,
+  );
   const profileStats = useMemo(
     () =>
       buildProfileStats(
@@ -282,6 +295,31 @@ export const Profile = () => {
     }
   };
 
+  const actionTripLinkRequest = async (
+    action: "accept" | "reject",
+    request: DibbyTripLinkRequest,
+  ) => {
+    if (!dibbyUser) {
+      return;
+    }
+
+    setBusyLinkRequestId(request.id);
+    try {
+      if (action === "accept") {
+        await acceptTripLinkRequest(dibbyUser, request);
+      } else {
+        await rejectTripLinkRequest(dibbyUser, request);
+      }
+    } catch (err: any) {
+      Alert.alert(
+        "Trip invite unavailable",
+        err?.message || "Unable to update this trip invite right now.",
+      );
+    } finally {
+      setBusyLinkRequestId(null);
+    }
+  };
+
   return (
     <View style={styles.topContainer}>
       <SafeAreaView style={styles.topContainer}>
@@ -302,6 +340,31 @@ export const Profile = () => {
                   title={dibbyUser.displayName || ""}
                   divider={true}
                 />
+
+                {tripLinkRequests.length > 0 && (
+                  <NeumoSurface
+                    variant="raised"
+                    tone="surface"
+                    radius={NeumoTokens.radius.lg}
+                    style={styles.sectionCard}
+                  >
+                    <Text style={styles.sectionTitle}>Trip invites</Text>
+                    {tripLinkRequests.map((request) => (
+                      <TripLinkRequestCard
+                        key={request.id}
+                        request={request}
+                        mode="invitee"
+                        busy={busyLinkRequestId === request.id}
+                        onAccept={(item) =>
+                          actionTripLinkRequest("accept", item)
+                        }
+                        onReject={(item) =>
+                          actionTripLinkRequest("reject", item)
+                        }
+                      />
+                    ))}
+                  </NeumoSurface>
+                )}
 
                 <NeumoSurface
                   variant="raised"
