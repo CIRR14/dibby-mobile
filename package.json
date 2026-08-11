@@ -12,7 +12,7 @@
     "emulators:start": "PATH=\"$(brew --prefix openjdk@17)/bin:$PATH\" firebase emulators:start --only firestore",
     "test:rules": "PATH=\"$(brew --prefix openjdk@17)/bin:$PATH\" firebase emulators:exec --only firestore \"jest firestore/__tests__/tripLinkRequests.rules.test.ts firestore/__tests__/tripPayments.rules.test.ts firestore/__tests__/trips.rules.test.ts --runInBand\"",
     "predeploy": "npx expo export:web",
-    "deploy-hosting": "npm run predeploy && firebase deploy --only hosting, firestore:rules"
+    "deploy-hosting": "npm run predeploy && firebase deploy --only hosting,firestore:rules"
   },
   "jest": {
     "preset": "jest-expo"
