@@ -136,16 +136,17 @@ const CreateTrip = () => {
       {isLoading ? (
         <DibbyLoading />
       ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          enabled
+          keyboardVerticalOffset={120}
+          style={styles.keyboardContainer}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            enabled
-            keyboardVerticalOffset={150}
-            style={styles.keyboardContainer}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
             <View style={styles.content}>
               <NeumoSurface
@@ -230,8 +231,8 @@ const CreateTrip = () => {
                 </Text>
               )}
             </View>
-          </KeyboardAvoidingView>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       )}
     </SafeAreaView>
   );
@@ -315,6 +316,9 @@ const makeStyles = (colors: ThemeColors) =>
       marginTop: 8,
     },
     keyboardContainer: {
+      flex: 1,
+    },
+    scrollView: {
       flex: 1,
     },
     scrollContent: {
