@@ -191,7 +191,21 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, write: if appEnabled() && signedIn() && request.auth.uid == userId;
+      allow get, list: if appEnabled() && signedIn();
+      allow create: if appEnabled() && signedIn() && request.auth.uid == userId;
+      allow update: if appEnabled() && signedIn() && (
+        request.auth.uid == userId ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["trips", "friends"]) &&
+          request.resource.data.uid == resource.data.uid &&
+          request.resource.data.username == resource.data.username &&
+          request.resource.data.displayName == resource.data.displayName &&
+          request.resource.data.email == resource.data.email &&
+          request.resource.data.color == resource.data.color &&
+          request.resource.data.photoURL == resource.data.photoURL
+        )
+      );
+      allow delete: if false;
     }
   }
 }
