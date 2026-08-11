@@ -1,11 +1,5 @@
 import React, { useMemo, useState } from "react";
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { collection, doc, Timestamp } from "firebase/firestore";
 import { ThemeColors } from "../constants/Colors";
@@ -66,9 +60,8 @@ const TripWizard = () => {
     }
     setCreatingTrip(true);
     const tripRef = doc(collection(db, "trips"));
-    const participantsWithColors = assignUniqueParticipantColors(
-      selectedResults,
-    );
+    const participantsWithColors =
+      assignUniqueParticipantColors(selectedResults);
 
     const newTripData: DibbyTrip = {
       id: tripRef.id,
@@ -136,10 +129,7 @@ const TripWizard = () => {
         {[1, 2, 3].map((value) => (
           <View
             key={value}
-            style={[
-              styles.stepDot,
-              value <= step && styles.stepDotActive,
-            ]}
+            style={[styles.stepDot, value <= step && styles.stepDotActive]}
           />
         ))}
       </View>
@@ -268,13 +258,17 @@ const TripWizard = () => {
             />
           }
         />
-        {step === 3 ? (
-          renderStep3()
-        ) : (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {step === 1 ? renderStep1() : renderStep2()}
-          </ScrollView>
-        )}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {step === 3
+            ? renderStep3()
+            : step === 1
+              ? renderStep1()
+              : renderStep2()}
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -287,11 +281,13 @@ const makeStyles = (colors: ThemeColors) =>
       backgroundColor: colors.background.default,
     },
     scrollContent: {
+      flexGrow: 1,
       padding: 16,
       paddingBottom: FloatingTabBar.spacer,
       gap: 16,
     },
     stepContent: {
+      flexGrow: 1,
       padding: 16,
       paddingBottom: FloatingTabBar.spacer,
       gap: 16,

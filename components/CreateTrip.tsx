@@ -5,6 +5,8 @@ import {
   View,
   Text,
   KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from "react-native";
 import { ThemeColors } from "../constants/Colors";
 import { useNavigation } from "@react-navigation/native";
@@ -52,7 +54,7 @@ const CreateTrip = () => {
   const styles = makeStyles(colors as unknown as ThemeColors);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedResults, setSelectedResults] = useState<DibbyParticipant[]>(
-    []
+    [],
   );
   const needsMoreTravelers = selectedResults.length <= 1;
 
@@ -73,9 +75,8 @@ const CreateTrip = () => {
   const onSubmit = async (data: DibbyTripFormValues) => {
     if (dibbyUser) {
       const newTripRef = doc(collection(db, "trips"));
-      const participantsWithColors = assignUniqueParticipantColors(
-        selectedResults
-      );
+      const participantsWithColors =
+        assignUniqueParticipantColors(selectedResults);
 
       const newTripData: DibbyTrip = {
         ...data,
@@ -93,7 +94,7 @@ const CreateTrip = () => {
       };
 
       const usersToAddTripTo = participantsWithColors.filter(
-        (r) => r && !r.createdUser
+        (r) => r && !r.createdUser,
       );
 
       try {
@@ -135,93 +136,102 @@ const CreateTrip = () => {
       {isLoading ? (
         <DibbyLoading />
       ) : (
-        <View style={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <KeyboardAvoidingView
-            behavior="padding"
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
             enabled
             keyboardVerticalOffset={150}
+            style={styles.keyboardContainer}
           >
-            <NeumoSurface
-              variant="raised"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
-              style={styles.sectionCard}
-            >
-              <Text style={styles.sectionTitle}>Trip details</Text>
-              <View style={styles.titleRow}>
-                <EmojiSelector
-                  value={selectedEmoji}
-                  onChange={(emoji) => setValue("emoji", emoji || "")}
-                  label="Trip emoji"
-                  size={46}
-                />
-                <View style={styles.titleInput}>
-                  <Controller
-                    control={control}
-                    name="title"
-                    rules={{
-                      required: true,
-                    }}
-                    render={({ field: { onChange, onBlur, value } }) => (
-                      <DibbyInput
-                        placeholder="Name of Trip"
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        value={value}
-                        clearButtonMode="always"
-                      />
-                    )}
+            <View style={styles.content}>
+              <NeumoSurface
+                variant="raised"
+                tone="surface"
+                radius={NeumoTokens.radius.lg}
+                style={styles.sectionCard}
+              >
+                <Text style={styles.sectionTitle}>Trip details</Text>
+                <View style={styles.titleRow}>
+                  <EmojiSelector
+                    value={selectedEmoji}
+                    onChange={(emoji) => setValue("emoji", emoji || "")}
+                    label="Trip emoji"
+                    size={46}
                   />
+                  <View style={styles.titleInput}>
+                    <Controller
+                      control={control}
+                      name="title"
+                      rules={{
+                        required: true,
+                      }}
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <DibbyInput
+                          placeholder="Name of Trip"
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          value={value}
+                          clearButtonMode="always"
+                        />
+                      )}
+                    />
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.helperText}>
-                Trip name helps everyone recognize it.
-              </Text>
-              {formState.errors.title && (
-                <Text style={styles.errorText}>Trip must have a name.</Text>
-              )}
-            </NeumoSurface>
+                <Text style={styles.helperText}>
+                  Trip name helps everyone recognize it.
+                </Text>
+                {formState.errors.title && (
+                  <Text style={styles.errorText}>Trip must have a name.</Text>
+                )}
+              </NeumoSurface>
 
-            <NeumoSurface
-              variant="raised"
-              tone="surface"
-              radius={NeumoTokens.radius.lg}
-              style={styles.sectionCard}
-            >
-              <Text style={styles.sectionTitle}>Travelers</Text>
-              <Text style={styles.searchHint}>
-                Search by username or add a guest name.
-              </Text>
-              <DibbySearchUsername
-                results={(res) => setSelectedResults(res)}
-                selectLoggedInUser
+              <NeumoSurface
+                variant="raised"
+                tone="surface"
+                radius={NeumoTokens.radius.lg}
+                style={styles.sectionCard}
+              >
+                <Text style={styles.sectionTitle}>Travelers</Text>
+                <Text style={styles.searchHint}>
+                  Search by username or add a guest name.
+                </Text>
+                <DibbySearchUsername
+                  results={(res) => setSelectedResults(res)}
+                  selectLoggedInUser
+                />
+                <View style={styles.legendRow}>
+                  <View style={[styles.legendPill, styles.legendGuest]}>
+                    <Text style={styles.legendGuestText}>
+                      Guest (no account)
+                    </Text>
+                  </View>
+                  <View style={[styles.legendPill, styles.legendUser]}>
+                    <Text style={styles.legendUserText}>Dibby user</Text>
+                  </View>
+                </View>
+                <Text style={styles.helperText}>
+                  Select at least two travelers to create a trip.
+                </Text>
+              </NeumoSurface>
+
+              <DibbyButton
+                onPress={handleSubmit(onSubmit)}
+                disabled={!formState.isValid || needsMoreTravelers}
+                title="Add Trip"
+                fullWidth
               />
-              <View style={styles.legendRow}>
-                <View style={[styles.legendPill, styles.legendGuest]}>
-                  <Text style={styles.legendGuestText}>Guest (no account)</Text>
-                </View>
-                <View style={[styles.legendPill, styles.legendUser]}>
-                  <Text style={styles.legendUserText}>Dibby user</Text>
-                </View>
-              </View>
-              <Text style={styles.helperText}>
-                Select at least two travelers to create a trip.
-              </Text>
-            </NeumoSurface>
-
-            <DibbyButton
-              onPress={handleSubmit(onSubmit)}
-              disabled={!formState.isValid || needsMoreTravelers}
-              title="Add Trip"
-              fullWidth
-            />
-            {needsMoreTravelers && (
-              <Text style={styles.helperTextCentered}>
-                Add one more traveler to continue.
-              </Text>
-            )}
+              {needsMoreTravelers && (
+                <Text style={styles.helperTextCentered}>
+                  Add one more traveler to continue.
+                </Text>
+              )}
+            </View>
           </KeyboardAvoidingView>
-        </View>
+        </ScrollView>
       )}
     </SafeAreaView>
   );
@@ -304,8 +314,15 @@ const makeStyles = (colors: ThemeColors) =>
       textAlign: "center",
       marginTop: 8,
     },
+    keyboardContainer: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      padding: 16,
+      paddingBottom: 32,
+    },
     content: {
-      margin: 16,
       gap: 12,
     },
   });
