@@ -27,6 +27,7 @@ import { Typography } from "../constants/Typography";
 import { useUser } from "../hooks/useUser";
 import { createTripPayment } from "../helpers/FirebaseHelpers";
 import { formatTitleWithEmoji } from "../helpers/AppHelpers";
+import { calculateTrip } from "../helpers/DibbyLogic";
 
 const AddPayment = ({ route }: any) => {
   const colors = useAppTheme();
@@ -112,13 +113,51 @@ const AddPayment = ({ route }: any) => {
     [currentTrip?.title, currentTrip?.emoji, tripName],
   );
 
+  const calculatedTrip = useMemo(() => {
+    if (!currentTrip) {
+      return undefined;
+    }
+    return calculateTrip(JSON.parse(JSON.stringify(currentTrip)));
+  }, [currentTrip]);
+
+  const suggestedAmountForSelection = useMemo(() => {
+    if (!calculatedTrip || !customFromUid || !customToUid) {
+      return 0;
+    }
+    const transaction = calculatedTrip.transactions.find(
+      (item) =>
+        item.owee.uid === customFromUid && item.owed.uid === customToUid,
+    );
+    return Number(transaction?.amount || 0);
+  }, [calculatedTrip, customFromUid, customToUid]);
+
+  useEffect(() => {
+    if (suggestedAmountForSelection > 0) {
+      setCustomAmount(String(suggestedAmountForSelection));
+    }
+  }, [suggestedAmountForSelection]);
+
+  const notify = (title: string, message: string) => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.alert(`${title}\n\n${message}`);
+      return;
+    }
+    Alert.alert(title, message);
+  };
+
+  const parseMoneyValue = (value: string): number => {
+    const normalized = (value || "").replace(/[^0-9.-]/g, "");
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
   const onSavePayment = async () => {
     if (!dibbyUser || !currentTrip) {
       return;
     }
 
     if (currentTrip.participants.length < 2) {
-      Alert.alert(
+      notify(
         "Unable to add payment",
         "This trip needs at least two travelers.",
       );
@@ -126,7 +165,7 @@ const AddPayment = ({ route }: any) => {
     }
 
     if (!customFromUid || !customToUid) {
-      Alert.alert(
+      notify(
         "Select travelers",
         "Choose who paid and who received this payment.",
       );
@@ -134,26 +173,37 @@ const AddPayment = ({ route }: any) => {
     }
 
     if (customFromUid === customToUid) {
-      Alert.alert(
+      notify(
         "Invalid travelers",
         "Payer and recipient must be different travelers.",
       );
       return;
     }
 
-    const amount = Number(customAmount) || 0;
-    const paid = Number(amountPaid) || 0;
+    const paid = parseMoneyValue(amountPaid);
+    const parsedTotal = parseMoneyValue(customAmount);
+    const amount = parsedTotal > 0 ? parsedTotal : paid;
+
+    const isTripOwner = currentTrip.createdBy === dibbyUser.uid;
+    const isDebtor = customFromUid === dibbyUser.uid;
+    if (!isTripOwner && !isDebtor) {
+      notify(
+        "You can’t record this payment",
+        "Only the trip owner or the traveler who owes can save this payment. Select yourself as 'Paid by', or ask the owner to record it.",
+      );
+      return;
+    }
 
     if (amount <= 0) {
-      Alert.alert(
+      notify(
         "Enter a total amount",
-        "Payment total must be greater than zero.",
+        "Enter amount paid, or set the total settlement amount when this is a partial payment against a larger obligation.",
       );
       return;
     }
 
     if (paid <= 0) {
-      Alert.alert(
+      notify(
         "Enter a payment amount",
         "Payment amount must be greater than zero.",
       );
@@ -161,7 +211,7 @@ const AddPayment = ({ route }: any) => {
     }
 
     if (paid > amount) {
-      Alert.alert(
+      notify(
         "Invalid amount",
         "Amount paid cannot be greater than total amount.",
       );
@@ -177,13 +227,10 @@ const AddPayment = ({ route }: any) => {
         amountPaid: paid,
         note: note || null,
       });
-      Alert.alert("Saved", "Custom payment added.");
+      notify("Saved", "Custom payment added.");
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert(
-        "Unable to save payment",
-        error?.message || "Try again later.",
-      );
+      notify("Unable to save payment", error?.message || "Try again later.");
     } finally {
       setSaving(false);
     }
@@ -290,12 +337,12 @@ const AddPayment = ({ route }: any) => {
                 </NeumoSurface>
               )}
 
-              <DibbyInput
-                placeholder="Total payment amount"
-                value={customAmount}
-                onChangeText={setCustomAmount}
-                money
-              />
+              <View style={styles.balanceSummary}>
+                <Text style={styles.inputLabel}>Current balance owed</Text>
+                <Text style={styles.balanceValue}>
+                  ${customAmount ? Number(customAmount).toFixed(2) : "0.00"}
+                </Text>
+              </View>
               <DibbyInput
                 placeholder="Amount paid"
                 value={amountPaid}
@@ -392,5 +439,14 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: "flex-end",
       gap: 8,
       flexWrap: "wrap",
+    },
+    balanceSummary: {
+      gap: 4,
+      paddingVertical: 4,
+    },
+    balanceValue: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.lg,
+      fontWeight: Typography.weight.bold as any,
     },
   });

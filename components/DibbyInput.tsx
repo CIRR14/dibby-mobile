@@ -34,6 +34,7 @@ interface IDibbyInputProps {
   keyboardType?: KeyboardTypeOptions;
   clearButtonMode?: "always" | "never" | "while-editing" | "unless-editing";
   disabled?: boolean;
+  editable?: boolean;
   secureTextEntry?: boolean;
   returnKeyType?: ReturnKeyTypeOptions;
   valid?: boolean;
@@ -55,6 +56,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
   clearButtonMode = "always",
   secureTextEntry,
   disabled,
+  editable = true,
   returnKeyType = "next",
   errorText,
   valid,
@@ -86,6 +88,7 @@ const DibbyInput: React.FC<IDibbyInputProps> = ({
           secureTextEntry={secureTextEntry}
           placeholderTextColor={colors.textSecondary}
           disabled={disabled}
+          editable={editable}
           clearTextOnFocus={clearTextOnFocus}
           returnKeyType={returnKeyType}
           onSubmitEditing={onSubmitEditing}
