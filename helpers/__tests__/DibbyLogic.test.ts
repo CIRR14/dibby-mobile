@@ -5,7 +5,11 @@ import {
   DibbyTrip,
   DibbyUser,
 } from "../../constants/DibbyTypes";
-import { calculateTrip, linkGuestParticipantToUser } from "../DibbyLogic";
+import {
+  applyTripPaymentToTrip,
+  calculateTrip,
+  linkGuestParticipantToUser,
+} from "../DibbyLogic";
 
 const makeParticipant = (uid: string, name: string): DibbyParticipant => ({
   uid,
@@ -179,6 +183,224 @@ describe("calculateTrip", () => {
     expect(transaction.owed.uid).toBe(alice.uid);
     expect(transaction.amount).toBeCloseTo(25, 2);
   });
+
+  it("uses participant balances when recorded payments changed balances after expenses", () => {
+    const alice = makeParticipant("a", "Alice");
+    const bob = makeParticipant("b", "Bob");
+
+    const expense = makeExpense({
+      amount: 100,
+      paidBy: alice.uid,
+      splitMethod: DibbySplitMethod.EQUAL_PARTS,
+      peopleInExpense: [
+        { uid: alice.uid, name: alice.name || "Alice", amount: 0 },
+        { uid: bob.uid, name: bob.name || "Bob", amount: 0 },
+      ],
+    });
+
+    alice.owed = 20;
+    bob.owed = -20;
+
+    const trip = makeTrip([alice, bob], [expense]);
+    const result = calculateTrip(trip);
+
+    expect(result.transactions).toHaveLength(1);
+    const transaction = result.transactions[0];
+    expect(transaction.owee.uid).toBe(bob.uid);
+    expect(transaction.owed.uid).toBe(alice.uid);
+    expect(transaction.amount).toBeCloseTo(20, 2);
+  });
+
+  it("handles a 14-person trip with backfilled big expenses, mixed payments, and later trip spend", () => {
+    const travelers = Array.from({ length: 14 }, (_, index) =>
+      makeParticipant(`traveler-${index + 1}`, `Traveler ${index + 1}`),
+    );
+    const byId = (id: string) => {
+      const traveler = travelers.find((participant) => participant.uid === id);
+      if (!traveler) {
+        throw new Error(`Missing traveler ${id}`);
+      }
+      return traveler;
+    };
+    const equalSplit = (participantIds: string[]) =>
+      participantIds.map((uid) => ({
+        uid,
+        name: byId(uid).name || uid,
+        amount: 0,
+      }));
+
+    const allTravelerIds = travelers.map((traveler) => traveler.uid);
+    const activityTravelerIds = [
+      "traveler-2",
+      "traveler-3",
+      "traveler-4",
+      "traveler-5",
+      "traveler-6",
+      "traveler-7",
+      "traveler-8",
+      "traveler-9",
+    ];
+    const vanTravelerIds = [
+      "traveler-1",
+      "traveler-2",
+      "traveler-3",
+      "traveler-4",
+      "traveler-5",
+      "traveler-6",
+      "traveler-7",
+      "traveler-8",
+    ];
+    const boatTravelerIds = [
+      "traveler-6",
+      "traveler-7",
+      "traveler-8",
+      "traveler-9",
+      "traveler-10",
+      "traveler-11",
+      "traveler-12",
+      "traveler-13",
+      "traveler-14",
+    ];
+
+    const expenses = [
+      makeExpense({
+        id: "airbnb",
+        title: "Airbnb",
+        amount: 7000,
+        paidBy: "traveler-1",
+        splitMethod: DibbySplitMethod.EQUAL_PARTS,
+        peopleInExpense: equalSplit(allTravelerIds),
+      }),
+      makeExpense({
+        id: "activity",
+        title: "Activity",
+        amount: 1600,
+        paidBy: "traveler-2",
+        splitMethod: DibbySplitMethod.EQUAL_PARTS,
+        peopleInExpense: equalSplit(activityTravelerIds),
+      }),
+      makeExpense({
+        id: "dinner",
+        title: "Welcome Dinner",
+        amount: 420,
+        paidBy: "traveler-3",
+        splitMethod: DibbySplitMethod.EQUAL_PARTS,
+        peopleInExpense: equalSplit(allTravelerIds),
+      }),
+      makeExpense({
+        id: "van",
+        title: "Van",
+        amount: 280,
+        paidBy: "traveler-8",
+        splitMethod: DibbySplitMethod.EQUAL_PARTS,
+        peopleInExpense: equalSplit(vanTravelerIds),
+      }),
+      makeExpense({
+        id: "groceries",
+        title: "Groceries",
+        amount: 350,
+        paidBy: "traveler-13",
+        splitMethod: DibbySplitMethod.EQUAL_PARTS,
+        peopleInExpense: equalSplit(allTravelerIds),
+      }),
+      makeExpense({
+        id: "boat",
+        title: "Boat Taxi",
+        amount: 270,
+        paidBy: "traveler-6",
+        splitMethod: DibbySplitMethod.EQUAL_PARTS,
+        peopleInExpense: equalSplit(boatTravelerIds),
+      }),
+    ];
+
+    const tripAfterExpenses = makeTrip(
+      travelers.map((traveler) => {
+        const owedByTraveler: Record<string, number> = {
+          "traveler-1": 6410,
+          "traveler-2": 810,
+          "traveler-3": -370,
+          "traveler-4": -790,
+          "traveler-5": -790,
+          "traveler-6": -550,
+          "traveler-7": -820,
+          "traveler-8": -540,
+          "traveler-9": -785,
+          "traveler-10": -585,
+          "traveler-11": -585,
+          "traveler-12": -585,
+          "traveler-13": -235,
+          "traveler-14": -585,
+        };
+
+        return {
+          ...traveler,
+          owed: owedByTraveler[traveler.uid],
+        };
+      }),
+      expenses,
+    );
+
+    const finalTrip = [
+      { fromUid: "traveler-4", toUid: "traveler-1", amountPaid: 500 },
+      { fromUid: "traveler-5", toUid: "traveler-1", amountPaid: 500 },
+      { fromUid: "traveler-10", toUid: "traveler-1", amountPaid: 500 },
+      { fromUid: "traveler-11", toUid: "traveler-1", amountPaid: 500 },
+      { fromUid: "traveler-6", toUid: "traveler-1", amountPaid: 300 },
+      { fromUid: "traveler-7", toUid: "traveler-1", amountPaid: 200 },
+      { fromUid: "traveler-12", toUid: "traveler-1", amountPaid: 250 },
+      { fromUid: "traveler-3", toUid: "traveler-2", amountPaid: 200 },
+      { fromUid: "traveler-4", toUid: "traveler-2", amountPaid: 200 },
+      { fromUid: "traveler-5", toUid: "traveler-2", amountPaid: 200 },
+      { fromUid: "traveler-6", toUid: "traveler-2", amountPaid: 100 },
+    ].reduce((trip, payment) => applyTripPaymentToTrip(trip, payment), tripAfterExpenses);
+
+    const balances = Object.fromEntries(
+      finalTrip.participants.map((participant) => [participant.uid, participant.owed]),
+    );
+
+    expect(balances).toEqual({
+      "traveler-1": 3660,
+      "traveler-2": 110,
+      "traveler-3": -170,
+      "traveler-4": -90,
+      "traveler-5": -90,
+      "traveler-6": -150,
+      "traveler-7": -620,
+      "traveler-8": -540,
+      "traveler-9": -785,
+      "traveler-10": -85,
+      "traveler-11": -85,
+      "traveler-12": -335,
+      "traveler-13": -235,
+      "traveler-14": -585,
+    });
+
+    const result = calculateTrip(finalTrip);
+    const totalsByCreditor = result.transactions.reduce<Record<string, number>>(
+      (acc, transaction) => {
+        acc[transaction.owed.uid] = (acc[transaction.owed.uid] || 0) + transaction.amount;
+        return acc;
+      },
+      {},
+    );
+    const totalSuggested = result.transactions.reduce(
+      (sum, transaction) => sum + transaction.amount,
+      0,
+    );
+
+    expect(result.finalNumberOfTransactions).toBe(13);
+    expect(totalSuggested).toBeCloseTo(3770, 2);
+    expect(totalsByCreditor).toEqual({
+      "traveler-1": 3660,
+      "traveler-2": 110,
+    });
+    expect(
+      result.transactions.find((transaction) => transaction.owee.uid === "traveler-4")?.amount,
+    ).toBeCloseTo(90, 2);
+    expect(
+      result.transactions.find((transaction) => transaction.owee.uid === "traveler-9")?.amount,
+    ).toBeCloseTo(785, 2);
+  });
 });
 
 describe("linkGuestParticipantToUser", () => {
@@ -276,8 +498,8 @@ describe("linkGuestParticipantToUser", () => {
     const targetUser = makeUser("u-jordan", "jordan", "Jordan Lee");
     const trip = makeTrip([alice], []);
 
-    expect(() => linkGuestParticipantToUser(trip, alice.uid, targetUser)).toThrow(
-      "Only guest travelers",
-    );
+    expect(() =>
+      linkGuestParticipantToUser(trip, alice.uid, targetUser),
+    ).toThrow("Only guest travelers");
   });
 });

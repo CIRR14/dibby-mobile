@@ -49,6 +49,7 @@ const LoginScreen = () => {
   const [passwordVerificationRequired, setPasswordVerificationRequired] =
     useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [passwordResetMessage, setPasswordResetMessage] = useState<string>("");
 
   const navigation = useNavigation();
 
@@ -108,9 +109,11 @@ const LoginScreen = () => {
     setPasswordVerification("");
     setPasswordVerificationRequired(false);
     setError("");
+    setPasswordResetMessage("");
   };
 
   const handleSignUp = () => {
+    setPasswordResetMessage("");
     setPasswordVerificationRequired(true);
     setMethod("signUp");
     if (isPasswordValid() && isPasswordVerified()) {
@@ -134,6 +137,7 @@ const LoginScreen = () => {
   };
 
   const handleLogin = () => {
+    setPasswordResetMessage("");
     setLoading(true);
     setMethod("logIn");
     signInWithEmailAndPassword(auth, email, password)
@@ -153,6 +157,7 @@ const LoginScreen = () => {
 
   const handleFacebookLogin = () => {
     setError("");
+    setPasswordResetMessage("");
     if (signInWithPopup) {
       signInWithPopup(auth, facebookProvider)
         .then((user: UserCredential) => {})
@@ -165,6 +170,7 @@ const LoginScreen = () => {
 
   const handleGoogleLogIn = () => {
     setError("");
+    setPasswordResetMessage("");
     if (signInWithPopup) {
       signInWithPopup(auth, googleProvider)
         .then((user: UserCredential) => {})
@@ -177,6 +183,7 @@ const LoginScreen = () => {
 
   const handleAppleLogin = () => {
     setError("");
+    setPasswordResetMessage("");
     if (signInWithPopup) {
       signInWithPopup(auth, appleProvider)
         .then((user: UserCredential) => {})
@@ -189,10 +196,13 @@ const LoginScreen = () => {
 
   const handleForgotPassword = async () => {
     setError("");
+    setPasswordResetMessage("");
     if (email) {
       sendPasswordResetEmail(auth, email)
-        .then((res) => {
-          // TODO: POP UP MODAL OR SOMETHING
+        .then(() => {
+          setPasswordResetMessage(
+            "Password reset email sent. Check your inbox and spam folder.",
+          );
         })
         .catch((err) => {
           setError(errorMessage(err?.code));
@@ -235,6 +245,9 @@ const LoginScreen = () => {
             )}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
+            {passwordResetMessage && (
+              <Text style={styles.successText}>{passwordResetMessage}</Text>
+            )}
           </View>
 
           <View style={styles.buttonContainer}>
@@ -334,6 +347,12 @@ const makeStyles = (colors: ThemeColors) =>
     },
     errorText: {
       color: colors.danger.button,
+      fontWeight: "500",
+      fontSize: Typography.size.xs,
+      marginTop: 6,
+    },
+    successText: {
+      color: colors.success.text,
       fontWeight: "500",
       fontSize: Typography.size.xs,
       marginTop: 6,

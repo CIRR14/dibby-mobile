@@ -6,6 +6,7 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
   CommonActions,
+  getFocusedRouteNameFromRoute,
   NavigationContainer,
   useNavigation,
   useNavigationState,
@@ -28,6 +29,8 @@ import {
 import LinkingConfiguration from "./LinkingConfiguration";
 import ViewTrip from "../screens/ViewTrip";
 import ViewExpense from "../screens/ViewExpense";
+import Payments from "../screens/Payments";
+import AddPayment from "../screens/AddPayment";
 import PdfScreen from "../screens/PdfScreen";
 import { VerifyEmail } from "../screens/VerifyEmail";
 import CreateTrip from "../components/CreateTrip";
@@ -257,6 +260,8 @@ function TripsStackNavigator() {
       <TripsStack.Screen name="Home" component={HomeScreen} />
       <TripsStack.Screen name="ViewTrip" component={ViewTrip} />
       <TripsStack.Screen name="ViewExpense" component={ViewExpense} />
+      <TripsStack.Screen name="Payments" component={Payments} />
+      <TripsStack.Screen name="AddPayment" component={AddPayment} />
       <TripsStack.Screen name="CreateTrip" component={CreateTrip} />
       <TripsStack.Screen name="TripWizard" component={TripWizard} />
       <TripsStack.Screen name="PrintPDF" component={PdfScreen} />
@@ -325,12 +330,17 @@ function BottomTabNavigator() {
       <BottomTab.Screen
         name="TripsTab"
         component={TripsStackNavigator}
-        options={{
+        options={({ route }) => ({
           title: "Trips",
           tabBarIcon: ({ color }) => (
             <FontAwesomeIcon icon={faSuitcase} size={18} color={color} />
           ),
-        }}
+          tabBarStyle: ["Payments", "AddPayment"].includes(
+            getFocusedRouteNameFromRoute(route) || "",
+          )
+            ? { display: "none" }
+            : undefined,
+        })}
       />
       <BottomTab.Screen
         name="AddAction"

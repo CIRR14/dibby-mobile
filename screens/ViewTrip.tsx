@@ -57,6 +57,7 @@ import {
   cancelTripLinkRequest,
   createTripLinkRequest,
   deleteDibbyExpense,
+  setTripCompletedStatus,
 } from "../helpers/FirebaseHelpers";
 import NeumoSurface from "../components/NeumoSurface";
 import NeumoPressable from "../components/NeumoPressable";
@@ -116,6 +117,7 @@ const ViewTrip = ({ route }: any) => {
   const [busyLinkRequestId, setBusyLinkRequestId] = useState<string | null>(
     null,
   );
+  const [completingTrip, setCompletingTrip] = useState<boolean>(false);
 
   const [loadingIndicator, setLoadingIndicator] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -358,6 +360,40 @@ const ViewTrip = ({ route }: any) => {
     [deleteExpense],
   );
 
+  const confirmCompleteTrip = useCallback(() => {
+    if (!currentTrip) {
+      return;
+    }
+
+    Alert.alert(
+      "Mark trip complete?",
+      "This will mark the trip as completed. You can reopen it later if needed.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Complete",
+          onPress: async () => {
+            setCompletingTrip(true);
+            try {
+              await setTripCompletedStatus(currentTrip.id, true);
+              Alert.alert(
+                "Trip completed",
+                "This trip is now marked as complete.",
+              );
+            } catch (error: any) {
+              Alert.alert(
+                "Unable to update trip",
+                error?.message || "Try again in a moment.",
+              );
+            } finally {
+              setCompletingTrip(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [currentTrip]);
+
   const renderExpenseItem = useCallback(
     ({ item }: { item: DibbyExpense }) => (
       <DibbyCard
@@ -478,6 +514,18 @@ const ViewTrip = ({ route }: any) => {
         </View>
       </NeumoPressable>
 
+      <DibbyButton
+        title="Payments"
+        type="outline"
+        size="sm"
+        onPress={() =>
+          navigation.navigate("Payments", {
+            tripName,
+            tripId,
+          })
+        }
+      />
+
       <NeumoPressable
         variant="flat"
         tone="base"
@@ -500,8 +548,39 @@ const ViewTrip = ({ route }: any) => {
         <DibbySummary
           currentTrip={currentTrip}
           calculatedTrip={calculatedTrip}
+          onOpenPayments={() =>
+            navigation.navigate("Payments", {
+              tripName,
+              tripId,
+            })
+          }
         />
       )}
+
+      {isTripOwner &&
+        currentTrip &&
+        !hasOpenBalances &&
+        !currentTrip.completed && (
+          <NeumoSurface
+            variant="raised"
+            tone="surface"
+            radius={NeumoTokens.radius.lg}
+            style={styles.completePromptCard}
+          >
+            <Text style={styles.completePromptTitle}>
+              All balances are settled
+            </Text>
+            <Text style={styles.completePromptText}>
+              Mark this trip complete when everyone has confirmed payment.
+            </Text>
+            <DibbyButton
+              title={completingTrip ? "Completing..." : "Mark trip complete"}
+              onPress={confirmCompleteTrip}
+              disabled={completingTrip}
+              fullWidth
+            />
+          </NeumoSurface>
+        )}
 
       <NeumoSurface
         variant="inset"
@@ -941,6 +1020,19 @@ const makeStyles = (colors: ThemeColors) =>
     quickSummary: {
       marginVertical: 12,
       gap: 8,
+    },
+    completePromptCard: {
+      gap: 10,
+      marginBottom: 8,
+    },
+    completePromptTitle: {
+      color: colors.textPrimary,
+      fontSize: Typography.size.md,
+      fontWeight: Typography.weight.semibold as any,
+    },
+    completePromptText: {
+      color: colors.textSecondary,
+      fontSize: Typography.size.sm,
     },
     segmentRow: {
       flexDirection: "row",

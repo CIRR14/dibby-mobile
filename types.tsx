@@ -53,6 +53,14 @@ export type TripsStackParamList = {
     tripId: string;
     expenseId: string;
   };
+  Payments: {
+    tripName: string;
+    tripId: string;
+  };
+  AddPayment: {
+    tripName: string;
+    tripId: string;
+  };
   CreateTrip: undefined;
   TripWizard: undefined;
   PrintPDF: { tripId: string };
@@ -69,7 +77,7 @@ export type TripsStackScreenProps<Screen extends keyof TripsStackParamList> =
   >;
 
 export type ProfileStackScreenProps<
-  Screen extends keyof ProfileStackParamList
+  Screen extends keyof ProfileStackParamList,
 > = CompositeScreenProps<
   NativeStackScreenProps<ProfileStackParamList, Screen>,
   NativeStackScreenProps<RootStackParamList>

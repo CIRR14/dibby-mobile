@@ -1,9 +1,11 @@
 import {
   DibbyExpense,
   DibbyParticipant,
+  DibbyPaymentStatus,
   DibbySplitMethod,
   DibbyTrip,
   DibbyUser,
+  DibbyTripPayment,
 } from "../constants/DibbyTypes";
 import { numberWithCommas } from "./AppHelpers";
 
@@ -26,8 +28,7 @@ const toCents = (value?: number | string | null): number => {
   return Math.round(numeric * centsPrecision);
 };
 
-const fromCents = (cents: number): number =>
-  Math.round(cents) / centsPrecision;
+const fromCents = (cents: number): number => Math.round(cents) / centsPrecision;
 
 const roundMoney = (value: number): number =>
   Number(fromCents(Math.round(value * centsPrecision)).toFixed(2));
@@ -78,9 +79,7 @@ const normalizeSplits = (
   return splits;
 };
 
-const buildBalancesFromExpenses = (
-  trip: DibbyTrip,
-): Map<string, number> => {
+const buildBalancesFromExpenses = (trip: DibbyTrip): Map<string, number> => {
   const participantIds = trip.participants.map((p) => p.uid);
   const balances = new Map<string, number>();
 
@@ -122,6 +121,17 @@ const buildBalancesFromParticipants = (
   });
   return balances;
 };
+
+const balancesMatchWithinCent = (
+  trip: DibbyTrip,
+  left: Map<string, number>,
+  right: Map<string, number>,
+): boolean =>
+  trip.participants.every((participant) =>
+    isZeroCents(
+      (left.get(participant.uid) || 0) - (right.get(participant.uid) || 0),
+    ),
+  );
 
 const minimizeTransactions = (
   trip: DibbyTrip,
@@ -189,27 +199,30 @@ const minimizeTransactions = (
 
 export const calculateTrip = (trip: DibbyTrip): ITransactionResponse => {
   const expenseBalances = buildBalancesFromExpenses(trip);
-  const expenseBalanceTotal = Array.from(expenseBalances.values()).reduce(
+  const participantBalances = buildBalancesFromParticipants(trip);
+  const participantHasAnyBalance = Array.from(
+    participantBalances.values(),
+  ).some((value) => !isZeroCents(value));
+
+  const useExpenseBalances =
+    balancesMatchWithinCent(trip, expenseBalances, participantBalances) ||
+    !participantHasAnyBalance;
+
+  const balances = new Map(
+    useExpenseBalances ? expenseBalances : participantBalances,
+  );
+
+  const remainder = Array.from(balances.values()).reduce(
     (acc, value) => acc + value,
     0,
   );
-  const balances = isZeroCents(expenseBalanceTotal)
-    ? expenseBalances
-    : buildBalancesFromParticipants(trip);
-
-  if (!isZeroCents(expenseBalanceTotal)) {
-    const remainder = Array.from(balances.values()).reduce(
-      (acc, value) => acc + value,
-      0,
-    );
-    if (!isZeroCents(remainder)) {
-      const firstParticipant = trip.participants[0];
-      if (firstParticipant) {
-        balances.set(
-          firstParticipant.uid,
-          (balances.get(firstParticipant.uid) || 0) - remainder,
-        );
-      }
+  if (!isZeroCents(remainder)) {
+    const firstParticipant = trip.participants[0];
+    if (firstParticipant) {
+      balances.set(
+        firstParticipant.uid,
+        (balances.get(firstParticipant.uid) || 0) - remainder,
+      );
     }
   }
 
@@ -279,6 +292,132 @@ export const linkGuestParticipantToUser = (
   };
 };
 
+export const buildTripPaymentStatus = (
+  amount: number,
+  amountPaid: number,
+): DibbyPaymentStatus => {
+  if (amountPaid >= amount) {
+    return DibbyPaymentStatus.PAID;
+  }
+  return DibbyPaymentStatus.PARTIAL;
+};
+
+export const applyTripPaymentToTrip = (
+  trip: DibbyTrip,
+  payment: Pick<DibbyTripPayment, "fromUid" | "toUid" | "amountPaid">,
+): DibbyTrip => {
+  const amountPaid = roundMoney(payment.amountPaid);
+
+  if (amountPaid <= 0) {
+    throw new Error("Payment amount must be greater than zero.");
+  }
+
+  if (payment.fromUid === payment.toUid) {
+    throw new Error("Payment participants must be different.");
+  }
+
+  const payer = trip.participants.find(
+    (participant) => participant.uid === payment.fromUid,
+  );
+  const payee = trip.participants.find(
+    (participant) => participant.uid === payment.toUid,
+  );
+
+  if (!payer || !payee) {
+    throw new Error("Payment participants are no longer in this trip.");
+  }
+
+  if (payer.owed >= 0) {
+    throw new Error("The payer does not currently owe a balance.");
+  }
+
+  if (payee.owed <= 0) {
+    throw new Error(
+      "The recipient does not currently have a receivable balance.",
+    );
+  }
+
+  const payerOwes = Math.abs(roundMoney(payer.owed));
+  const payeeReceives = roundMoney(payee.owed);
+  const maxPayable = roundMoney(Math.min(payerOwes, payeeReceives));
+
+  if (amountPaid > maxPayable + 0.01) {
+    throw new Error("Payment amount exceeds the current open balance.");
+  }
+
+  const updatedTripParticipants = trip.participants.map((participant) => {
+    if (participant.uid === payment.fromUid) {
+      return {
+        ...participant,
+        owed: roundMoney(participant.owed + amountPaid),
+      };
+    }
+
+    if (participant.uid === payment.toUid) {
+      return {
+        ...participant,
+        owed: roundMoney(participant.owed - amountPaid),
+      };
+    }
+
+    return participant;
+  });
+
+  return {
+    ...trip,
+    participants: updatedTripParticipants,
+  };
+};
+
+export const revertTripPaymentFromTrip = (
+  trip: DibbyTrip,
+  payment: Pick<DibbyTripPayment, "fromUid" | "toUid" | "amountPaid">,
+): DibbyTrip => {
+  const amountPaid = roundMoney(payment.amountPaid);
+
+  if (amountPaid <= 0) {
+    throw new Error("Payment amount must be greater than zero.");
+  }
+
+  if (payment.fromUid === payment.toUid) {
+    throw new Error("Payment participants must be different.");
+  }
+
+  const payer = trip.participants.find(
+    (participant) => participant.uid === payment.fromUid,
+  );
+  const payee = trip.participants.find(
+    (participant) => participant.uid === payment.toUid,
+  );
+
+  if (!payer || !payee) {
+    throw new Error("Payment participants are no longer in this trip.");
+  }
+
+  const updatedTripParticipants = trip.participants.map((participant) => {
+    if (participant.uid === payment.fromUid) {
+      return {
+        ...participant,
+        owed: roundMoney(participant.owed - amountPaid),
+      };
+    }
+
+    if (participant.uid === payment.toUid) {
+      return {
+        ...participant,
+        owed: roundMoney(participant.owed + amountPaid),
+      };
+    }
+
+    return participant;
+  });
+
+  return {
+    ...trip,
+    participants: updatedTripParticipants,
+  };
+};
+
 export const getTransactionString = (transaction: ITransaction): string => {
   return `💰 ${transaction.owee.name} owes ${transaction.owed.name}: $${numberWithCommas(
     transaction.amount.toString(),
@@ -290,7 +429,6 @@ export const getAmountOfTransactionsString = (
 ): string => {
   return ` Number of transactions: ${numberOfTransactions}`;
 };
-
 
 export const checkResults = (
   ogTrip: DibbyTrip,

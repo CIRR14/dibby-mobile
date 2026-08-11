@@ -22,16 +22,23 @@ import {
   DibbyExpense,
   DibbyFriend,
   DibbyParticipant,
+  DibbyPaymentStatus,
   DibbySplits,
   DibbyTrip,
   DibbyTripLinkRequest,
+  DibbyTripPayment,
   DibbyUser,
 } from "../constants/DibbyTypes";
 import { getTravelerFromId } from "./AppHelpers";
 import { assignUniqueParticipantColors } from "./GenerateColor";
 import { CreateExpenseForm } from "../components/CreateExpense";
 import { v4 } from "uuid";
-import { linkGuestParticipantToUser } from "./DibbyLogic";
+import {
+  applyTripPaymentToTrip,
+  buildTripPaymentStatus,
+  linkGuestParticipantToUser,
+  revertTripPaymentFromTrip,
+} from "./DibbyLogic";
 
 const chunkArray = <T>(items: T[], size = 10): T[][] => {
   if (!items.length) {
@@ -76,6 +83,9 @@ const resolveNewTripOwner = (trip: DibbyTrip, userId: string) => {
 
 const getTripLinkRequestId = (tripId: string, guestUid: string) =>
   `${tripId}_${guestUid}`.replace(/\//g, "_");
+
+const getTripPaymentId = (tripId: string, fromUid: string, toUid: string) =>
+  `${tripId}_${fromUid}_${toUid}_${v4()}`.replace(/\//g, "_");
 
 export const createTripLinkRequest = async (
   requester: DibbyUser,
@@ -191,6 +201,232 @@ export const rejectTripLinkRequest = async (
   }
 
   await deleteDoc(doc(db, "tripLinkRequests", request.id));
+};
+
+type TripPaymentInput = {
+  fromUid: string;
+  toUid: string;
+  amount: number;
+  amountPaid: number;
+  note?: string | null;
+};
+
+const assertPaymentActorCanWrite = (
+  requester: DibbyUser,
+  trip: DibbyTrip,
+  payment: TripPaymentInput,
+) => {
+  const isTripOwner = trip.createdBy === requester.uid;
+  const isDebtor = payment.fromUid === requester.uid;
+
+  if (!isTripOwner && !isDebtor) {
+    throw new Error("Only the trip owner or debtor can manage this payment.");
+  }
+};
+
+export const createTripPayment = async (
+  requester: DibbyUser,
+  trip: DibbyTrip,
+  payment: TripPaymentInput,
+): Promise<void> => {
+  if (payment.amount <= 0) {
+    throw new Error("Payment amount must be greater than zero.");
+  }
+
+  if (payment.amountPaid <= 0) {
+    throw new Error("Paid amount must be greater than zero.");
+  }
+
+  if (payment.amountPaid > payment.amount) {
+    throw new Error("Paid amount cannot exceed the payment amount.");
+  }
+
+  const paymentId = getTripPaymentId(trip.id, payment.fromUid, payment.toUid);
+  const paymentRef = doc(db, "tripPayments", paymentId);
+  const tripRef = doc(db, "trips", trip.id);
+
+  await runTransaction(db, async (transaction) => {
+    const tripSnap = await transaction.get(tripRef);
+    if (!tripSnap.exists()) {
+      throw new Error("This trip no longer exists.");
+    }
+
+    const latestTrip = tripSnap.data() as DibbyTrip;
+    assertPaymentActorCanWrite(requester, latestTrip, payment);
+
+    const payer = latestTrip.participants.find(
+      (participant) => participant.uid === payment.fromUid,
+    );
+    const payee = latestTrip.participants.find(
+      (participant) => participant.uid === payment.toUid,
+    );
+
+    if (!payer || !payee) {
+      throw new Error("Payment participants are no longer in this trip.");
+    }
+
+    const nextTrip = applyTripPaymentToTrip(latestTrip, payment);
+    const status = buildTripPaymentStatus(payment.amount, payment.amountPaid);
+    const paymentRecord: DibbyTripPayment = {
+      id: paymentId,
+      tripId: latestTrip.id,
+      tripTitle: latestTrip.title,
+      tripEmoji: latestTrip.emoji || null,
+      fromUid: payment.fromUid,
+      fromUsername: payer.username,
+      fromName: payer.name,
+      toUid: payment.toUid,
+      toUsername: payee.username,
+      toName: payee.name,
+      amount: payment.amount,
+      amountPaid: payment.amountPaid,
+      status,
+      requestedByUid: requester.uid,
+      requestedByUsername: requester.username,
+      requestedByName: requester.displayName,
+      dateCreated: Timestamp.now(),
+      dateUpdated: Timestamp.now(),
+      note: payment.note || null,
+    };
+
+    transaction.update(tripRef, {
+      ...nextTrip,
+      dateUpdated: Timestamp.now(),
+    });
+    transaction.set(paymentRef, paymentRecord);
+  });
+};
+
+export const updateTripPayment = async (
+  requester: DibbyUser,
+  payment: DibbyTripPayment,
+  nextPayment: TripPaymentInput,
+): Promise<void> => {
+  if (nextPayment.amount <= 0) {
+    throw new Error("Payment amount must be greater than zero.");
+  }
+
+  if (nextPayment.amountPaid <= 0) {
+    throw new Error("Paid amount must be greater than zero.");
+  }
+
+  if (nextPayment.amountPaid > nextPayment.amount) {
+    throw new Error("Paid amount cannot exceed the payment amount.");
+  }
+
+  const paymentRef = doc(db, "tripPayments", payment.id);
+  const tripRef = doc(db, "trips", payment.tripId);
+
+  await runTransaction(db, async (transaction) => {
+    const [tripSnap, paymentSnap] = await Promise.all([
+      transaction.get(tripRef),
+      transaction.get(paymentRef),
+    ]);
+
+    if (!tripSnap.exists()) {
+      throw new Error("This trip no longer exists.");
+    }
+
+    if (!paymentSnap.exists()) {
+      throw new Error("This payment is no longer available.");
+    }
+
+    const latestTrip = tripSnap.data() as DibbyTrip;
+    const latestPayment = paymentSnap.data() as DibbyTripPayment;
+
+    const canWrite =
+      latestTrip.createdBy === requester.uid ||
+      latestPayment.fromUid === requester.uid;
+    if (!canWrite) {
+      throw new Error("Only the trip owner or debtor can manage this payment.");
+    }
+
+    if (
+      nextPayment.fromUid !== latestPayment.fromUid ||
+      nextPayment.toUid !== latestPayment.toUid
+    ) {
+      throw new Error("Payment participants cannot be changed after creation.");
+    }
+
+    const reversedTrip = revertTripPaymentFromTrip(latestTrip, {
+      fromUid: latestPayment.fromUid,
+      toUid: latestPayment.toUid,
+      amountPaid: latestPayment.amountPaid,
+    });
+    const nextTrip = applyTripPaymentToTrip(reversedTrip, nextPayment);
+
+    transaction.update(tripRef, {
+      ...nextTrip,
+      dateUpdated: Timestamp.now(),
+    });
+    transaction.update(paymentRef, {
+      ...latestPayment,
+      amount: nextPayment.amount,
+      amountPaid: nextPayment.amountPaid,
+      status: buildTripPaymentStatus(
+        nextPayment.amount,
+        nextPayment.amountPaid,
+      ),
+      dateUpdated: Timestamp.now(),
+      note: nextPayment.note || null,
+    });
+  });
+};
+
+export const deleteTripPayment = async (
+  requester: DibbyUser,
+  payment: DibbyTripPayment,
+): Promise<void> => {
+  const paymentRef = doc(db, "tripPayments", payment.id);
+  const tripRef = doc(db, "trips", payment.tripId);
+
+  await runTransaction(db, async (transaction) => {
+    const [tripSnap, paymentSnap] = await Promise.all([
+      transaction.get(tripRef),
+      transaction.get(paymentRef),
+    ]);
+
+    if (!tripSnap.exists()) {
+      throw new Error("This trip no longer exists.");
+    }
+
+    if (!paymentSnap.exists()) {
+      throw new Error("This payment is no longer available.");
+    }
+
+    const latestTrip = tripSnap.data() as DibbyTrip;
+    const latestPayment = paymentSnap.data() as DibbyTripPayment;
+    const canDelete =
+      latestTrip.createdBy === requester.uid ||
+      latestPayment.fromUid === requester.uid;
+
+    if (!canDelete) {
+      throw new Error("Only the trip owner or debtor can manage this payment.");
+    }
+
+    const reversedTrip = revertTripPaymentFromTrip(latestTrip, {
+      fromUid: latestPayment.fromUid,
+      toUid: latestPayment.toUid,
+      amountPaid: latestPayment.amountPaid,
+    });
+
+    transaction.update(tripRef, {
+      ...reversedTrip,
+      dateUpdated: Timestamp.now(),
+    });
+    transaction.delete(paymentRef);
+  });
+};
+
+export const setTripCompletedStatus = async (
+  tripId: string,
+  completed: boolean,
+): Promise<void> => {
+  const tripRef = doc(db, "trips", tripId);
+  await updateDoc(tripRef, {
+    completed,
+    dateUpdated: Timestamp.now(),
+  });
 };
 
 export const acceptTripLinkRequest = async (
@@ -332,13 +568,15 @@ export const createDibbyTrip = async (
   participants: DibbyParticipant[],
 ) => {
   await setDoc(tripRef, tripData);
-  participants.forEach(async (user) => {
-    const docRef = doc(db, "users", user.uid);
-    const updatedUser = {
-      trips: arrayUnion(tripRef.id),
-    };
-    await updateDoc(docRef, updatedUser);
-  });
+  await Promise.all(
+    participants.map(async (user) => {
+      const docRef = doc(db, "users", user.uid);
+      const updatedUser = {
+        trips: arrayUnion(tripRef.id),
+      };
+      await updateDoc(docRef, updatedUser);
+    }),
+  );
 };
 
 export const deleteDibbyTrip = async (tripData: DibbyTrip) => {
@@ -350,11 +588,13 @@ export const deleteDibbyTrip = async (tripData: DibbyTrip) => {
     where(documentId(), "in", usersToDeleteTripIn),
   );
   const querySnapshot = await getDocs(q);
-  querySnapshot.forEach(async (doc) => {
-    await updateDoc(doc.ref, {
-      trips: arrayRemove(tripData.id),
-    });
-  });
+  await Promise.all(
+    querySnapshot.docs.map(async (doc) => {
+      await updateDoc(doc.ref, {
+        trips: arrayRemove(tripData.id),
+      });
+    }),
+  );
   return await deleteDoc(doc(db, "trips", tripData.id));
 };
 
@@ -367,11 +607,11 @@ export const createDibbyExpense = async (
   const expensePerPersonAverage = formData.perPersonAverage;
   const expenseAmount: number = parseFloat(formData.amount);
 
-  const getNewParticipants = (): DibbyParticipant[] => {
-    const participantsNotIncluded = trip.participants.filter(
+  const getNewParticipants = (latestTrip: DibbyTrip): DibbyParticipant[] => {
+    const participantsNotIncluded = latestTrip.participants.filter(
       (p) => !formData.peopleInExpense.includes(p.uid),
     );
-    const participantsIncluded = trip.participants.filter((p) =>
+    const participantsIncluded = latestTrip.participants.filter((p) =>
       formData.peopleInExpense.includes(p.uid),
     );
 
@@ -406,52 +646,58 @@ export const createDibbyExpense = async (
     return [...newParticipants, ...participants];
   };
 
-  const peopleInExpense: DibbySplits[] = formData.peopleInExpense
-    .map((t) => {
-      const traveler = getTravelerFromId(trip, t);
-      if (traveler) {
+  await runTransaction(db, async (transaction) => {
+    const tripSnap = await transaction.get(tripRef);
+    if (!tripSnap.exists()) {
+      throw new Error("This trip no longer exists.");
+    }
+
+    const latestTrip = tripSnap.data() as DibbyTrip;
+    const peopleInExpense: DibbySplits[] = formData.peopleInExpense
+      .map((travelerId) => {
+        const traveler = getTravelerFromId(latestTrip, travelerId);
+        if (!traveler) {
+          return null;
+        }
         const splitTravelerInfo = formData.peopleSplits?.find(
-          (p) => p.uid === traveler?.uid,
+          (p) => p.uid === traveler.uid,
         );
         return {
-          uid: traveler?.uid,
-          name: traveler?.name,
+          uid: traveler.uid,
+          name: traveler.name,
           amount: splitTravelerInfo?.amount || expensePerPersonAverage,
         };
-      } else {
-        return null;
-      }
-    })
-    .filter((e) => e) as DibbySplits[];
+      })
+      .filter((entry) => entry) as DibbySplits[];
 
-  const newExpense: DibbyExpense = {
-    id: expenseId,
-    title: formData.title,
-    description: formData.description,
-    amount: expenseAmount,
-    createdBy: formData.createdBy,
-    dateCreated: Timestamp.now(),
-    dateUpdated: Timestamp.now(),
-    perPersonAverage: expensePerPersonAverage,
-    paidBy: formData.paidBy,
-    splitMethod: formData.splitMethod,
-    peopleInExpense,
-    emoji: formData.emoji || null,
-  };
-  const newTripData = {
-    ...trip,
-    participants: [...getNewParticipants()],
-    expenses: arrayUnion(newExpense),
-    amount: increment(expenseAmount),
-    perPersonAverage: increment(
-      parseFloat(formData.amount) / trip.participants.length,
-    ),
-    dateUpdated: Timestamp.now(),
-  };
+    const newExpense: DibbyExpense = {
+      id: expenseId,
+      title: formData.title,
+      description: formData.description,
+      amount: expenseAmount,
+      createdBy: formData.createdBy,
+      dateCreated: Timestamp.now(),
+      dateUpdated: Timestamp.now(),
+      perPersonAverage: expensePerPersonAverage,
+      paidBy: formData.paidBy,
+      splitMethod: formData.splitMethod,
+      peopleInExpense,
+      emoji: formData.emoji || null,
+    };
 
-  console.log({ newTripData });
-
-  await updateDoc(tripRef, newTripData);
+    const nextAmount = (latestTrip.amount || 0) + expenseAmount;
+    transaction.update(tripRef, {
+      ...latestTrip,
+      participants: getNewParticipants(latestTrip),
+      expenses: [...latestTrip.expenses, newExpense],
+      amount: nextAmount,
+      perPersonAverage:
+        latestTrip.participants.length > 0
+          ? nextAmount / latestTrip.participants.length
+          : 0,
+      dateUpdated: Timestamp.now(),
+    });
+  });
 };
 
 export const deleteDibbyExpense = async (
@@ -460,35 +706,61 @@ export const deleteDibbyExpense = async (
 ): Promise<void> => {
   const tripRef = doc(db, "trips", trip.id);
 
-  const newParticipants: DibbyParticipant[] = trip.participants.map((p) => {
-    const inExpenseAmount = expense.peopleInExpense.find(
-      (e) => e.uid === p.uid,
-    )?.amount;
-    const newOwed =
-      expense.paidBy === p.uid && inExpenseAmount
-        ? p.owed - Math.abs(expense.amount - inExpenseAmount)
-        : expense.paidBy !== p.uid && inExpenseAmount
-          ? p.owed + inExpenseAmount
-          : p.owed;
+  await runTransaction(db, async (transaction) => {
+    const tripSnap = await transaction.get(tripRef);
+    if (!tripSnap.exists()) {
+      throw new Error("This trip no longer exists.");
+    }
 
-    return {
-      ...p,
-      owed: newOwed,
-      amountPaid:
-        expense.paidBy === p.uid ? p.amountPaid - expense.amount : p.amountPaid,
-    };
+    const latestTrip = tripSnap.data() as DibbyTrip;
+    const savedExpense = latestTrip.expenses.find(
+      (item) => item.id === expense.id,
+    );
+    if (!savedExpense) {
+      throw new Error("This expense no longer exists.");
+    }
+
+    const newParticipants: DibbyParticipant[] = latestTrip.participants.map(
+      (participant) => {
+        const inExpenseAmount = savedExpense.peopleInExpense.find(
+          (entry) => entry.uid === participant.uid,
+        )?.amount;
+        const newOwed =
+          savedExpense.paidBy === participant.uid && inExpenseAmount
+            ? participant.owed - Math.abs(savedExpense.amount - inExpenseAmount)
+            : savedExpense.paidBy !== participant.uid && inExpenseAmount
+              ? participant.owed + inExpenseAmount
+              : participant.owed;
+
+        return {
+          ...participant,
+          owed: newOwed,
+          amountPaid:
+            savedExpense.paidBy === participant.uid
+              ? participant.amountPaid - savedExpense.amount
+              : participant.amountPaid,
+        };
+      },
+    );
+
+    const nextAmount = Math.max(
+      0,
+      (latestTrip.amount || 0) - savedExpense.amount,
+    );
+    transaction.update(tripRef, {
+      ...latestTrip,
+      participants: newParticipants,
+      expenses: latestTrip.expenses.filter(
+        (item) => item.id !== savedExpense.id,
+      ),
+      amount: nextAmount,
+      perPersonAverage:
+        latestTrip.participants.length > 0
+          ? nextAmount / latestTrip.participants.length
+          : 0,
+      dateUpdated: Timestamp.now(),
+    });
   });
-
-  const newTrip = {
-    ...trip,
-    participants: newParticipants,
-    expenses: arrayRemove(expense),
-    amount: increment(-expense.amount),
-    perPersonAverage: increment(-(expense.amount / trip.participants.length)),
-    dateUpdated: Timestamp.now(),
-  };
-  const docUpdate = await updateDoc(tripRef, newTrip);
-  return docUpdate;
 };
 
 export const addDibbyParticipant = async (
@@ -514,13 +786,15 @@ export const addDibbyParticipant = async (
 
   await updateDoc(doc(db, "trips", trip.id), updatedTrip);
 
-  usersToAddTripTo.forEach(async (uid) => {
-    const docRef = doc(db, "users", uid);
-    const updatedUser = {
-      trips: arrayUnion(trip.id),
-    };
-    await updateDoc(docRef, updatedUser);
-  });
+  await Promise.all(
+    usersToAddTripTo.map(async (uid) => {
+      const docRef = doc(db, "users", uid);
+      const updatedUser = {
+        trips: arrayUnion(trip.id),
+      };
+      await updateDoc(docRef, updatedUser);
+    }),
+  );
 };
 
 export const addDibbyFriends = async (

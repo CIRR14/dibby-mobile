@@ -21,8 +21,24 @@ service cloud.firestore {
       return get(tripPath(tripId)).data;
     }
 
+    function userPath(userId) {
+      return /databases/$(database)/documents/users/$(userId);
+    }
+
+    function userExists(userId) {
+      return exists(userPath(userId));
+    }
+
+    function userHasTrip(userId, tripId) {
+      return userExists(userId) && get(userPath(userId)).data.trips.hasAny([tripId]);
+    }
+
     function isTripOwner(tripId) {
       return signedIn() && tripExists(tripId) && tripData(tripId).createdBy == request.auth.uid;
+    }
+
+    function isTripMember(tripId) {
+      return signedIn() && userHasTrip(request.auth.uid, tripId);
     }
 
     function nullableString(value) {
@@ -58,6 +74,52 @@ service cloud.firestore {
         request.resource.data.dateCreated is timestamp;
     }
 
+      function hasValidTripPaymentShape(requestId) {
+        return request.resource.data.keys().hasOnly([
+          "id",
+          "tripId",
+          "tripTitle",
+          "tripEmoji",
+          "fromUid",
+          "fromUsername",
+          "fromName",
+          "toUid",
+          "toUsername",
+          "toName",
+          "amount",
+          "amountPaid",
+          "status",
+          "requestedByUid",
+          "requestedByUsername",
+          "requestedByName",
+          "dateCreated",
+          "dateUpdated",
+          "note",
+        ]) &&
+        request.resource.data.id == requestId &&
+        request.resource.data.tripId is string &&
+        request.resource.data.tripTitle is string &&
+        nullableString(request.resource.data.tripEmoji) &&
+        request.resource.data.fromUid is string &&
+        nullableString(request.resource.data.fromUsername) &&
+        nullableString(request.resource.data.fromName) &&
+        request.resource.data.toUid is string &&
+        nullableString(request.resource.data.toUsername) &&
+        nullableString(request.resource.data.toName) &&
+        request.resource.data.amount is number &&
+        request.resource.data.amountPaid is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amountPaid > 0 &&
+        request.resource.data.amountPaid <= request.resource.data.amount &&
+        request.resource.data.status in ["PAID", "PARTIAL"] &&
+        request.resource.data.requestedByUid is string &&
+        nullableString(request.resource.data.requestedByUsername) &&
+        nullableString(request.resource.data.requestedByName) &&
+        request.resource.data.dateCreated is timestamp &&
+        request.resource.data.dateUpdated is timestamp &&
+        nullableString(request.resource.data.note);
+      }
+
     match /tripLinkRequests/{requestId} {
       allow create: if appEnabled() && signedIn() &&
         hasValidTripLinkRequestShape(requestId) &&
@@ -78,8 +140,54 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    match /tripPayments/{paymentId} {
+      allow create: if appEnabled() && signedIn() &&
+        hasValidTripPaymentShape(paymentId) &&
+        tripExists(request.resource.data.tripId) &&
+        request.resource.data.requestedByUid == request.auth.uid &&
+        (
+          request.auth.uid == request.resource.data.fromUid ||
+          isTripOwner(request.resource.data.tripId)
+        );
+
+      allow get, list: if appEnabled() && signedIn() && (
+        resource.data.fromUid == request.auth.uid ||
+        resource.data.toUid == request.auth.uid ||
+        isTripOwner(resource.data.tripId)
+      );
+
+      allow delete: if appEnabled() && signedIn() && (
+        resource.data.fromUid == request.auth.uid ||
+        isTripOwner(resource.data.tripId)
+      );
+
+      allow update: if appEnabled() && signedIn() && (
+        resource.data.fromUid == request.auth.uid ||
+        isTripOwner(resource.data.tripId)
+      ) &&
+        hasValidTripPaymentShape(paymentId) &&
+        request.resource.data.id == resource.data.id &&
+        request.resource.data.tripId == resource.data.tripId &&
+        request.resource.data.fromUid == resource.data.fromUid &&
+        request.resource.data.toUid == resource.data.toUid &&
+        request.resource.data.dateCreated == resource.data.dateCreated &&
+        request.resource.data.requestedByUid == resource.data.requestedByUid;
+    }
+
     match /trips/{tripId} {
-      allow read, write: if appEnabled() && signedIn();
+      allow create: if appEnabled() && signedIn() &&
+        request.resource.data.id == tripId &&
+        request.resource.data.createdBy == request.auth.uid;
+
+      allow get, list: if appEnabled() && signedIn() && (
+        isTripOwner(tripId) ||
+        isTripMember(tripId)
+      );
+
+      allow update, delete: if appEnabled() && signedIn() && (
+        isTripOwner(tripId) ||
+        isTripMember(tripId)
+      );
     }
 
     match /users/{userId} {

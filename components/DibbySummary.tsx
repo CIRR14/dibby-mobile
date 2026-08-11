@@ -25,10 +25,12 @@ import { track } from "../helpers/track";
 interface DibbySummary {
   currentTrip: DibbyTrip;
   calculatedTrip: ITransactionResponse;
+  onOpenPayments?: () => void;
 }
 const DibbySummary: React.FC<DibbySummary> = ({
   currentTrip,
   calculatedTrip,
+  onOpenPayments,
 }) => {
   const colors = useAppTheme();
   const styles = makeStyles(colors as unknown as ThemeColors);
@@ -51,10 +53,7 @@ const DibbySummary: React.FC<DibbySummary> = ({
   const openBalances = currentTrip.participants.filter(
     (t) => !inRange(t.owed, -0.01, 0.01),
   ).length;
-  const shareTitle = formatTitleWithEmoji(
-    currentTrip.title,
-    currentTrip.emoji,
-  );
+  const shareTitle = formatTitleWithEmoji(currentTrip.title, currentTrip.emoji);
 
   const buildShareMessage = () => {
     if (!transactions.length) {
@@ -136,7 +135,9 @@ const DibbySummary: React.FC<DibbySummary> = ({
                 style={[
                   styles.statusPill,
                   {
-                    color: isSettled ? colors.success.background : colors.accent,
+                    color: isSettled
+                      ? colors.success.background
+                      : colors.accent,
                   },
                 ]}
               >
@@ -253,16 +254,30 @@ const DibbySummary: React.FC<DibbySummary> = ({
           <View style={styles.transactions}>
             <View style={styles.transactionsHeader}>
               <Text style={styles.sectionTitle}>Suggested payments</Text>
-              <NeumoPressable
-                variant="flat"
-                tone="base"
-                radius={NeumoTokens.radius.pill}
-                padding={6}
-                onPress={handleShare}
-                style={styles.shareTextButton}
-              >
-                <Text style={styles.shareText}>Share</Text>
-              </NeumoPressable>
+              <View style={styles.transactionsHeaderActions}>
+                {onOpenPayments && (
+                  <NeumoPressable
+                    variant="flat"
+                    tone="base"
+                    radius={NeumoTokens.radius.pill}
+                    padding={6}
+                    onPress={onOpenPayments}
+                    style={styles.shareTextButton}
+                  >
+                    <Text style={styles.shareText}>Pay</Text>
+                  </NeumoPressable>
+                )}
+                <NeumoPressable
+                  variant="flat"
+                  tone="base"
+                  radius={NeumoTokens.radius.pill}
+                  padding={6}
+                  onPress={handleShare}
+                  style={styles.shareTextButton}
+                >
+                  <Text style={styles.shareText}>Share</Text>
+                </NeumoPressable>
+              </View>
             </View>
             {transactions.map((t, index) => (
               <View
@@ -398,6 +413,11 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+    },
+    transactionsHeaderActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
     },
     shareTextButton: {
       paddingHorizontal: 8,
